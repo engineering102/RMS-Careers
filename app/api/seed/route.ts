@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Development Seed Route
- * Seeds a minimal set of Academy sample data (programs, students, enrollments)
+ * Seeds a minimal set of Academy sample programs and initial student enrollments
  * for testing and local verification.
  */
 export async function GET() {
@@ -20,6 +20,15 @@ export async function GET() {
     const seededPrograms = await db
       .insert(programs)
       .values([
+        {
+          name: 'Campus Recruitment & Training Program',
+          code: 'CR-GNITC-26',
+          description: 'Comprehensive campus placement preparation covering Aptitude, Coding, and Mock Interviews.',
+          status: 'active',
+          capacity: 60,
+          startDate: new Date('2026-10-01'),
+          endDate: new Date('2026-12-31')
+        },
         {
           name: 'Full-Stack Software Engineering',
           code: 'FSSE-2026',

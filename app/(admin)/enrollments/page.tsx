@@ -1,27 +1,34 @@
-import { ClipboardList } from 'lucide-react';
-import { EmptyState } from '@/components/admin/empty-state';
+import * as React from 'react';
+import { getEnrollmentsWithDetails } from '@/lib/db';
+import { EnrollmentsTable } from './enrollments-table';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Enrollments | Academy Enrollment'
 };
 
-export default function EnrollmentsPage() {
+export default async function EnrollmentsPage(props: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const search = searchParams.q ?? '';
+  const statusFilter = searchParams.status ?? 'all';
+
+  const enrollmentsList = await getEnrollmentsWithDetails(search, undefined, statusFilter);
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Enrollments</h1>
           <p className="text-sm text-muted-foreground">
-            View and manage student enrollments across all programs.
+            View and manage student registrations across all programs.
           </p>
         </div>
       </div>
 
-      <EmptyState
-        icon={ClipboardList}
-        title="No enrollments yet"
-        description="Students who enroll in active programs will appear here for review and confirmation."
-      />
+      <EnrollmentsTable enrollments={enrollmentsList} />
     </div>
   );
 }

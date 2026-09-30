@@ -4,7 +4,8 @@ import {
   text,
   integer,
   timestamp,
-  pgEnum
+  pgEnum,
+  uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -49,18 +50,27 @@ export const students = pgTable('students', {
 });
 
 // Enrollments Table
-export const enrollments = pgTable('enrollments', {
-  id: serial('id').primaryKey(),
-  studentId: integer('student_id')
-    .notNull()
-    .references(() => students.id, { onDelete: 'cascade' }),
-  programId: integer('program_id')
-    .notNull()
-    .references(() => programs.id, { onDelete: 'cascade' }),
-  status: enrollmentStatusEnum('status').notNull().default('pending'),
-  confirmationSentAt: timestamp('confirmation_sent_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow()
-});
+export const enrollments = pgTable(
+  'enrollments',
+  {
+    id: serial('id').primaryKey(),
+    studentId: integer('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    programId: integer('program_id')
+      .notNull()
+      .references(() => programs.id, { onDelete: 'cascade' }),
+    status: enrollmentStatusEnum('status').notNull().default('pending'),
+    confirmationSentAt: timestamp('confirmation_sent_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow()
+  },
+  (table) => ({
+    uniqueStudentProgram: uniqueIndex('student_program_idx').on(
+      table.studentId,
+      table.programId
+    )
+  })
+);
 
 // Relations
 export const programsRelations = relations(programs, ({ many }) => ({
