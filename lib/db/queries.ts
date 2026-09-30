@@ -299,3 +299,33 @@ export async function getEnrollmentsCount(): Promise<number> {
     return 0;
   }
 }
+
+export async function getExistingEnrollmentsByEmails(
+  programId: number,
+  emails: string[]
+): Promise<Set<string>> {
+  const enrolledEmails = new Set<string>();
+  try {
+    if (!process.env.POSTGRES_URL || emails.length === 0) return enrolledEmails;
+
+    const lowerEmails = emails.map((e) => e.trim().toLowerCase());
+
+    const rows = await db
+      .select({ email: students.email })
+      .from(enrollments)
+      .innerJoin(students, eq(enrollments.studentId, students.id))
+      .where(
+        and(
+          eq(enrollments.programId, programId),
+          sql`LOWER(${students.email}) IN ${lowerEmails}`
+        )
+      );
+
+    rows.forEach((r) => enrolledEmails.add(r.email.toLowerCase()));
+    return enrolledEmails;
+  } catch (error) {
+    console.error('Error fetching existing enrollments by emails:', error);
+    return enrolledEmails;
+  }
+}
+

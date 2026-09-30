@@ -1,6 +1,9 @@
 import * as React from 'react';
+import Link from 'next/link';
 import { getEnrollmentsWithDetails } from '@/lib/db';
 import { EnrollmentsTable } from './enrollments-table';
+import { Button } from '@/components/ui/button';
+import { Upload } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +28,14 @@ export default async function EnrollmentsPage(props: {
           <p className="text-sm text-muted-foreground">
             View and manage student registrations across all programs.
           </p>
+        </div>
+        <div>
+          <Button asChild size="sm" className="h-9 gap-1.5 font-medium">
+            <Link href="/enrollments/import">
+              <Upload className="h-4 w-4" />
+              <span>Import Students</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
