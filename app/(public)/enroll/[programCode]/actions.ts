@@ -7,8 +7,10 @@ import {
   findStudentByEmail,
   checkExistingEnrollment,
   createOrUpdateStudent,
-  createEnrollmentRecord
+  createEnrollmentRecord,
+  markEnrollmentConfirmationSent
 } from '@/lib/db';
+import { sendEnrollmentConfirmationEmail } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
 
 const phoneRegex = /^(?:\+?91[\-\s]?)?[6-9]\d{9}$/;
@@ -46,10 +48,12 @@ export type EnrollmentActionResult =
       success: true;
       data: {
         studentName: string;
+        studentEmail: string;
         programName: string;
         programCode: string;
         status: 'pending';
         registeredAt: string;
+        emailSent: boolean;
       };
     }
   | {
@@ -148,8 +152,30 @@ export async function submitStudentEnrollment(
       year
     });
 
-    // 7. Create Enrollment Record
+    // 7. Create Enrollment Record in Database
     const enrollment = await createEnrollmentRecord(student.id, program.id);
+
+    // 8. Attempt Registration Acknowledgement Email Dispatch
+    // Note: Email failure MUST NOT roll back a valid database enrollment
+    let emailSent = false;
+    try {
+      const emailResult = await sendEnrollmentConfirmationEmail({
+        studentName: student.fullName,
+        studentEmail: student.email,
+        programName: program.name,
+        programCode: program.code,
+        startDate: program.startDate,
+        endDate: program.endDate,
+        status: 'pending'
+      });
+
+      if (emailResult.success) {
+        emailSent = true;
+        await markEnrollmentConfirmationSent(enrollment.id);
+      }
+    } catch (emailErr) {
+      console.error('[Action] Email dispatch caught error (enrollment preserved):', emailErr);
+    }
 
     // Revalidate admin enrollments cache
     revalidatePath('/enrollments');
@@ -158,10 +184,12 @@ export async function submitStudentEnrollment(
       success: true,
       data: {
         studentName: student.fullName,
+        studentEmail: student.email,
         programName: program.name,
         programCode: program.code,
         status: 'pending',
-        registeredAt: enrollment.createdAt.toISOString()
+        registeredAt: enrollment.createdAt.toISOString(),
+        emailSent
       }
     };
   } catch (error) {

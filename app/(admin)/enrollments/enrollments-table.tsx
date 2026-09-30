@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Eye, GraduationCap, User, Calendar, Hash, Building2, Phone, Mail } from 'lucide-react';
+import { Eye, GraduationCap, User, Calendar, Hash, Building2, Phone, Mail, CheckCircle2, Clock } from 'lucide-react';
 import { EmptyState } from '@/components/admin/empty-state';
 import type { DetailedEnrollment } from '@/lib/db/queries';
 
@@ -67,6 +67,21 @@ export function EnrollmentsTable({ enrollments }: EnrollmentsTableProps) {
     }
   };
 
+  const getEmailStatusBadge = (confirmationSentAt: Date | null) => {
+    if (confirmationSentAt) {
+      return (
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 text-[11px]">
+          <CheckCircle2 className="h-3 w-3 text-blue-600" /> Sent
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 gap-1 text-[11px]">
+        <Clock className="h-3 w-3 text-slate-400" /> Not Sent
+      </Badge>
+    );
+  };
+
   const formatYear = (year: number | null) => {
     if (!year) return 'N/A';
     const suffixes: Record<number, string> = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
@@ -100,6 +115,7 @@ export function EnrollmentsTable({ enrollments }: EnrollmentsTableProps) {
                 <TableHead>Email</TableHead>
                 <TableHead>Program</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Email Sent</TableHead>
                 <TableHead className="hidden md:table-cell">Registered On</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -120,6 +136,7 @@ export function EnrollmentsTable({ enrollments }: EnrollmentsTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(item.status)}</TableCell>
+                  <TableCell>{getEmailStatusBadge(item.confirmationSentAt)}</TableCell>
                   <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                     {new Date(item.createdAt).toLocaleDateString('en-US', {
                       month: 'short',
@@ -232,7 +249,7 @@ export function EnrollmentsTable({ enrollments }: EnrollmentsTableProps) {
               {/* Enrollment Registration Info */}
               <div className="rounded-lg border bg-muted/30 p-3.5 space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" /> Registration Log
+                  <Calendar className="h-3.5 w-3.5" /> Registration Log & Email Status
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                   <div>
@@ -245,8 +262,15 @@ export function EnrollmentsTable({ enrollments }: EnrollmentsTableProps) {
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">Initial Status:</span>
-                    <span className="capitalize font-medium text-foreground">{selectedEnrollment.status}</span>
+                    <span className="text-muted-foreground block">Confirmation Email Sent:</span>
+                    <span className="font-medium text-foreground">
+                      {selectedEnrollment.confirmationSentAt
+                        ? new Date(selectedEnrollment.confirmationSentAt).toLocaleString('en-US', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                          })
+                        : 'Not sent yet'}
+                    </span>
                   </div>
                 </div>
               </div>

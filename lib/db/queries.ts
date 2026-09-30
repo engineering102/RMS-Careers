@@ -198,6 +198,20 @@ export async function createEnrollmentRecord(
   return created;
 }
 
+export async function markEnrollmentConfirmationSent(
+  enrollmentId: number
+): Promise<void> {
+  try {
+    if (!process.env.POSTGRES_URL) return;
+    await db
+      .update(enrollments)
+      .set({ confirmationSentAt: new Date() })
+      .where(eq(enrollments.id, enrollmentId));
+  } catch (error) {
+    console.error('Failed to update confirmationSentAt timestamp:', error);
+  }
+}
+
 export async function getEnrollmentsWithDetails(
   search?: string,
   programIdFilter?: number,

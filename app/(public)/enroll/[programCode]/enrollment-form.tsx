@@ -19,7 +19,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Mail, Sparkles } from 'lucide-react';
 import { submitStudentEnrollment, type EnrollmentActionResult } from './actions';
 import { toast } from 'sonner';
 
@@ -34,9 +34,11 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
   const [successData, setSuccessData] = React.useState<{
     studentName: string;
+    studentEmail: string;
     programName: string;
     programCode: string;
     status: string;
+    emailSent: boolean;
   } | null>(null);
 
   // Form field states
@@ -52,7 +54,7 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
     setFormError(null);
     setFieldErrors({});
 
-    // Client-side quick checks
+    // Client-side quick validation
     const errors: Record<string, string> = {};
     if (!fullName.trim()) errors.fullName = 'Full Name is required';
     if (!email.trim()) errors.email = 'Email is required';
@@ -82,9 +84,11 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
       if (result.success) {
         setSuccessData({
           studentName: result.data.studentName,
+          studentEmail: result.data.studentEmail,
           programName: result.data.programName,
           programCode: result.data.programCode,
-          status: result.data.status
+          status: result.data.status,
+          emailSent: result.data.emailSent
         });
         toast.success('Registration completed successfully!');
       } else {
@@ -115,7 +119,7 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
             Registration Successful
           </CardTitle>
           <CardDescription className="text-emerald-800/80 dark:text-emerald-300/80 text-base">
-            You&apos;re registered for <strong className="font-semibold">{successData.programName}</strong>.
+            Your registration for <strong className="font-semibold">{successData.programName}</strong> has been received.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 max-w-md mx-auto">
@@ -139,9 +143,17 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
               </Badge>
             </div>
           </div>
-          <p className="text-xs text-center text-muted-foreground">
-            Your registration is currently pending review by the academy administration.
-          </p>
+
+          {successData.emailSent ? (
+            <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <span>A registration acknowledgement email has been sent to <strong>{successData.studentEmail}</strong>.</span>
+            </div>
+          ) : (
+            <p className="text-xs text-center text-muted-foreground">
+              Your registration is currently pending review by the academy administration.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
