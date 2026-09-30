@@ -11,10 +11,13 @@ export function SearchInput() {
   const [isPending, startTransition] = useTransition();
 
   function searchAction(formData: FormData) {
-    let value = formData.get('q') as string;
-    let params = new URLSearchParams({ q: value });
+    const value = formData.get('q') as string;
+    const params = new URLSearchParams();
+    if (value) {
+      params.set('q', value);
+    }
     startTransition(() => {
-      router.replace(`/?${params.toString()}`);
+      router.replace(`?${params.toString()}`);
     });
   }
 
