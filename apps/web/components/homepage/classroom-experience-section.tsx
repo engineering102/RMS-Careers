@@ -1,5 +1,6 @@
+import Image from 'next/image';
 import { classroomExperienceContent } from '@/lib/data/homepage-content';
-import { Camera, CheckCircle2, HeartHandshake } from 'lucide-react';
+import { CheckCircle2, HeartHandshake } from 'lucide-react';
 
 export function ClassroomExperienceSection() {
   return (
@@ -33,23 +34,27 @@ export function ClassroomExperienceSection() {
             </div>
           </div>
 
-          {/* Right Column: Premium Replaceable Photography Frame */}
+          {/* Right Column: Real Classroom Photography */}
           <div className="lg:col-span-5">
-            <div className="relative rounded-3xl border-2 border-dashed border-border bg-card p-8 sm:p-12 text-center shadow-lg overflow-hidden flex flex-col items-center justify-center min-h-[360px]">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
-                <Camera className="h-8 w-8" />
-              </div>
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary mb-2">
-                Replaceable Photo Frame
-              </span>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                {classroomExperienceContent.photoSlot.label}
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
-                {classroomExperienceContent.photoSlot.caption}
-              </p>
-              <div className="mt-6 px-3 py-1 rounded-full bg-muted border border-border text-[11px] font-mono text-muted-foreground">
-                Reserved for partner campus photography
+            <div className="relative rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-xl overflow-hidden group">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+                <Image
+                  src={classroomExperienceContent.photoSlot.imageSrc || '/images/homepage/classroom/classroom01.jpeg'}
+                  alt={classroomExperienceContent.photoSlot.label}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-card/85 backdrop-blur-md border border-border/80">
+                  <div className="text-xs font-bold text-foreground">
+                    {classroomExperienceContent.photoSlot.label}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                    {classroomExperienceContent.photoSlot.caption}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

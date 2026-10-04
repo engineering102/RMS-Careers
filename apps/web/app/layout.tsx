@@ -35,29 +35,34 @@ export const metadata: Metadata = {
       'max-snippet': -1
     }
   },
+  icons: {
+    icon: '/images/homepage/branding/favicon.ico',
+    shortcut: '/images/homepage/branding/favicon.ico',
+    apple: '/images/homepage/branding/favicon.ico'
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://www.rms-careers.com',
     siteName: 'RMS Careers',
-    title: 'RMS Careers | Technical Education & Structured Learning Platform',
+    title: 'RMS Careers | Your Degree Gets You Started. Your Skills Get You Hired.',
     description:
-      'Structured technical learning, free starter DSA sheets, and career training programs for engineers and technical students.',
+      'Structured technical learning, practical projects, and career preparation programs for engineering students and institutional partners.',
     images: [
       {
-        url: '/rms-logo.jpg',
-        width: 800,
-        height: 800,
-        alt: 'RMS Careers'
+        url: '/images/homepage/branding/logo.svg',
+        width: 1024,
+        height: 1024,
+        alt: 'RMS Careers Logo'
       }
     ]
   },
   twitter: {
     card: 'summary',
-    title: 'RMS Careers | Technical Education & Structured Learning Platform',
+    title: 'RMS Careers | Your Degree Gets You Started. Your Skills Get You Hired.',
     description:
-      'Structured technical learning, free starter DSA sheets, and career training programs for engineers and technical students.',
-    images: ['/rms-logo.jpg']
+      'Structured technical learning, practical projects, and career preparation programs for engineering students and institutional partners.',
+    images: ['/images/homepage/branding/logo.svg']
   }
 };
 

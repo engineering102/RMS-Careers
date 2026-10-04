@@ -12,7 +12,7 @@ export function Footer() {
             <Link href="/#home" className="flex items-center gap-3 group">
               <div className="relative h-8 w-8 overflow-hidden rounded-md border border-border shadow-sm group-hover:border-primary/50 transition-colors">
                 <Image
-                  src="/rms-logo.jpg"
+                  src="/images/homepage/branding/logo.svg"
                   alt="RMS Careers Logo"
                   fill
                   className="object-cover"

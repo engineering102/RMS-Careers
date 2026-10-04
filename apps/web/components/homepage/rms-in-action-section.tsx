@@ -1,5 +1,6 @@
+import Image from 'next/image';
 import { rmsInActionContent } from '@/lib/data/homepage-content';
-import { Camera, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export function RmsInActionSection() {
   const { gallery } = rmsInActionContent;
@@ -27,22 +28,25 @@ export function RmsInActionSection() {
         {/* Asymmetric Editorial Photo Gallery */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Featured Large Photo Frame */}
-          <div className="lg:col-span-7 rounded-3xl border-2 border-dashed border-border bg-card p-6 sm:p-8 flex flex-col justify-between min-h-[340px] shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary uppercase">
-                {featured.category}
-              </span>
-              <Camera className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="my-auto py-8 text-center">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
-                <Camera className="h-6 w-6" />
+          <div className="lg:col-span-7 rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-sm group">
+            <div className="relative w-full h-[320px] sm:h-[380px] md:h-[420px] rounded-2xl overflow-hidden">
+              <Image
+                src={featured.imageSrc || '/images/homepage/classroom/classroom02.jpeg'}
+                alt={featured.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 1024px) 100vw, 60vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/25 to-transparent" />
+              <div className="absolute top-3 left-3">
+                <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-primary/90 text-primary-foreground backdrop-blur-sm uppercase shadow-sm">
+                  {featured.category}
+                </span>
               </div>
-              <div className="text-xs font-mono text-muted-foreground">Classroom Photography Slot</div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-foreground mb-1">{featured.title}</h3>
-              <p className="text-xs text-muted-foreground">{featured.caption}</p>
+              <div className="absolute bottom-3 left-3 right-3 p-3.5 rounded-xl bg-card/85 backdrop-blur-md border border-border/80">
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">{featured.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{featured.caption}</p>
+              </div>
             </div>
           </div>
 
@@ -51,33 +55,51 @@ export function RmsInActionSection() {
             {supporting.map((item) => (
               <div
                 key={item.id}
-                className="rounded-3xl border-2 border-dashed border-border bg-card p-5 flex flex-col justify-between flex-1 min-h-[160px] shadow-xs"
+                className="rounded-3xl border border-border bg-card p-3 shadow-xs group flex-1"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-muted text-foreground uppercase">
-                    {item.category}
-                  </span>
-                  <Camera className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="py-2">
-                  <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.caption}</p>
+                <div className="relative w-full h-[180px] sm:h-[195px] rounded-2xl overflow-hidden">
+                  <Image
+                    src={item.imageSrc || '/images/homepage/workshops/workshop01.jpeg'}
+                    alt={item.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/25 to-transparent" />
+                  <div className="absolute top-2.5 left-2.5">
+                    <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-muted/90 text-foreground backdrop-blur-sm uppercase shadow-2xs">
+                      {item.category}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 p-2.5 rounded-lg bg-card/85 backdrop-blur-md border border-border/80">
+                    <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{item.caption}</p>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Wide Photo Frame */}
-          <div className="lg:col-span-12 rounded-3xl border-2 border-dashed border-border bg-card p-6 sm:p-8 flex flex-col justify-between min-h-[180px] shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 uppercase">
-                {wide.category}
-              </span>
-              <Camera className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="py-4">
-              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">{wide.title}</h3>
-              <p className="text-xs text-muted-foreground">{wide.caption}</p>
+          <div className="lg:col-span-12 rounded-3xl border border-border bg-card p-3 sm:p-4 shadow-xs group">
+            <div className="relative w-full h-[220px] sm:h-[280px] md:h-[320px] rounded-2xl overflow-hidden">
+              <Image
+                src={wide.imageSrc || '/images/homepage/classroom/classroom04.jpeg'}
+                alt={wide.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="100vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/25 to-transparent" />
+              <div className="absolute top-3 left-3">
+                <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-emerald-500/90 text-white backdrop-blur-sm uppercase shadow-sm">
+                  {wide.category}
+                </span>
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 p-3.5 rounded-xl bg-card/85 backdrop-blur-md border border-border/80 max-w-xl">
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-1">{wide.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{wide.caption}</p>
+              </div>
             </div>
           </div>
         </div>

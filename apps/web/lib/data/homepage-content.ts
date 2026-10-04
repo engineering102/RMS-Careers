@@ -328,7 +328,8 @@ export const classroomExperienceContent = {
   ],
   photoSlot: {
     label: 'Classroom & Workshop Photography',
-    caption: 'Direct teaching and code review sessions at partner engineering colleges (Replaceable Photo Frame)'
+    caption: 'Direct teaching and code review sessions at partner engineering colleges',
+    imageSrc: '/images/homepage/classroom/classroom01.jpeg'
   }
 };
 
@@ -345,28 +346,32 @@ export const rmsInActionContent = {
       category: 'Teaching',
       title: 'Classroom Concept Breakdown',
       caption: 'Decomposing complex algorithmic patterns into intuitive invariants.',
-      aspect: 'featured'
+      aspect: 'featured',
+      imageSrc: '/images/homepage/classroom/classroom02.jpeg'
     },
     {
       id: '02',
       category: 'Workshops',
       title: 'Campus Placement Sprints',
       caption: 'Intensive weekend bootcamps breaking down hiring expectations.',
-      aspect: 'supporting'
+      aspect: 'supporting',
+      imageSrc: '/images/homepage/workshops/workshop01.jpeg'
     },
     {
       id: '03',
       category: 'Code Reviews',
       title: 'Architecture & Logic Audits',
       caption: 'Live line-by-line feedback on clean modular code.',
-      aspect: 'supporting'
+      aspect: 'supporting',
+      imageSrc: '/images/homepage/classroom/classroom03.jpeg'
     },
     {
       id: '04',
       category: 'Projects',
       title: 'Collaborative Capstone Engineering',
       caption: 'Student teams building modular full-stack projects using Git.',
-      aspect: 'wide'
+      aspect: 'wide',
+      imageSrc: '/images/homepage/classroom/classroom04.jpeg'
     }
   ]
 };

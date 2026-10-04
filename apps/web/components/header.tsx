@@ -97,7 +97,7 @@ export function Header() {
         >
           <div className="relative h-9 w-9 overflow-hidden rounded-md border border-border shadow-sm group-hover:border-primary/50 transition-colors">
             <Image
-              src="/rms-logo.jpg"
+              src="/images/homepage/branding/logo.svg"
               alt="RMS Careers Logo"
               fill
               className="object-cover"
@@ -107,9 +107,6 @@ export function Header() {
           <div className="flex flex-col">
             <span className="font-bold text-base sm:text-lg leading-tight tracking-tight text-foreground group-hover:text-primary transition-colors">
               RMS Careers
-            </span>
-            <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
-              Technical Academy
             </span>
           </div>
         </Link>
