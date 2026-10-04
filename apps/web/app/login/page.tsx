@@ -57,13 +57,13 @@ export default function LoginGatewayPage() {
             </p>
 
             <div className="pt-2 text-xs font-mono text-muted-foreground">
-              student.rmscareers.com
+              student.rms-careers.com
             </div>
           </div>
 
           <div className="pt-6 mt-6 border-t border-border">
             <a
-              href="https://student.rmscareers.com"
+              href="https://student.rms-careers.com"
               className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span>Continue to Student</span>
@@ -91,13 +91,13 @@ export default function LoginGatewayPage() {
             </p>
 
             <div className="pt-2 text-xs font-mono text-muted-foreground">
-              tutor.rmscareers.com
+              tutor.rms-careers.com
             </div>
           </div>
 
           <div className="pt-6 mt-6 border-t border-border">
             <a
-              href="https://tutor.rmscareers.com"
+              href="https://tutor.rms-careers.com"
               className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-secondary text-secondary-foreground hover:bg-muted font-semibold text-sm transition-colors border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span>Continue to Tutor</span>
@@ -125,13 +125,13 @@ export default function LoginGatewayPage() {
             </p>
 
             <div className="pt-2 text-xs font-mono text-muted-foreground">
-              admin.rmscareers.com
+              admin.rms-careers.com
             </div>
           </div>
 
           <div className="pt-6 mt-6 border-t border-border">
             <a
-              href="https://admin.rmscareers.com/login"
+              href="https://admin.rms-careers.com"
               className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-foreground text-background hover:bg-foreground/90 font-semibold text-sm transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span>Continue to Admin</span>

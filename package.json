@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev:admin": "pnpm --filter @rms/admin dev",
+    "dev:student": "pnpm --filter @rms/student dev",
     "dev:web": "pnpm --filter @rms/web dev",
     "build": "pnpm -r --filter \"./apps/*\" build",
     "test": "pnpm -r --if-present test",

@@ -1,0 +1,35 @@
+{
+  "name": "@rms/student",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rms/auth": "workspace:*",
+    "@rms/db": "workspace:*",
+    "@neondatabase/serverless": "^0.9.5",
+    "drizzle-orm": "^0.31.4",
+    "lucide-react": "^0.400.0",
+    "next": "^15.1.9",
+    "next-auth": "5.0.0-beta.25",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.6",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "5.7.2",
+    "vitest": "2.0.0"
+  }
+}

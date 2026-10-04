@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AnnouncementBar } from '@/components/homepage/announcement-bar';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://rmscareers.com'),
+  metadataBase: new URL('https://www.rms-careers.com'),
   title: {
-    default: 'RMS Careers | Technical Education & Structured Learning Platform',
+    default: 'RMS Careers | Your Degree Gets You Started. Your Skills Get You Hired.',
     template: '%s | RMS Careers'
   },
   description:
-    'RMS Careers delivers structured computer science curriculum, data structures & algorithms tracks, and career preparation programs designed in collaboration with academic institutions and industry practitioners.',
+    'RMS Careers is an enterprise-grade career-readiness ecosystem for B.Tech engineering students and institutional college partners—bridging academic theory and industry technical hiring.',
   keywords: [
     'RMS Careers',
+    'Career Readiness Ecosystem',
+    'B.Tech Engineering Skills',
     'Technical Education',
     'Data Structures and Algorithms',
-    'Computer Science Curriculum',
-    'Full Stack Development',
     'Campus Placements',
-    'DSA Sheets'
+    'Institutional College Partnerships'
   ],
   authors: [{ name: 'RMS Careers' }],
   creator: 'RMS Careers',
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://rmscareers.com',
+    url: 'https://www.rms-careers.com',
     siteName: 'RMS Careers',
     title: 'RMS Careers | Technical Education & Structured Learning Platform',
     description:
@@ -88,6 +89,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+        <AnnouncementBar />
         <Header />
         <main className="flex-1 w-full" id="main-content">
           {children}

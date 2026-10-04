@@ -3,7 +3,7 @@ import { getPublicPrograms } from '@/lib/db/queries/programs';
 import { getAllPublicSheets } from '@/lib/data/dsa-sheets';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://rmscareers.com';
+  const baseUrl = 'https://www.rms-careers.com';
   const currentDate = new Date();
 
   // Static public routes

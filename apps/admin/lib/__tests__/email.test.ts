@@ -178,7 +178,7 @@ describe('Email Service — sendEnrollmentConfirmationEmail', () => {
 
   it('constructs correct payload and sends via Resend when configured', async () => {
     process.env.RESEND_API_KEY = 're_test_mock_api_key_123';
-    process.env.EMAIL_FROM = 'RMS Admissions <admissions@rmscareers.com>';
+    process.env.EMAIL_FROM = 'RMS Admissions <admissions@rms-careers.com>';
 
     mockSend.mockResolvedValueOnce({
       data: { id: 'msg_mock_001' },
@@ -193,7 +193,7 @@ describe('Email Service — sendEnrollmentConfirmationEmail', () => {
 
     expect(mockSend).toHaveBeenCalledTimes(1);
     const sentPayload = mockSend.mock.calls[0][0];
-    expect(sentPayload.from).toBe('RMS Admissions <admissions@rmscareers.com>');
+    expect(sentPayload.from).toBe('RMS Admissions <admissions@rms-careers.com>');
     expect(sentPayload.to).toEqual(['kavita@example.com']);
     expect(sentPayload.subject).toBe('Registration Received — Data Science & Machine Learning');
     expect(sentPayload.html).toContain('Kavita Reddy');

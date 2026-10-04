@@ -18,3 +18,4 @@ export * from './queries/users';
 export * from './queries/colleges';
 export * from './queries/batches';
 export * from './queries/tokens';
+export * from './queries/student-provisioning';

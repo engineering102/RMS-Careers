@@ -4,18 +4,15 @@ import { auth } from '@/lib/auth';
 import {
   getPrograms,
   getProgramEnrollmentCount,
-  findStudentByEmail,
-  checkExistingEnrollment,
-  createOrUpdateStudent,
-  createEnrollmentRecord,
   markEnrollmentConfirmationSent,
   getExistingEnrollmentsByEmails,
   type Program
 } from '@/lib/db';
+import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
 import { parseImportFile } from '@/lib/csv/parser';
 import { validateImportRows, type ValidatedImportRow } from '@/lib/csv/validator';
 import { generateCsvTemplate, generateErrorReportCsv } from '@/lib/csv/template';
-import { sendEnrollmentConfirmationEmail } from '@/lib/email';
+import { sendEnrollmentConfirmationEmail, sendStudentActivationEmail } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
 
 export interface ImportPreviewData {
@@ -222,41 +219,49 @@ export async function executeBulkImportAction(input: {
     let emailFailuresCount = 0;
 
     for (const row of validRowsToImport) {
-      // Check if student exists prior to operation
-      const existingStudent = await findStudentByEmail(row.email);
-      if (existingStudent) {
-        reusedStudentsCount++;
-      } else {
-        newStudentsCount++;
-      }
-
-      // Find or Create Student Record
-      const student = await createOrUpdateStudent({
-        fullName: row.fullName,
-        email: row.email,
-        phone: row.phone,
-        collegeRollNumber: row.collegeRollNumber,
-        branch: row.branch,
-        year: row.year
+      const result = await createEnrollmentWithStudentProvisioning({
+        programId: program.id,
+        student: {
+          fullName: row.fullName,
+          email: row.email,
+          phone: row.phone,
+          collegeRollNumber: row.collegeRollNumber,
+          branch: row.branch,
+          year: row.year
+        }
       });
 
-      // Check duplicate enrollment again safely
-      const existingEnrollment = await checkExistingEnrollment(student.id, program.id);
-      if (existingEnrollment) {
-        alreadyEnrolledCount++;
-        continue;
+      if (!result.success) {
+        if (result.error === 'already_enrolled') {
+          alreadyEnrolledCount++;
+          continue;
+        }
+        throw new Error(`Student Portal provisioning failed for ${row.email}: ${result.message || result.error}`);
       }
 
-      // Create Enrollment
-      const enrollment = await createEnrollmentRecord(student.id, program.id);
+      if (result.isNewStudent) {
+        newStudentsCount++;
+      } else {
+        reusedStudentsCount++;
+      }
       newEnrollmentsCount++;
 
-      // Optional Phase 3 Email Dispatch
+      // Optional Phase 3 Email Dispatch (strictly post-commit)
       if (sendEmails) {
         try {
+          if (result.activation) {
+            const studentPortalUrl = process.env.STUDENT_APP_URL || 'https://student.rms-careers.com';
+            const activationResult = await sendStudentActivationEmail({
+              studentName: result.student.fullName,
+              studentEmail: result.student.email,
+              activationUrl: new URL(`/activate?token=${result.activation.rawToken}`, studentPortalUrl).toString(),
+              expiresAt: result.activation.expiresAt
+            });
+            if (!activationResult.success) emailFailuresCount++;
+          }
           const emailResult = await sendEnrollmentConfirmationEmail({
-            studentName: student.fullName,
-            studentEmail: student.email,
+            studentName: result.student.fullName,
+            studentEmail: result.student.email,
             programName: program.name,
             programCode: program.code,
             startDate: program.startDate,
@@ -266,12 +271,12 @@ export async function executeBulkImportAction(input: {
 
           if (emailResult.success) {
             emailsSentCount++;
-            await markEnrollmentConfirmationSent(enrollment.id);
+            await markEnrollmentConfirmationSent(result.enrollment.id);
           } else {
             emailFailuresCount++;
           }
         } catch (emailErr) {
-          console.error(`[Bulk Import] Email failed for ${student.email}:`, emailErr);
+          console.error(`[Bulk Import] Email failed for ${result.student.email}:`, emailErr);
           emailFailuresCount++;
         }
       }

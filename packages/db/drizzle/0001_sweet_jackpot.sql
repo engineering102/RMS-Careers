@@ -163,7 +163,6 @@ EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "unique_active_enrollment_idx" ON "enrollments" USING btree ("student_id","program_id") WHERE status IN ('active', 'confirmed');--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "enrollments_student_id_idx" ON "enrollments" USING btree ("student_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "enrollments_program_id_idx" ON "enrollments" USING btree ("program_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "enrollments_batch_id_idx" ON "enrollments" USING btree ("batch_id");--> statement-breakpoint

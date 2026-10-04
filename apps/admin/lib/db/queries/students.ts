@@ -5,7 +5,8 @@ import {
   students,
   studentStats,
   type Student,
-  type StudentStat
+  type StudentStat,
+  type DbClient
 } from '@rms/db';
 import { ilike, desc, sql, eq } from 'drizzle-orm';
 
@@ -40,11 +41,14 @@ export async function getStudentsByCollege(collegeId: string): Promise<Student[]
   }
 }
 
-export async function findStudentByEmail(email: string): Promise<Student | null> {
+export async function findStudentByEmail(
+  email: string,
+  client: DbClient = db
+): Promise<Student | null> {
   try {
     if (!process.env.POSTGRES_URL || !email) return null;
     const cleanEmail = email.trim().toLowerCase();
-    const results = await db
+    const results = await client
       .select()
       .from(students)
       .where(sql`LOWER(${students.email}) = ${cleanEmail}`)
@@ -52,26 +56,30 @@ export async function findStudentByEmail(email: string): Promise<Student | null>
     return results[0] || null;
   } catch (error) {
     console.error(`Error finding student by email ${email}:`, error);
+    if (client !== db) throw error;
     return null;
   }
 }
 
-export async function createOrUpdateStudent(data: {
-  fullName: string;
-  email: string;
-  phone: string;
-  collegeRollNumber: string;
-  branch: string;
-  year: number;
-  collegeId?: string | null;
-  userId?: string | null;
-}): Promise<Student> {
+export async function createOrUpdateStudent(
+  data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    collegeRollNumber: string;
+    branch: string;
+    year: number;
+    collegeId?: string | null;
+    userId?: string | null;
+  },
+  client: DbClient = db
+): Promise<Student> {
   const cleanEmail = data.email.trim().toLowerCase();
-  const existingStudent = await findStudentByEmail(cleanEmail);
+  const existingStudent = await findStudentByEmail(cleanEmail, client);
 
   if (existingStudent) {
     // Update existing student details if provided
-    const [updated] = await db
+    const [updated] = await client
       .update(students)
       .set({
         fullName: data.fullName,
@@ -89,7 +97,7 @@ export async function createOrUpdateStudent(data: {
   }
 
   // Create new student
-  const [created] = await db
+  const [created] = await client
     .insert(students)
     .values({
       fullName: data.fullName,

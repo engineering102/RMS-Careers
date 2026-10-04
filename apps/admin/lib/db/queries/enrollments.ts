@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db, enrollments, students, programs, type Enrollment } from '@rms/db';
+import { db, enrollments, students, programs, type Enrollment, type DbClient } from '@rms/db';
 import { eq, desc, count, and, ne, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
 
 export interface DetailedEnrollment {
@@ -105,11 +105,12 @@ export async function getEnrollmentSummaryStats(): Promise<EnrollmentSummaryStat
 
 export async function checkExistingEnrollment(
   studentId: number,
-  programId: number
+  programId: number,
+  client: DbClient = db
 ): Promise<Enrollment | null> {
   try {
     if (!process.env.POSTGRES_URL) return null;
-    const results = await db
+    const results = await client
       .select()
       .from(enrollments)
       .where(
@@ -122,15 +123,17 @@ export async function checkExistingEnrollment(
     return results[0] || null;
   } catch (error) {
     console.error('Error checking existing enrollment:', error);
+    if (client !== db) throw error;
     return null;
   }
 }
 
 export async function createEnrollmentRecord(
   studentId: number,
-  programId: number
+  programId: number,
+  client: DbClient = db
 ): Promise<Enrollment> {
-  const [created] = await db
+  const [created] = await client
     .insert(enrollments)
     .values({
       studentId,

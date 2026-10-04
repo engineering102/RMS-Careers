@@ -18,28 +18,27 @@ vi.mock('next/cache', () => ({
 
 const mockGetPrograms = vi.fn();
 const mockGetProgramEnrollmentCount = vi.fn();
-const mockFindStudentByEmail = vi.fn();
-const mockCheckExistingEnrollment = vi.fn();
-const mockCreateOrUpdateStudent = vi.fn();
-const mockCreateEnrollmentRecord = vi.fn();
 const mockMarkEnrollmentConfirmationSent = vi.fn();
 const mockGetExistingEnrollmentsByEmails = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   getPrograms: (...args: any[]) => mockGetPrograms(...args),
   getProgramEnrollmentCount: (...args: any[]) => mockGetProgramEnrollmentCount(...args),
-  findStudentByEmail: (...args: any[]) => mockFindStudentByEmail(...args),
-  checkExistingEnrollment: (...args: any[]) => mockCheckExistingEnrollment(...args),
-  createOrUpdateStudent: (...args: any[]) => mockCreateOrUpdateStudent(...args),
-  createEnrollmentRecord: (...args: any[]) => mockCreateEnrollmentRecord(...args),
   markEnrollmentConfirmationSent: (...args: any[]) => mockMarkEnrollmentConfirmationSent(...args),
   getExistingEnrollmentsByEmails: (...args: any[]) => mockGetExistingEnrollmentsByEmails(...args)
+}));
+
+const mockCreateEnrollmentWithStudentProvisioning = vi.fn();
+vi.mock('@/lib/services/enrollment-orchestration', () => ({
+  createEnrollmentWithStudentProvisioning: (...args: any[]) =>
+    mockCreateEnrollmentWithStudentProvisioning(...args)
 }));
 
 const mockSendEmail = vi.fn();
 vi.mock('@/lib/email', () => ({
   sendEnrollmentConfirmationEmail: (...args: any[]) => mockSendEmail(...args)
 }));
+
 
 import {
   validateImportFileAction,
@@ -97,6 +96,14 @@ describe('Bulk Import Server Actions', () => {
     mockGetPrograms.mockResolvedValue([sampleProgram]);
     mockGetProgramEnrollmentCount.mockResolvedValue(10);
     mockGetExistingEnrollmentsByEmails.mockResolvedValue(new Set<string>());
+    mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+      success: true,
+      isNewStudent: true,
+      student: { id: 10 },
+      enrollment: { id: 100 },
+      userId: 'student-user',
+      activation: null
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -325,10 +332,14 @@ describe('Bulk Import Server Actions', () => {
     });
 
     it('successfully imports new student and creates enrollment record', async () => {
-      mockFindStudentByEmail.mockResolvedValue(null); // brand new student
-      mockCreateOrUpdateStudent.mockResolvedValue({ id: 10, ...validRow });
-      mockCheckExistingEnrollment.mockResolvedValue(null);
-      mockCreateEnrollmentRecord.mockResolvedValue({ id: 100, studentId: 10, programId: 1 });
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: true,
+        student: { id: 10, ...validRow },
+        enrollment: { id: 100, studentId: 10, programId: 1 },
+        userId: 'student-user',
+        activation: null
+      });
 
       const result = await executeBulkImportAction({
         programId: 1,
@@ -346,17 +357,30 @@ describe('Bulk Import Server Actions', () => {
         expect(result.summary.emailsSentCount).toBe(0);
       }
 
-      expect(mockCreateOrUpdateStudent).toHaveBeenCalledTimes(1);
-      expect(mockCreateEnrollmentRecord).toHaveBeenCalledWith(10, 1);
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalledWith({
+        programId: 1,
+        student: {
+          fullName: 'Vikram Joshi',
+          email: 'vikram.j@example.com',
+          phone: '9876543210',
+          collegeRollNumber: '21CS99',
+          branch: 'CSE',
+          year: 3
+        }
+      });
       expect(mockRevalidatePath).toHaveBeenCalledWith('/enrollments');
     });
 
     it('reuses existing student record when student is already in database', async () => {
       const existingStudent = { id: 25, fullName: 'Vikram Joshi', email: 'vikram.j@example.com' };
-      mockFindStudentByEmail.mockResolvedValue(existingStudent);
-      mockCreateOrUpdateStudent.mockResolvedValue(existingStudent);
-      mockCheckExistingEnrollment.mockResolvedValue(null);
-      mockCreateEnrollmentRecord.mockResolvedValue({ id: 101, studentId: 25, programId: 1 });
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: false,
+        student: existingStudent,
+        enrollment: { id: 101, studentId: 25, programId: 1 },
+        userId: 'student-user',
+        activation: null
+      });
 
       const result = await executeBulkImportAction({
         programId: 1,
@@ -373,10 +397,10 @@ describe('Bulk Import Server Actions', () => {
     });
 
     it('safely skips enrollment creation if student is already enrolled in this program', async () => {
-      const existingStudent = { id: 25, fullName: 'Vikram Joshi', email: 'vikram.j@example.com' };
-      mockFindStudentByEmail.mockResolvedValue(existingStudent);
-      mockCreateOrUpdateStudent.mockResolvedValue(existingStudent);
-      mockCheckExistingEnrollment.mockResolvedValue({ id: 50, studentId: 25, programId: 1 });
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: false,
+        error: 'already_enrolled'
+      });
 
       const result = await executeBulkImportAction({
         programId: 1,
@@ -389,14 +413,17 @@ describe('Bulk Import Server Actions', () => {
         expect(result.summary.alreadyEnrolledCount).toBe(1);
         expect(result.summary.newEnrollmentsCount).toBe(0);
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
     });
 
     it('dispatches emails when sendEmails is true and tallies successes and failures', async () => {
-      mockFindStudentByEmail.mockResolvedValue(null);
-      mockCreateOrUpdateStudent.mockResolvedValue({ id: 10, ...validRow });
-      mockCheckExistingEnrollment.mockResolvedValue(null);
-      mockCreateEnrollmentRecord.mockResolvedValue({ id: 100, studentId: 10, programId: 1 });
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: true,
+        student: { id: 10, ...validRow },
+        enrollment: { id: 100, studentId: 10, programId: 1 },
+        userId: 'student-user',
+        activation: null
+      });
 
       mockSendEmail.mockResolvedValue({ success: true, messageId: 'msg_bulk_01' });
       mockMarkEnrollmentConfirmationSent.mockResolvedValue(true);
@@ -417,10 +444,14 @@ describe('Bulk Import Server Actions', () => {
     });
 
     it('gracefully counts email failure when email sending throws an exception', async () => {
-      mockFindStudentByEmail.mockResolvedValue(null);
-      mockCreateOrUpdateStudent.mockResolvedValue({ id: 10, ...validRow });
-      mockCheckExistingEnrollment.mockResolvedValue(null);
-      mockCreateEnrollmentRecord.mockResolvedValue({ id: 100, studentId: 10, programId: 1 });
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: true,
+        student: { id: 10, ...validRow },
+        enrollment: { id: 100, studentId: 10, programId: 1 },
+        userId: 'student-user',
+        activation: null
+      });
 
       mockSendEmail.mockRejectedValue(new Error('SMTP service unavailable'));
 

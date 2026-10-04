@@ -1,49 +1,40 @@
-import { getPublicPrograms } from '@/lib/db/queries/programs';
-import { getAllPublicSheets } from '@/lib/data/dsa-sheets';
 import { HeroSection } from '@/components/homepage/hero-section';
-import { CapabilitiesSection } from '@/components/homepage/capabilities-section';
-import { ProgramsSection } from '@/components/homepage/programs-section';
-import { JourneySection } from '@/components/homepage/journey-section';
-import { SplitAudienceSection } from '@/components/homepage/split-audience-section';
-import { PublicDsaSection } from '@/components/homepage/public-dsa-section';
-import { TrustSection } from '@/components/homepage/trust-section';
-import { AboutSection } from '@/components/homepage/about-section';
-import { FinalCtaSection } from '@/components/homepage/final-cta-section';
+import { GapSection } from '@/components/homepage/gap-section';
+import { ApproachSection } from '@/components/homepage/approach-section';
+import { DeliveryModelSection } from '@/components/homepage/delivery-model-section';
+import { StudentExperienceSection } from '@/components/homepage/student-experience-section';
+import { ClassroomExperienceSection } from '@/components/homepage/classroom-experience-section';
+import { RmsInActionSection } from '@/components/homepage/rms-in-action-section';
+import { PartnerFormSection } from '@/components/homepage/partner-form-section';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
-  const publicPrograms = await getPublicPrograms();
-  const dsaSheets = getAllPublicSheets();
-
+export default function HomePage() {
   return (
     <div className="flex flex-col w-full bg-gradient-hero">
-      {/* 1. HERO: Editorial Split Composition with Pattern Code Showcase */}
+      {/* 01. HERO: Editorial Typography & 6-Month Career-Readiness Journey System Visual */}
       <HeroSection />
 
-      {/* 2. CAPABILITIES: What RMS Careers Delivers (Editorial Asymmetric Cards) */}
-      <CapabilitiesSection />
+      {/* 02. THE GAP: Editorial Problem Statement & Readiness Bridge Diagram */}
+      <GapSection />
 
-      {/* 3. PROGRAMS: Public Training Programs Showcase (#programs) */}
-      <ProgramsSection programs={publicPrograms} />
+      {/* 03. THE RMS APPROACH: Interactive 5-Stage Framework across 6-Month Journey */}
+      <ApproachSection />
 
-      {/* 4. PLATFORM JOURNEY: Connected 4-Stage Learning Progression */}
-      <JourneySection />
+      {/* 04. SIX-MONTH DELIVERY MODEL: 5 Program Components & Online (Primary) / Offline / Hybrid */}
+      <DeliveryModelSection />
 
-      {/* 5. AUDIENCE SPLIT: Two-Sided Platform (Students vs Academic Institutions) */}
-      <SplitAudienceSection />
+      {/* 05. WHAT STUDENTS EXPERIENCE: 5-Step Student Journey & UI Progress Glimpse */}
+      <StudentExperienceSection />
 
-      {/* 6. PUBLIC DSA: Freemium Starter Practice Catalog & Local Anonymous Mode */}
-      <PublicDsaSection sheets={dsaSheets} />
+      {/* 06. BUILT FROM REAL CLASSROOM EXPERIENCE: Origin Narrative & Photo Frame */}
+      <ClassroomExperienceSection />
 
-      {/* 7. TRUST & STANDARDS: No Exaggerations. Real Engineering Standards. */}
-      <TrustSection />
+      {/* 07. RMS IN ACTION: Asymmetric Editorial Photography Gallery */}
+      <RmsInActionSection />
 
-      {/* 8. ABOUT: Dedicated About RMS Careers Section (#about) */}
-      <AboutSection />
-
-      {/* 9. FINAL CTA: Culmination Call to Action */}
-      <FinalCtaSection />
+      {/* 08. PARTNER WITH RMS: Comprehensive Institutional Partnership Enquiry Form */}
+      <PartnerFormSection />
     </div>
   );
 }

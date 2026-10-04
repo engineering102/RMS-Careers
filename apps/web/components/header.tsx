@@ -66,21 +66,21 @@ export function Header() {
     {
       name: 'Student Portal',
       description: 'Enrolled cohort coursework, evaluations & streaks',
-      href: 'https://student.rmscareers.com',
+      href: 'https://student.rms-careers.com',
       icon: GraduationCap,
       badge: 'Learner'
     },
     {
       name: 'Tutor Portal',
       description: 'Milestone reviews, code feedback & batch grading',
-      href: 'https://tutor.rmscareers.com',
+      href: 'https://tutor.rms-careers.com',
       icon: Users2,
       badge: 'Mentor'
     },
     {
       name: 'Admin Portal',
       description: 'Institution administration, batches & rosters',
-      href: 'https://admin.rmscareers.com',
+      href: 'https://admin.rms-careers.com',
       icon: ShieldCheck,
       badge: 'Control Plane'
     }
@@ -115,32 +115,55 @@ export function Header() {
         </Link>
 
         {/* Desktop Primary Navigation */}
-        <nav className="hidden md:flex items-center gap-1.5 text-sm font-medium" aria-label="Main Navigation">
+        <nav className="hidden md:flex items-center gap-1 text-sm font-medium" aria-label="Main Navigation">
           <Link
-            href="/#programs"
-            className="px-3.5 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
+            href="/programs"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
           >
             Programs
           </Link>
           <Link
             href="/learn"
-            className="px-3.5 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors flex items-center gap-1.5"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
           >
-            <span>Students</span>
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-              Guest Practice
-            </span>
+            Students
           </Link>
           <Link
-            href="/#about"
-            className="px-3.5 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
+            href="/#partner"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
           >
-            About
+            Institutions
+          </Link>
+          <Link
+            href="/curriculum"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
+          >
+            Resources
+          </Link>
+          <Link
+            href="/#classroom-experience"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
+          >
+            About Us
+          </Link>
+          <Link
+            href="/#partner"
+            className="px-3 py-2 text-foreground/80 hover:text-foreground hover:bg-muted/80 rounded-md transition-colors"
+          >
+            Contact
           </Link>
         </nav>
 
-        {/* Action Controls: Theme Toggle & Portal Login Dropdown */}
+        {/* Action Controls: Partner With RMS, Theme Toggle & Portal Login Dropdown */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Visually emphasized Partner With RMS CTA */}
+          <Link
+            href="/#partner"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <span>Partner With RMS</span>
+          </Link>
+
           {/* Theme Toggle Button */}
           <button
             type="button"
@@ -251,7 +274,7 @@ export function Header() {
         <div className="md:hidden border-b border-border bg-background px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-200">
           <nav className="space-y-1">
             <Link
-              href="/#programs"
+              href="/programs"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
             >
@@ -260,30 +283,47 @@ export function Header() {
             <Link
               href="/learn"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Code2 className="h-4 w-4 text-primary" />
-                <span>Students</span>
-              </div>
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                Guest Practice
-              </span>
+              Students
             </Link>
             <Link
-              href="/#about"
+              href="/#partner"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
             >
-              About
+              Institutions
             </Link>
             <Link
-              href="/#contact"
+              href="/curriculum"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2.5 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              Resources
+            </Link>
+            <Link
+              href="/#classroom-experience"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              About Us
+            </Link>
+            <Link
+              href="/#partner"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-base font-medium text-foreground hover:bg-muted transition-colors"
             >
               Contact
             </Link>
+            <div className="pt-2">
+              <Link
+                href="/#partner"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-1.5 w-full px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm shadow-sm"
+              >
+                <span>Partner With RMS</span>
+              </Link>
+            </div>
           </nav>
 
           <div className="pt-3 border-t border-border space-y-2">

@@ -5,6 +5,7 @@ import {
   renderEnrollmentConfirmationEmail,
   type EnrollmentConfirmationEmailData
 } from './templates/enrollment-confirmation';
+import { renderStudentActivationEmail, type StudentActivationEmailData } from './templates/student-activation';
 
 export interface SendEmailResult {
   success: boolean;
@@ -71,5 +72,17 @@ export async function sendEnrollmentConfirmationEmail(
       reason: 'delivery_failed',
       error: error instanceof Error ? error.message : String(error)
     };
+  }
+}
+
+/** Sends a post-commit Student Portal activation invitation. */
+export async function sendStudentActivationEmail(data: StudentActivationEmailData): Promise<SendEmailResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey?.trim()) return { success: false, reason: 'provider_not_configured' };
+  try {
+    const response = await new Resend(apiKey).emails.send({ from: process.env.EMAIL_FROM || 'RMS Careers <onboarding@resend.dev>', to: [data.studentEmail], ...renderStudentActivationEmail(data) });
+    return response.error ? { success: false, reason: 'delivery_failed', error: response.error.message } : { success: true, messageId: response.data?.id };
+  } catch (error) {
+    return { success: false, reason: 'delivery_failed', error: error instanceof Error ? error.message : String(error) };
   }
 }

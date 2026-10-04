@@ -14,7 +14,7 @@ describe('SEO, Sitemap & Robots Validation (@rms/web)', () => {
   describe('robots.ts', () => {
     it('configures permissive public crawler rules with production sitemap URI', () => {
       const result = robots();
-      expect(result.sitemap).toBe('https://rmscareers.com/sitemap.xml');
+      expect(result.sitemap).toBe('https://www.rms-careers.com/sitemap.xml');
       expect(Array.isArray(result.rules)).toBe(true);
 
       const rules = result.rules as any[];
@@ -43,20 +43,20 @@ describe('SEO, Sitemap & Robots Validation (@rms/web)', () => {
       const urls = result.map((r) => r.url);
 
       // Core routes
-      expect(urls).toContain('https://rmscareers.com');
-      expect(urls).toContain('https://rmscareers.com/programs');
-      expect(urls).toContain('https://rmscareers.com/curriculum');
-      expect(urls).toContain('https://rmscareers.com/learn');
-      expect(urls).toContain('https://rmscareers.com/learn/dsa');
-      expect(urls).toContain('https://rmscareers.com/login');
+      expect(urls).toContain('https://www.rms-careers.com');
+      expect(urls).toContain('https://www.rms-careers.com/programs');
+      expect(urls).toContain('https://www.rms-careers.com/curriculum');
+      expect(urls).toContain('https://www.rms-careers.com/learn');
+      expect(urls).toContain('https://www.rms-careers.com/learn/dsa');
+      expect(urls).toContain('https://www.rms-careers.com/login');
 
       // Dynamic public sheets
-      expect(urls).toContain('https://rmscareers.com/learn/dsa/arrays-and-hashing');
-      expect(urls).toContain('https://rmscareers.com/learn/dsa/two-pointers-and-sliding-window');
-      expect(urls).toContain('https://rmscareers.com/learn/dsa/linked-lists-and-recursion');
+      expect(urls).toContain('https://www.rms-careers.com/learn/dsa/arrays-and-hashing');
+      expect(urls).toContain('https://www.rms-careers.com/learn/dsa/two-pointers-and-sliding-window');
+      expect(urls).toContain('https://www.rms-careers.com/learn/dsa/linked-lists-and-recursion');
 
       // Dynamic public programs
-      expect(urls).toContain('https://rmscareers.com/programs/PEP-2026');
+      expect(urls).toContain('https://www.rms-careers.com/programs/PEP-2026');
 
       // Invariant: NEVER leak private application surfaces into the public sitemap
       for (const url of urls) {
@@ -75,8 +75,8 @@ describe('SEO, Sitemap & Robots Validation (@rms/web)', () => {
       const urls = result.map((r) => r.url);
 
       // Core static routes must still be present
-      expect(urls).toContain('https://rmscareers.com');
-      expect(urls).toContain('https://rmscareers.com/programs');
+      expect(urls).toContain('https://www.rms-careers.com');
+      expect(urls).toContain('https://www.rms-careers.com/programs');
       expect(urls.length).toBeGreaterThanOrEqual(6);
     });
   });

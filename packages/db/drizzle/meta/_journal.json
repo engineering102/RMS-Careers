@@ -15,6 +15,13 @@
       "when": 1791022681597,
       "tag": "0001_sweet_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791022681598,
+      "tag": "0002_unique_active_enrollment_idx",
+      "breakpoints": true
     }
   ]
 }

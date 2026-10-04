@@ -18,21 +18,20 @@ vi.mock('@/lib/email', () => ({
 
 const mockGetProgramByCode = vi.fn();
 const mockGetProgramEnrollmentCount = vi.fn();
-const mockFindStudentByEmail = vi.fn();
-const mockCheckExistingEnrollment = vi.fn();
-const mockCreateOrUpdateStudent = vi.fn();
-const mockCreateEnrollmentRecord = vi.fn();
 const mockMarkEnrollmentConfirmationSent = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   getProgramByCode: (...args: any[]) => mockGetProgramByCode(...args),
   getProgramEnrollmentCount: (...args: any[]) => mockGetProgramEnrollmentCount(...args),
-  findStudentByEmail: (...args: any[]) => mockFindStudentByEmail(...args),
-  checkExistingEnrollment: (...args: any[]) => mockCheckExistingEnrollment(...args),
-  createOrUpdateStudent: (...args: any[]) => mockCreateOrUpdateStudent(...args),
-  createEnrollmentRecord: (...args: any[]) => mockCreateEnrollmentRecord(...args),
   markEnrollmentConfirmationSent: (...args: any[]) => mockMarkEnrollmentConfirmationSent(...args)
 }));
+
+const mockCreateEnrollmentWithStudentProvisioning = vi.fn();
+vi.mock('@/lib/services/enrollment-orchestration', () => ({
+  createEnrollmentWithStudentProvisioning: (...args: any[]) =>
+    mockCreateEnrollmentWithStudentProvisioning(...args)
+}));
+
 
 import { submitStudentEnrollment } from '../../app/(public)/enroll/[programCode]/actions';
 
@@ -84,12 +83,16 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
 
     mockGetProgramByCode.mockResolvedValue(mockProgram);
     mockGetProgramEnrollmentCount.mockResolvedValue(10);
-    mockFindStudentByEmail.mockResolvedValue(null);
-    mockCheckExistingEnrollment.mockResolvedValue(null);
-    mockCreateOrUpdateStudent.mockResolvedValue(mockStudent);
-    mockCreateEnrollmentRecord.mockResolvedValue(mockEnrollment);
     mockSendEmail.mockResolvedValue({ success: true, messageId: 'msg_test_001' });
     mockMarkEnrollmentConfirmationSent.mockResolvedValue(true);
+    mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+      success: true,
+      isNewStudent: true,
+      student: mockStudent,
+      enrollment: mockEnrollment,
+      userId: 'student-user',
+      activation: null
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -110,16 +113,18 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
         expect(result.data.registeredAt).toBe('2026-10-03T10:00:00.000Z');
       }
 
-      expect(mockCreateOrUpdateStudent).toHaveBeenCalledWith({
-        fullName: 'Rohan Gupta',
-        email: 'rohan.gupta@example.com',
-        phone: '9876543210',
-        collegeRollNumber: '21CS101',
-        branch: 'Computer Science',
-        year: 3
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalledWith({
+        programId: 1,
+        student: {
+          fullName: 'Rohan Gupta',
+          email: 'rohan.gupta@example.com',
+          phone: '9876543210',
+          collegeRollNumber: '21CS101',
+          branch: 'Computer Science',
+          year: 3
+        }
       });
 
-      expect(mockCreateEnrollmentRecord).toHaveBeenCalledWith(42, 1);
       expect(mockSendEmail).toHaveBeenCalledTimes(1);
       expect(mockMarkEnrollmentConfirmationSent).toHaveBeenCalledWith(101);
       expect(mockRevalidatePath).toHaveBeenCalledWith('/enrollments');
@@ -127,15 +132,19 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
 
     it('reuses existing student record if student already exists but is new to this program', async () => {
       const existingStudent = { ...mockStudent, id: 99 };
-      mockFindStudentByEmail.mockResolvedValue(existingStudent);
-      mockCheckExistingEnrollment.mockResolvedValue(null);
-      mockCreateOrUpdateStudent.mockResolvedValue(existingStudent);
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: false,
+        student: existingStudent,
+        enrollment: { ...mockEnrollment, studentId: 99 },
+        userId: 'student-user',
+        activation: null
+      });
 
       const result = await submitStudentEnrollment(validSubmission);
 
       expect(result.success).toBe(true);
-      expect(mockCheckExistingEnrollment).toHaveBeenCalledWith(99, 1);
-      expect(mockCreateEnrollmentRecord).toHaveBeenCalledWith(99, 1);
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalled();
     });
 
     it('preserves valid enrollment when confirmation email delivery fails', async () => {
@@ -151,7 +160,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (result.success) {
         expect(result.data.emailSent).toBe(false);
       }
-      expect(mockCreateEnrollmentRecord).toHaveBeenCalledWith(42, 1);
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalled();
       expect(mockMarkEnrollmentConfirmationSent).not.toHaveBeenCalled();
     });
 
@@ -164,7 +173,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (result.success) {
         expect(result.data.emailSent).toBe(false);
       }
-      expect(mockCreateEnrollmentRecord).toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalled();
     });
   });
 
@@ -182,7 +191,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.fullName).toMatch(/at least 2 characters/i);
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('fails when email address is invalid', async () => {
@@ -195,7 +204,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.email).toMatch(/valid email/i);
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('fails when phone number does not match Indian phone regex', async () => {
@@ -208,7 +217,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.phone).toMatch(/valid 10-digit phone/i);
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('fails when college roll number is missing', async () => {
@@ -221,7 +230,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.collegeRollNumber).toBeDefined();
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('fails when branch is empty', async () => {
@@ -234,7 +243,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.branch).toBeDefined();
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('fails when year is out of range 1-4', async () => {
@@ -247,7 +256,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.fieldErrors?.year).toBeDefined();
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
   });
 
@@ -264,7 +273,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.error).toBe('Program not found.');
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('returns error when program is archived', async () => {
@@ -279,7 +288,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.error).toBe('Registration for this program is no longer available.');
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('returns error when program is not active (e.g. draft)', async () => {
@@ -294,7 +303,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.error).toBe('Registration for this program is not currently open.');
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('returns error when program has reached maximum capacity', async () => {
@@ -310,15 +319,14 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.error).toBe('Registration for this program is currently full.');
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
     });
 
     it('rejects duplicate enrollment if student is already registered for this program', async () => {
-      mockFindStudentByEmail.mockResolvedValue(mockStudent);
-      mockCheckExistingEnrollment.mockResolvedValue({
-        id: 777,
-        studentId: mockStudent.id,
-        programId: mockProgram.id
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: false,
+        error: 'already_enrolled',
+        message: 'You are already registered for this program.'
       });
 
       const result = await submitStudentEnrollment(validSubmission);
@@ -327,7 +335,7 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
       if (!result.success) {
         expect(result.error).toBe('You are already registered for this program.');
       }
-      expect(mockCreateEnrollmentRecord).not.toHaveBeenCalled();
+      expect(mockSendEmail).not.toHaveBeenCalled();
     });
   });
 
@@ -336,7 +344,9 @@ describe('Public Enrollment Server Action — submitStudentEnrollment', () => {
   // -------------------------------------------------------------------------
   describe('Database failure & unexpected errors', () => {
     it('handles unexpected database exception gracefully without leaking sensitive details', async () => {
-      mockCreateEnrollmentRecord.mockRejectedValue(new Error('FATAL: connection pool exhausted'));
+      mockCreateEnrollmentWithStudentProvisioning.mockRejectedValue(
+        new Error('FATAL: connection pool exhausted')
+      );
 
       const result = await submitStudentEnrollment(validSubmission);
 

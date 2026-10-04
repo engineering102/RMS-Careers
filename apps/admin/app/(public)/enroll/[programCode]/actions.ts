@@ -4,13 +4,10 @@ import { z } from 'zod';
 import {
   getProgramByCode,
   getProgramEnrollmentCount,
-  findStudentByEmail,
-  checkExistingEnrollment,
-  createOrUpdateStudent,
-  createEnrollmentRecord,
   markEnrollmentConfirmationSent
 } from '@/lib/db';
-import { sendEnrollmentConfirmationEmail } from '@/lib/email';
+import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
+import { sendEnrollmentConfirmationEmail, sendStudentActivationEmail } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
 
 const phoneRegex = /^(?:\+?91[\-\s]?)?[6-9]\d{9}$/;
@@ -127,35 +124,56 @@ export async function submitStudentEnrollment(
       }
     }
 
-    // 5. Server-Side Duplicate Check
-    const existingStudent = await findStudentByEmail(email);
-    if (existingStudent) {
-      const existingEnrollment = await checkExistingEnrollment(
-        existingStudent.id,
-        program.id
-      );
-      if (existingEnrollment) {
+    // 5. Execute Student + Enrollment + Account provisioning in one atomic transaction
+    const enrollmentResult = await createEnrollmentWithStudentProvisioning({
+      programId: program.id,
+      student: {
+        fullName,
+        email,
+        phone,
+        collegeRollNumber,
+        branch,
+        year
+      }
+    });
+
+    if (!enrollmentResult.success) {
+      if (enrollmentResult.error === 'already_enrolled') {
         return {
           success: false,
           error: 'You are already registered for this program.'
         };
       }
+      if (enrollmentResult.error === 'identity_conflict') {
+        return {
+          success: false,
+          error: 'Enrollment could not be completed due to an account identity conflict. Please contact support.'
+        };
+      }
+      return {
+        success: false,
+        error: enrollmentResult.message || 'An error occurred during enrollment. Please try again.'
+      };
     }
 
-    // 6. Create or Reuse Student Record
-    const student = await createOrUpdateStudent({
-      fullName,
-      email,
-      phone,
-      collegeRollNumber,
-      branch,
-      year
-    });
+    const { student, enrollment, activation } = enrollmentResult;
 
-    // 7. Create Enrollment Record in Database
-    const enrollment = await createEnrollmentRecord(student.id, program.id);
+    // 6. Post-commit: Activation email dispatch (only if new activation token was generated)
+    if (activation) {
+      const studentPortalUrl = process.env.STUDENT_APP_URL || 'https://student.rms-careers.com';
+      try {
+        await sendStudentActivationEmail({
+          studentName: student.fullName,
+          studentEmail: student.email,
+          activationUrl: new URL(`/activate?token=${activation.rawToken}`, studentPortalUrl).toString(),
+          expiresAt: activation.expiresAt
+        });
+      } catch (emailError) {
+        console.error('Student activation email dispatch failed after provisioning:', emailError);
+      }
+    }
 
-    // 8. Attempt Registration Acknowledgement Email Dispatch
+    // 7. Post-commit: Attempt registration acknowledgement dispatch without affecting enrollment/provisioning.
     // Note: Email failure MUST NOT roll back a valid database enrollment
     let emailSent = false;
     try {

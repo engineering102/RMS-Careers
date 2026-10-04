@@ -12,6 +12,8 @@ const sql = neon(connectionString);
 
 export const db = drizzle(sql, { schema });
 export type Database = typeof db;
+export type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type DbClient = Database | TransactionClient;
 
 export * from './schema';
 export { schema };

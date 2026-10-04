@@ -32,7 +32,7 @@ Usage:
   pnpm exec tsx scripts/seed-admin.ts <email> <password> [name]
 
 Or set environment variables:
-  ADMIN_INITIAL_EMAIL="admin@rmscareers.com"
+  ADMIN_INITIAL_EMAIL="admin@rms-careers.com"
   ADMIN_INITIAL_PASSWORD="your-secure-password"
   ADMIN_INITIAL_NAME="Admin Name"
   pnpm exec tsx scripts/seed-admin.ts

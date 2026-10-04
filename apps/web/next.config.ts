@@ -2,6 +2,10 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@rms/db'],
+  devIndicators: {
+    appIsrStatus: false,
+    buildActivity: false
+  },
   images: {
     remotePatterns: [
       {

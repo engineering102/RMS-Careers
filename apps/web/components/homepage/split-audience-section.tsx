@@ -6,8 +6,6 @@ import {
   ArrowRight,
   Sparkles,
   Code2,
-  Users2,
-  Terminal,
   ShieldCheck
 } from 'lucide-react';
 import { audienceSplitContent } from '@/lib/data/homepage-content';
@@ -16,7 +14,7 @@ export function SplitAudienceSection() {
   const { students, institutions } = audienceSplitContent;
 
   return (
-    <section className="py-16 md:py-24 border-b border-border/70">
+    <section className="py-16 md:py-24 border-b border-border/70 relative" id="institutions">
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 md:mb-18 space-y-3">
@@ -71,14 +69,14 @@ export function SplitAudienceSection() {
             <div className="pt-8 mt-8 border-t border-border/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <Link
                 href={students.cta.href}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:bg-primary/90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Code2 className="h-4 w-4" />
                 <span>{students.cta.label}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
-                No Login Required • Browser Storage
+                {students.footnote}
               </span>
             </div>
           </div>
@@ -120,14 +118,14 @@ export function SplitAudienceSection() {
             <div className="pt-8 mt-8 border-t border-border/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <Link
                 href={institutions.cta.href}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-border bg-card text-foreground hover:bg-muted font-semibold text-sm transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-border bg-card text-foreground font-semibold text-sm shadow-sm hover:bg-muted/80 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <Users2 className="h-4 w-4 text-purple-500" />
+                <Building2 className="h-4 w-4 text-muted-foreground" />
                 <span>{institutions.cta.label}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <span className="text-xs text-muted-foreground text-center sm:text-right font-medium">
-                Dedicated Tenant • Batch Analytics
+                {institutions.footnote}
               </span>
             </div>
           </div>

@@ -83,7 +83,7 @@ pnpm admin:seed <email> <password> [name]
 Example:
 
 ```bash
-pnpm admin:seed admin@rmscareers.com "SecurePassword#2026" "Platform Administrator"
+pnpm admin:seed admin@rms-careers.com "SecurePassword#2026" "Platform Administrator"
 ```
 
 The script will hash the password, insert the user with `status = 'active'`, and assign the `super_admin` role.
