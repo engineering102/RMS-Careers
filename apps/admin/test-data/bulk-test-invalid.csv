@@ -1,0 +1,5 @@
+Full Name,Email,Phone Number,College Roll Number,Branch,Academic Year
+Invalid Email Student,not-an-email,9876543215,INV001,CSE,3rd Year
+Invalid Phone Student,invalid.phone@example.com,12345,INV002,ECE,4th Year
+,missing.name@example.com,9876543217,INV003,IT,2nd Year
+Bad Year Student,bad.year@example.com,9876543218,INV004,CSE,5th Year
