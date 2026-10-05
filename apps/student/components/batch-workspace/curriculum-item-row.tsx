@@ -22,7 +22,13 @@ interface CurriculumItemRowProps {
   item: CurriculumItem;
 }
 
-function getContentTypeMeta(type: ContentType) {
+function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?: string) {
+  const contentHref = contentItemId
+    ? batchId
+      ? `/content/${contentItemId}?batchId=${encodeURIComponent(batchId)}`
+      : `/content/${contentItemId}`
+    : '/library';
+
   switch (type) {
     case 'lecture':
       return {
@@ -30,7 +36,7 @@ function getContentTypeMeta(type: ContentType) {
         icon: Video,
         badgeClass: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
         actionLabel: 'Watch Lecture',
-        defaultHref: '/library'
+        defaultHref: contentHref
       };
     case 'notes':
       return {
@@ -38,7 +44,7 @@ function getContentTypeMeta(type: ContentType) {
         icon: FileText,
         badgeClass: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
         actionLabel: 'Read Notes',
-        defaultHref: '/library'
+        defaultHref: contentHref
       };
     case 'dsa_sheet':
       return {
@@ -71,7 +77,7 @@ function getContentTypeMeta(type: ContentType) {
         icon: Bookmark,
         badgeClass: 'border-slate-700 bg-slate-800 text-slate-300',
         actionLabel: 'Open Resource',
-        defaultHref: '/library'
+        defaultHref: contentHref
       };
   }
 }
@@ -105,7 +111,7 @@ function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
 }
 
 export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
-  const meta = getContentTypeMeta(item.contentType);
+  const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId);
   const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
   const dueInfo = formatRelativeDue(item.dueAt, item.isCompleted);

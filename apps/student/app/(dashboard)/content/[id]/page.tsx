@@ -1,0 +1,119 @@
+import { notFound } from 'next/navigation';
+import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { getContentItem } from '@/lib/db/queries/content';
+import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
+import { ContentHeader } from '@/components/content-player/content-header';
+import { EmbeddedVideoPlayer } from '@/components/content-player/embedded-video-player';
+import { ResourceViewer } from '@/components/content-player/resource-viewer';
+import { CompletionButton } from '@/components/content-player/completion-button';
+import { UnsupportedContentView } from '@/components/content-player/unsupported-content-view';
+import { Card, CardContent } from '@/components/ui/card';
+
+export const metadata = {
+  title: 'Content Player — RMS Student Portal',
+  description: 'Learning content and lecture resource player.'
+};
+
+interface ContentPageProps {
+  params: Promise<{
+    id: string;
+  }>;
+  searchParams: Promise<{
+    batchId?: string;
+  }>;
+}
+
+export default async function ContentPage({ params, searchParams }: ContentPageProps) {
+  const context = await requireStudentEntitlement();
+
+  if (!context.hasActiveEntitlement || !context.student) {
+    return <EmptyEnrollmentView context={context} />;
+  }
+
+  const { id } = await params;
+  const { batchId } = await searchParams;
+
+  // Server-authoritative query (validates entitlement, throws notFound() if unauthorized)
+  const item = await getContentItem(context.student.id, id, batchId);
+
+  const isLecture = item.contentType === 'lecture';
+  const isResource = item.contentType === 'notes' || item.contentType === 'resource';
+  const isSpecialized = !isLecture && !isResource;
+
+  return (
+    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+      {/* 1. Header with breadcrumbs and metadata */}
+      <ContentHeader
+        title={item.title}
+        contentType={item.contentType}
+        programCode={item.programCode}
+        topic={item.metadata.topic as string | undefined}
+        durationMinutes={item.videoMetadata?.durationMinutes || item.metadata.durationMinutes}
+        relatedBatchContext={item.relatedBatchContext}
+        batchId={batchId}
+      />
+
+      {/* 2. Main Content Body according to content type */}
+      {isLecture && (
+        <div className="space-y-6">
+          <EmbeddedVideoPlayer
+            contentItemId={item.id}
+            videoMetadata={item.videoMetadata}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <CompletionButton
+              contentItemId={item.id}
+              contentType={item.contentType}
+              initialCompleted={item.isCompleted}
+              completedAt={item.completedAt}
+              batchId={batchId || item.relatedBatchContext?.batchId}
+            />
+          </div>
+
+          {/* Lecture Description & Overview */}
+          {item.description && (
+            <Card className="border-slate-800 bg-slate-900/40">
+              <CardContent className="p-5 sm:p-6 space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  About this Lecture
+                </h4>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  {item.description}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {isResource && (
+        <div className="space-y-6">
+          <ResourceViewer
+            title={item.title}
+            description={item.description}
+            resourceMetadata={item.resourceMetadata}
+          />
+
+          <div className="pt-2">
+            <CompletionButton
+              contentItemId={item.id}
+              contentType={item.contentType}
+              initialCompleted={item.isCompleted}
+              completedAt={item.completedAt}
+              batchId={batchId || item.relatedBatchContext?.batchId}
+            />
+          </div>
+        </div>
+      )}
+
+      {isSpecialized && (
+        <UnsupportedContentView
+          contentType={item.contentType}
+          title={item.title}
+          description={item.description}
+        />
+      )}
+    </div>
+  );
+}
