@@ -4,12 +4,14 @@ import {
   getStudentPracticeQuizzes,
   getStudentFormalAssessments
 } from '@/lib/db/queries/assessments';
+import { getStudentProjectAssignments } from '@/lib/db/queries/projects';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { AssessmentsHeader } from '@/components/assessments/assessments-header';
 import { PracticeQuizCard } from '@/components/assessments/practice-quiz-card';
 import { FormalAssessmentCard } from '@/components/assessments/formal-assessment-card';
+import { ProjectAssignmentCard } from '@/components/projects/project-assignment-card';
 import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardCheck, Timer } from 'lucide-react';
+import { ClipboardCheck, Timer, FolderGit2 } from 'lucide-react';
 
 export const metadata = {
   title: 'Assessments & Practice Checks — RMS Student Portal',
@@ -23,9 +25,10 @@ export default async function AssessmentsPage() {
     return <EmptyEnrollmentView context={context} />;
   }
 
-  const [formalAssessments, practiceQuizzes] = await Promise.all([
+  const [formalAssessments, practiceQuizzes, projectAssignments] = await Promise.all([
     getStudentFormalAssessments(context.student.id),
-    getStudentPracticeQuizzes(context.student.id)
+    getStudentPracticeQuizzes(context.student.id),
+    getStudentProjectAssignments(context.student.id)
   ]);
 
   return (
@@ -116,6 +119,51 @@ export default async function AssessmentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {practiceQuizzes.map((quiz) => (
               <PracticeQuizCard key={quiz.id} quiz={quiz} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 4. Project Assignments Section (Slice 13) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+              <FolderGit2 className="h-4 w-4 text-amber-400" />
+              <span>Project Assignments</span>
+            </h2>
+            <p className="text-xs text-slate-400">
+              Industry-grade project deliverables evaluated against git workflows and technical rubrics.
+            </p>
+          </div>
+
+          <span className="text-xs text-slate-400 font-mono">
+            {projectAssignments.length}{' '}
+            {projectAssignments.length === 1 ? 'project' : 'projects'}
+          </span>
+        </div>
+
+        {projectAssignments.length === 0 ? (
+          <Card className="border-slate-800 bg-slate-900/40">
+            <CardContent className="p-8 text-center space-y-2.5">
+              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+                <FolderGit2 className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-200">
+                No Project Deliverables Assigned
+              </h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                Project assignments and repository submission briefs will appear here as your batch progresses.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {projectAssignments.map((project) => (
+              <ProjectAssignmentCard
+                key={`${project.contentItemId}-${project.batchId}`}
+                project={project}
+              />
             ))}
           </div>
         )}

@@ -7,6 +7,8 @@ import { EmbeddedVideoPlayer } from '@/components/content-player/embedded-video-
 import { ResourceViewer } from '@/components/content-player/resource-viewer';
 import { CompletionButton } from '@/components/content-player/completion-button';
 import { UnsupportedContentView } from '@/components/content-player/unsupported-content-view';
+import { getProjectAssignmentForStudent } from '@/lib/db/queries/projects';
+import { ProjectSubmissionWorkspace } from '@/components/projects/project-submission-workspace';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = {
@@ -38,7 +40,17 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
   const isLecture = item.contentType === 'lecture';
   const isResource = item.contentType === 'notes' || item.contentType === 'resource';
-  const isSpecialized = !isLecture && !isResource;
+  const isProject = item.contentType === 'project';
+  const isSpecialized = !isLecture && !isResource && !isProject;
+
+  let projectAssignment = null;
+  if (isProject) {
+    projectAssignment = await getProjectAssignmentForStudent(
+      context.student.id,
+      item.id,
+      batchId || item.relatedBatchContext?.batchId
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
@@ -105,6 +117,10 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
             />
           </div>
         </div>
+      )}
+
+      {isProject && projectAssignment && (
+        <ProjectSubmissionWorkspace assignment={projectAssignment} />
       )}
 
       {isSpecialized && (

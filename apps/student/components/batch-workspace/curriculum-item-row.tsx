@@ -72,7 +72,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         icon: FolderGit2,
         badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
         actionLabel: 'View Project',
-        defaultHref: '/assessments'
+        defaultHref: contentHref
       };
     case 'resource':
     default:
