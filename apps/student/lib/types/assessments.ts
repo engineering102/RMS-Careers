@@ -89,3 +89,125 @@ export interface SubmitPracticeQuizInput {
   responses: Record<number, string[]>; // questionId -> selectedOptionIds
   batchId?: string;
 }
+
+// ==========================================
+// SLICE 12: FORMAL TIMED ASSESSMENTS
+// ==========================================
+
+export type FormalAttemptStatus =
+  | 'upcoming' // now < availableFrom
+  | 'available' // availableFrom <= now <= dueAt and no attempt started
+  | 'in_progress' // attempt started and not expired/submitted
+  | 'submitted' // submitted by student
+  | 'auto_submitted' // submitted when timer expired
+  | 'closed'; // dueAt passed and no attempt was started
+
+export interface FormalAssessmentSummary {
+  id: string; // quizzes.id
+  contentItemId: string;
+  programId: number;
+  programName: string;
+  programCode: string;
+  batchId: string;
+  batchName: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  timeLimitMinutes: number;
+  passingScorePercent: number;
+  questionCount: number;
+  totalPoints: number;
+  availableFrom: Date | null;
+  dueAt: Date | null;
+  status: FormalAttemptStatus;
+  attempt?: {
+    id: string;
+    startedAt: Date;
+    submittedAt: Date | null;
+    score: number;
+    maxScore: number;
+    percentage: number;
+    isPassed: boolean;
+    tabBlurCount: number;
+  } | null;
+}
+
+export interface FormalAssessmentRunnerData {
+  id: string; // quizzes.id
+  contentItemId: string;
+  programName: string;
+  programCode: string;
+  batchId: string;
+  batchName: string;
+  title: string;
+  description: string | null;
+  timeLimitMinutes: number;
+  passingScorePercent: number;
+  questions: ClientQuizQuestion[];
+  totalPoints: number;
+  availableFrom: Date | null;
+  dueAt: Date | null;
+  status: FormalAttemptStatus;
+  activeAttempt?: {
+    id: string;
+    startedAt: Date;
+    authoritativeDeadline: Date;
+    remainingSeconds: number;
+    responses: Record<number, string[]>;
+    tabBlurCount: number;
+  } | null;
+  completedAttempt?: {
+    id: string;
+    startedAt: Date;
+    submittedAt: Date;
+    score: number;
+    maxScore: number;
+    percentage: number;
+    isPassed: boolean;
+    tabBlurCount: number;
+    isAutoSubmitted: boolean;
+    explanationsSuppressed: boolean;
+    publishDate: Date | null;
+    questionResults?: QuestionGradingResult[];
+  } | null;
+}
+
+export interface StartFormalAttemptInput {
+  quizId: string;
+  batchId: string;
+}
+
+export interface StartFormalAttemptResult {
+  attemptId: string;
+  quizId: string;
+  batchId: string;
+  startedAt: Date;
+  authoritativeDeadline: Date;
+  timeLimitMinutes: number;
+}
+
+export interface SubmitFormalAssessmentInput {
+  attemptId: string;
+  quizId: string;
+  batchId: string;
+  responses: Record<number, string[]>;
+  tabBlurCount: number;
+  isAutoSubmit?: boolean;
+}
+
+export interface FormalAssessmentSubmissionResult {
+  attemptId: string;
+  quizId: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  isPassed: boolean;
+  isFirstPass: boolean;
+  xpAwarded: number;
+  submittedAt: Date;
+  isAutoSubmitted: boolean;
+  tabBlurCount: number;
+  explanationsSuppressed: boolean;
+  publishDate: Date | null;
+  questionResults?: QuestionGradingResult[];
+}

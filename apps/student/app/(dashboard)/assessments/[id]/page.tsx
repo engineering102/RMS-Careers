@@ -1,11 +1,17 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
-import { getPracticeQuizForRunner } from '@/lib/db/queries/assessments';
+import {
+  getAssessmentType,
+  getPracticeQuizForRunner,
+  getFormalAssessmentForRunner
+} from '@/lib/db/queries/assessments';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { PracticeQuizRunner } from '@/components/assessments/practice-quiz-runner';
+import { FormalAssessmentRunner } from '@/components/assessments/formal-assessment-runner';
 
-interface PracticeQuizPageProps {
+interface AssessmentPageProps {
   params: Promise<{
     id: string;
   }>;
@@ -17,34 +23,45 @@ interface PracticeQuizPageProps {
 export async function generateMetadata({
   params,
   searchParams
-}: PracticeQuizPageProps): Promise<Metadata> {
+}: AssessmentPageProps): Promise<Metadata> {
   const { id } = await params;
   const { batchId } = await searchParams;
   const context = await requireStudentEntitlement();
 
   if (!context.hasActiveEntitlement || !context.student) {
     return {
-      title: 'Practice Assessment — RMS Student Portal'
+      title: 'Assessment — RMS Student Portal'
     };
   }
 
   try {
-    const quiz = await getPracticeQuizForRunner(context.student.id, id, batchId);
-    return {
-      title: `${quiz.title} — Practice Assessment`,
-      description: quiz.description || 'Self-paced practice knowledge check with instant feedback.'
-    };
+    const assessmentType = await getAssessmentType(id);
+    if (assessmentType === 'formal') {
+      const formalData = await getFormalAssessmentForRunner(context.student.id, id, batchId);
+      return {
+        title: `${formalData.title} — Formal Assessment`,
+        description: formalData.description || 'Timed formal cohort examination.'
+      };
+    } else if (assessmentType === 'practice') {
+      const practiceData = await getPracticeQuizForRunner(context.student.id, id, batchId);
+      return {
+        title: `${practiceData.title} — Practice Assessment`,
+        description: practiceData.description || 'Self-paced practice knowledge check.'
+      };
+    }
   } catch {
-    return {
-      title: 'Practice Assessment — RMS Student Portal'
-    };
+    // Fall through to default metadata
   }
+
+  return {
+    title: 'Assessment — RMS Student Portal'
+  };
 }
 
-export default async function PracticeQuizPage({
+export default async function AssessmentPage({
   params,
   searchParams
-}: PracticeQuizPageProps) {
+}: AssessmentPageProps) {
   const context = await requireStudentEntitlement();
 
   if (!context.hasActiveEntitlement || !context.student) {
@@ -54,17 +71,34 @@ export default async function PracticeQuizPage({
   const { id } = await params;
   const { batchId } = await searchParams;
 
-  // Server-authoritative query (anti-probing: calls notFound() if unauthorized or nonexistent)
-  const quizRunnerData = await getPracticeQuizForRunner(
-    context.student.id,
-    id,
-    batchId
-  );
+  // Determine assessment type server-authoritatively
+  const assessmentType = await getAssessmentType(id);
 
-  return (
-    <PracticeQuizRunner
-      quiz={quizRunnerData}
-      initialBatchId={batchId}
-    />
-  );
+  if (assessmentType === 'formal') {
+    // Formal Timed Assessment (Slice 12)
+    const formalData = await getFormalAssessmentForRunner(
+      context.student.id,
+      id,
+      batchId
+    );
+
+    return <FormalAssessmentRunner initialData={formalData} />;
+  } else if (assessmentType === 'practice') {
+    // Practice Knowledge Check (Slice 11)
+    const practiceData = await getPracticeQuizForRunner(
+      context.student.id,
+      id,
+      batchId
+    );
+
+    return (
+      <PracticeQuizRunner
+        quiz={practiceData}
+        initialBatchId={batchId}
+      />
+    );
+  }
+
+  // If unrecognized, unentitled, or nonexistent, anti-probing triggers notFound()
+  notFound();
 }
