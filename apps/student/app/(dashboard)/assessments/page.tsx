@@ -5,13 +5,15 @@ import {
   getStudentFormalAssessments
 } from '@/lib/db/queries/assessments';
 import { getStudentProjectAssignments } from '@/lib/db/queries/projects';
+import { getStudentExternalAssessments } from '@/lib/db/queries/external-assessments';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { AssessmentsHeader } from '@/components/assessments/assessments-header';
 import { PracticeQuizCard } from '@/components/assessments/practice-quiz-card';
 import { FormalAssessmentCard } from '@/components/assessments/formal-assessment-card';
 import { ProjectAssignmentCard } from '@/components/projects/project-assignment-card';
+import { ExternalAssessmentCard } from '@/components/assessments/external-assessment-card';
 import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardCheck, Timer, FolderGit2 } from 'lucide-react';
+import { ClipboardCheck, Timer, FolderGit2, Award } from 'lucide-react';
 
 export const metadata = {
   title: 'Assessments & Practice Checks — RMS Student Portal',
@@ -25,11 +27,13 @@ export default async function AssessmentsPage() {
     return <EmptyEnrollmentView context={context} />;
   }
 
-  const [formalAssessments, practiceQuizzes, projectAssignments] = await Promise.all([
-    getStudentFormalAssessments(context.student.id),
-    getStudentPracticeQuizzes(context.student.id),
-    getStudentProjectAssignments(context.student.id)
-  ]);
+  const [formalAssessments, practiceQuizzes, projectAssignments, externalAssessments] =
+    await Promise.all([
+      getStudentFormalAssessments(context.student.id),
+      getStudentPracticeQuizzes(context.student.id),
+      getStudentProjectAssignments(context.student.id),
+      getStudentExternalAssessments(context.student.id)
+    ]);
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto pb-12">
@@ -164,6 +168,49 @@ export default async function AssessmentsPage() {
                 key={`${project.contentItemId}-${project.batchId}`}
                 project={project}
               />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 5. External Standardized Assessments Section (Slice 14) */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+              <Award className="h-4 w-4 text-emerald-400" />
+              <span>External Standardized Assessments</span>
+            </h2>
+            <p className="text-xs text-slate-400">
+              Official standardized placement benchmarks and third-party proctored test report cards.
+            </p>
+          </div>
+
+          <span className="text-xs text-slate-400 font-mono">
+            {externalAssessments.length}{' '}
+            {externalAssessments.length === 1 ? 'report card' : 'report cards'}
+          </span>
+        </div>
+
+        {externalAssessments.length === 0 ? (
+          <Card className="border-slate-800 bg-slate-900/40">
+            <CardContent className="p-8 text-center space-y-2.5">
+              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+                <Award className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-200">
+                No External Assessments Ingested
+              </h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                Standardized test scores conducted on partner assessment platforms (such as HackerEarth,
+                AMCAT, or TCS iON) will appear here once verified and imported by administrators.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {externalAssessments.map((record) => (
+              <ExternalAssessmentCard key={record.id} record={record} />
             ))}
           </div>
         )}
