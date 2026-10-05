@@ -47,9 +47,7 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'Assessments',
     href: '/assessments',
     icon: ClipboardCheck,
-    badge: 'Coming Soon',
-    disabled: true,
-    description: 'Formal timed exams & project reviews'
+    description: 'Practice knowledge checks & assessment center'
   },
   {
     title: 'Leaderboards',
