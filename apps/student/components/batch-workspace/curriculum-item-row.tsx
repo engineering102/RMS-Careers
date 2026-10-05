@@ -22,7 +22,7 @@ interface CurriculumItemRowProps {
   item: CurriculumItem;
 }
 
-function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?: string) {
+function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?: string, slug?: string) {
   const contentHref = contentItemId
     ? batchId
       ? `/content/${contentItemId}?batchId=${encodeURIComponent(batchId)}`
@@ -52,7 +52,11 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         icon: Code2,
         badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
         actionLabel: 'Open DSA Sheet',
-        defaultHref: '/dsa'
+        defaultHref: slug
+          ? batchId
+            ? `/dsa?sheet=${encodeURIComponent(slug)}&batchId=${encodeURIComponent(batchId)}`
+            : `/dsa?sheet=${encodeURIComponent(slug)}`
+          : '/dsa'
       };
     case 'quiz':
       return {
@@ -111,7 +115,7 @@ function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
 }
 
 export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
-  const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId);
+  const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId, item.slug);
   const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
   const dueInfo = formatRelativeDue(item.dueAt, item.isCompleted);

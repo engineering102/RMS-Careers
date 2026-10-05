@@ -20,7 +20,7 @@ interface ContentCardProps {
   item: LibraryItem;
 }
 
-function getContentTypeMeta(type: ContentType, itemId?: string) {
+function getContentTypeMeta(type: ContentType, itemId?: string, slug?: string) {
   const contentHref = itemId ? `/content/${itemId}` : '/library';
 
   switch (type) {
@@ -46,7 +46,7 @@ function getContentTypeMeta(type: ContentType, itemId?: string) {
         icon: Code2,
         badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
         actionLabel: 'Open DSA Sheet',
-        defaultHref: '/dsa'
+        defaultHref: slug ? `/dsa?sheet=${encodeURIComponent(slug)}` : '/dsa'
       };
     case 'quiz':
       return {
@@ -77,7 +77,7 @@ function getContentTypeMeta(type: ContentType, itemId?: string) {
 }
 
 export function ContentCard({ item }: ContentCardProps) {
-  const meta = getContentTypeMeta(item.contentType, item.id);
+  const meta = getContentTypeMeta(item.contentType, item.id, item.slug);
   const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
 

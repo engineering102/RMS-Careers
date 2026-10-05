@@ -41,8 +41,6 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'DSA Practice',
     href: '/dsa',
     icon: Code2,
-    badge: 'Coming Soon',
-    disabled: true,
     description: 'Curated problem patterns & progress tracker'
   },
   {
