@@ -25,10 +25,15 @@ export const studentAuthConfig: NextAuthConfig = {
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const isLoginPage = nextUrl.pathname.startsWith('/login');
-      const isActivatePage = nextUrl.pathname.startsWith('/activate');
+      const pathname = nextUrl.pathname;
+      const isLoginPage = pathname.startsWith('/login');
+      const isActivatePage = pathname.startsWith('/activate');
+      const isForgotPasswordPage = pathname.startsWith('/forgot-password');
+      const isResetPasswordPage = pathname.startsWith('/reset-password');
+      const isResendActivationPage = pathname.startsWith('/resend-activation');
 
-      if (isLoginPage) {
+      // Unauthenticated recovery and onboarding routes
+      if (isLoginPage || isForgotPasswordPage || isResetPasswordPage || isResendActivationPage) {
         if (auth?.user?.role === 'student') {
           return Response.redirect(new URL('/dashboard', nextUrl));
         }

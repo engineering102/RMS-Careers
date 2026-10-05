@@ -78,12 +78,33 @@ describe('Student authorized callback role & route enforcement', () => {
     expect(result).toBe(true);
   });
 
+  it('allows unauthenticated access to /forgot-password, /reset-password, and /resend-activation', () => {
+    expect(runAuthorized(null, '/forgot-password')).toBe(true);
+    expect(runAuthorized(null, '/reset-password')).toBe(true);
+    expect(runAuthorized(null, '/resend-activation')).toBe(true);
+  });
+
   it('redirects authenticated students on /login to /dashboard', () => {
     const studentAuth = { user: { id: 'u1', role: 'student' } };
     const result = runAuthorized(studentAuth, '/login') as Response;
     expect(result).toBeInstanceOf(Response);
     expect(result.status).toBe(302);
     expect(result.headers.get('location')).toContain('/dashboard');
+  });
+
+  it('redirects authenticated students on recovery routes to /dashboard', () => {
+    const studentAuth = { user: { id: 'u1', role: 'student' } };
+    const forgotRes = runAuthorized(studentAuth, '/forgot-password') as Response;
+    expect(forgotRes.status).toBe(302);
+    expect(forgotRes.headers.get('location')).toContain('/dashboard');
+
+    const resetRes = runAuthorized(studentAuth, '/reset-password') as Response;
+    expect(resetRes.status).toBe(302);
+    expect(resetRes.headers.get('location')).toContain('/dashboard');
+
+    const resendRes = runAuthorized(studentAuth, '/resend-activation') as Response;
+    expect(resendRes.status).toBe(302);
+    expect(resendRes.headers.get('location')).toContain('/dashboard');
   });
 
   it('allows non-student users on /login to see the login page with error without looping', () => {
