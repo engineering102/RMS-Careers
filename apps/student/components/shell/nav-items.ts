@@ -37,8 +37,6 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'My Library',
     href: '/library',
     icon: Library,
-    badge: 'Coming Soon',
-    disabled: true,
     description: 'Searchable topic-filtered self-paced repository'
   },
   {
