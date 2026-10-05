@@ -29,8 +29,6 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'Batch Workspace',
     href: '/batches',
     icon: BookOpen,
-    badge: 'Coming Soon',
-    disabled: true,
     description: 'Chronological weekly milestone curriculum'
   },
   {
