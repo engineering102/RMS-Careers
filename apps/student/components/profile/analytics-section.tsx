@@ -131,7 +131,7 @@ export function AnalyticsSection({
       </div>
 
       {/* 2. 30-Day Activity Heatmap */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm shadow-xl">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -201,7 +201,7 @@ export function AnalyticsSection({
       {/* 3. Dual Section: Topic Completion Progress & Category XP Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* A. Topic Completion Progress Bars */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
           <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
               <Code2 className="h-5 w-5" />
@@ -236,7 +236,7 @@ export function AnalyticsSection({
         </div>
 
         {/* B. Category XP Breakdown */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm shadow-xl">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
           <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <PieChart className="h-5 w-5" />

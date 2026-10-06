@@ -126,8 +126,10 @@ export function ProblemDetailModal({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+            aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
           </button>

@@ -123,6 +123,7 @@ export function MobileNav({ context, open, onClose }: MobileNavProps) {
                 type="submit"
                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-900 hover:text-slate-100 transition"
                 title="Sign out"
+                aria-label="Sign out"
               >
                 <LogOut className="h-4 w-4" />
               </button>

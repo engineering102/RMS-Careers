@@ -67,7 +67,7 @@ export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[11px] tracking-wider bg-slate-950/40">
+            <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[11px] tracking-wider bg-slate-950/40 whitespace-nowrap">
               <th className="py-3 px-4 w-16 text-center">Rank</th>
               <th className="py-3 px-4">Student</th>
               <th className="py-3 px-4">Department / Branch</th>
@@ -81,7 +81,7 @@ export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) 
             {entries.map((entry) => (
               <tr
                 key={entry.studentId}
-                className={`transition-colors ${
+                className={`transition-colors whitespace-nowrap ${
                   entry.isCurrentUser
                     ? 'bg-blue-950/30 border-l-2 border-l-blue-500 hover:bg-blue-950/40'
                     : 'hover:bg-slate-800/30'

@@ -81,7 +81,7 @@ export function CareerForm({ career }: CareerFormProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm shadow-xl">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">

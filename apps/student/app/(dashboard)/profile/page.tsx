@@ -66,7 +66,7 @@ export default async function ProfilePage() {
                 {profileData.academic.year ? ` · Year ${profileData.academic.year}` : ''}
               </p>
 
-              <p className="mt-1 font-mono text-xs text-slate-500">
+              <p className="mt-1 font-mono text-xs text-slate-500 break-words">
                 Roll No: {profileData.academic.collegeRollNumber || 'N/A'} · {profileData.academic.email}
               </p>
             </div>

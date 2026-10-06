@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Send,
   Sparkles,
-  Info
+  Info,
+  Laptop
 } from 'lucide-react';
 import { submitProjectAssignment } from '@/lib/actions/projects';
 import type {
@@ -254,6 +255,12 @@ export function ProjectSubmissionWorkspace({
                   <span>{successMessage}</span>
                 </div>
               )}
+
+              {/* Mobile ergonomics notice per Section 19 */}
+              <div className="sm:hidden flex items-center gap-2 p-3 rounded-xl border border-slate-800 bg-slate-950/70 text-xs text-slate-400">
+                <Laptop className="h-4 w-4 text-amber-400 shrink-0" />
+                <span>Desktop recommended for GitHub repository submission</span>
+              </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* GitHub Repository URL */}
