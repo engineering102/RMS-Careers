@@ -29,6 +29,13 @@
       "when": 1791198561647,
       "tag": "0003_deep_zarda",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791200000000,
+      "tag": "0004_multi_batch_central_content",
+      "breakpoints": true
     }
   ]
 }

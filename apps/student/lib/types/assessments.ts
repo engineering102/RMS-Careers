@@ -23,7 +23,7 @@ export interface ClientQuizQuestion {
 export interface PracticeQuizSummary {
   id: string; // quizzes.id
   contentItemId: string;
-  programId: number;
+  programId: number | null;
   programName: string;
   programCode: string;
   title: string;
@@ -105,7 +105,7 @@ export type FormalAttemptStatus =
 export interface FormalAssessmentSummary {
   id: string; // quizzes.id
   contentItemId: string;
-  programId: number;
+  programId: number | null;
   programName: string;
   programCode: string;
   batchId: string;

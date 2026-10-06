@@ -30,8 +30,11 @@ export const enrollmentStatusEnum = pgEnum('enrollment_status', [
   'active',
   'transferred',
   'completed',
-  'dropped'
+  'dropped',
+  'revoked',
+  'suspended'
 ]);
+export type EnrollmentStatusEnum = (typeof enrollmentStatusEnum.enumValues)[number];
 
 export const userStatusEnum = pgEnum('user_status', [
   'pending_activation',
@@ -271,6 +274,7 @@ export const batches = pgTable(
       .notNull()
       .references(() => colleges.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    status: varchar('status', { length: 32 }).notNull().default('active'),
     startDate: timestamp('start_date', { withTimezone: true }),
     endDate: timestamp('end_date', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
@@ -315,8 +319,8 @@ export const enrollments = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
   },
   (table) => ({
-    uniqueActiveEnrollmentIdx: uniqueIndex('unique_active_enrollment_idx')
-      .on(table.studentId, table.programId)
+    uniqueActiveBatchEnrollmentIdx: uniqueIndex('unique_active_batch_enrollment_idx')
+      .on(table.studentId, table.batchId)
       .where(sql`status IN ('active', 'confirmed')`),
     enrollmentStudentIdx: index('enrollments_student_id_idx').on(table.studentId),
     enrollmentProgramIdx: index('enrollments_program_id_idx').on(table.programId),
@@ -333,8 +337,7 @@ export const contentItems = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     programId: integer('program_id')
-      .notNull()
-      .references(() => programs.id, { onDelete: 'cascade' }),
+      .references(() => programs.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     slug: text('slug').notNull(),
     contentType: contentTypeEnum('content_type').notNull(),
@@ -365,6 +368,7 @@ export const batchCurriculum = pgTable(
       .references(() => contentItems.id, { onDelete: 'cascade' }),
     weekNumber: integer('week_number').notNull(),
     sequenceOrder: integer('sequence_order').notNull().default(0),
+    isRequired: boolean('is_required').notNull().default(true),
     availableFrom: timestamp('available_from', { withTimezone: true }),
     dueAt: timestamp('due_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
@@ -537,6 +541,11 @@ export const activities = pgTable(
       table.referenceId
     ),
     activityStreakIdx: index('activity_streak_idx').on(
+      table.studentId,
+      table.activityDateIst
+    ),
+    activityBatchXpIdx: index('activity_batch_xp_idx').on(
+      table.batchId,
       table.studentId,
       table.activityDateIst
     )

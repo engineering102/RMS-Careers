@@ -23,7 +23,7 @@ export interface RelatedBatchContext {
 
 export interface ContentPlayerItem {
   id: string;
-  programId: number;
+  programId: number | null;
   programName: string;
   programCode: string;
   title: string;

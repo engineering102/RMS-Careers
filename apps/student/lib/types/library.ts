@@ -19,7 +19,7 @@ export interface ContentItemMetadata {
 
 export interface LibraryItem {
   id: string;
-  programId: number;
+  programId: number | null;
   programName: string;
   programCode: string;
   title: string;

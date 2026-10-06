@@ -37,16 +37,16 @@ vi.mock('@rms/db', async (importOriginal) => {
           insert: vi.fn().mockImplementation(() => ({
             values: vi.fn().mockImplementation((vals: any) => ({
               returning: vi.fn().mockImplementation(() => {
-                // Check active enrollment constraint: at most one active enrollment per student/program
+                // Check active enrollment constraint: at most one active enrollment per student/batch
                 const activeExisting = mockEnrollmentsDb.find(
                   (e) =>
                     e.studentId === vals.studentId &&
-                    e.programId === vals.programId &&
+                    e.batchId === vals.batchId &&
                     (e.status === 'active' || e.status === 'confirmed')
                 );
                 if (activeExisting) {
                   return Promise.reject(
-                    new Error('duplicate key value violates unique constraint "unique_active_enrollment_idx"')
+                    new Error('duplicate key value violates unique constraint "unique_active_batch_enrollment_idx"')
                   );
                 }
 
