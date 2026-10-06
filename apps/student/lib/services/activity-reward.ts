@@ -48,6 +48,24 @@ export function isConsecutiveIstDay(prevDateIst: string, currentDateIst: string)
 }
 
 /**
+ * Returns Monday's date formatted as YYYY-MM-DD representing the start of the
+ * current calendar week in Asia/Kolkata timezone.
+ */
+export function getStartOfWeekIst(referenceDate: Date = new Date()): string {
+  const todayIst = getTodayDateIst(referenceDate);
+  const [year, month, day] = todayIst.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  const dayOfWeek = date.getUTCDay(); // 0 is Sun, 1 is Mon...
+  const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  date.setUTCDate(date.getUTCDate() - diffToMonday);
+
+  const prevYear = date.getUTCFullYear();
+  const prevMonth = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const prevDay = String(date.getUTCDate()).padStart(2, '0');
+  return `${prevYear}-${prevMonth}-${prevDay}`;
+}
+
+/**
  * Pure, deterministic streak rollover engine.
  * - Same day activity: streak unchanged.
  * - Consecutive day activity: streak incremented (+1), longest streak updated if beaten.

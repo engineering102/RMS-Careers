@@ -53,8 +53,6 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'Leaderboards',
     href: '/leaderboards',
     icon: Trophy,
-    badge: 'Coming Soon',
-    disabled: true,
     description: 'College & batch peer rankings'
   },
   {
