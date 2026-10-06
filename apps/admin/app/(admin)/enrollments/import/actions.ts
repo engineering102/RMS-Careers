@@ -6,7 +6,10 @@ import {
   getProgramEnrollmentCount,
   markEnrollmentConfirmationSent,
   getExistingEnrollmentsByEmails,
-  type Program
+  getBatchById,
+  getBatchEnrollmentCount,
+  type Program,
+  type Batch
 } from '@/lib/db';
 import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
 import { parseImportFile } from '@/lib/csv/parser';
@@ -23,6 +26,12 @@ export interface ImportPreviewData {
     capacity: number;
     enrolledCount: number;
     remainingCapacity: number;
+  };
+  batch: {
+    id: string;
+    name: string;
+    status: string;
+    enrolledCount: number;
   };
   totalRows: number;
   validCount: number;
@@ -55,8 +64,9 @@ export async function validateImportFileAction(formData: FormData): Promise<
       return { success: false, error: 'Unauthorized access. Admin authentication required.' };
     }
 
-    // 2. Extract Program ID and File
+    // 2. Extract Program ID, Batch ID, and File
     const programIdStr = formData.get('programId') as string;
+    const batchIdStr = formData.get('batchId') as string | null;
     const file = formData.get('file') as File | null;
 
     if (!programIdStr) {
@@ -66,6 +76,10 @@ export async function validateImportFileAction(formData: FormData): Promise<
     const programId = parseInt(programIdStr, 10);
     if (isNaN(programId)) {
       return { success: false, error: 'Invalid program selected.' };
+    }
+
+    if (!batchIdStr) {
+      return { success: false, error: 'Please select a target batch.' };
     }
 
     if (!file || file.size === 0) {
@@ -88,7 +102,17 @@ export async function validateImportFileAction(formData: FormData): Promise<
       return { success: false, error: 'Selected program is archived and cannot accept new enrollments.' };
     }
 
-    // 4. Parse Uploaded Spreadsheet File
+    // 4. Resolve Batch Server-Side and Verify Consistency
+    const batch = await getBatchById(batchIdStr);
+    if (!batch) {
+      return { success: false, error: 'Selected batch not found.' };
+    }
+
+    if (batch.programId !== program.id) {
+      return { success: false, error: 'Selected batch does not belong to the selected program.' };
+    }
+
+    // 5. Parse Uploaded Spreadsheet File
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const parseResult = parseImportFile(buffer, file.name);
@@ -105,29 +129,31 @@ export async function validateImportFileAction(formData: FormData): Promise<
       return { success: false, error: 'The uploaded file contains no data rows.' };
     }
 
-    // 5. Validate Input Rows
+    // 6. Validate Input Rows
     const validatedRows = validateImportRows(parseResult.rows);
 
-    // 6. Database Check for Existing Enrollments
+    // 7. Database Check for Existing Enrollments in target batch
     const validEmails = validatedRows
       .filter((r) => r.status === 'valid')
       .map((r) => r.email);
 
     const existingEnrolledSet = await getExistingEnrollmentsByEmails(
       program.id,
-      validEmails
+      validEmails,
+      batch.id
     );
 
-    // Update row statuses if student is already enrolled in this program
+    // Update row statuses if student is already enrolled in this target batch
     validatedRows.forEach((r) => {
       if (r.status === 'valid' && existingEnrolledSet.has(r.email.toLowerCase())) {
         r.status = 'already_enrolled';
-        r.issue = 'Student is already enrolled in this program';
+        r.issue = 'Student is already enrolled in this batch';
       }
     });
 
-    // 7. Metric Calculations & Capacity Check
+    // 8. Metric Calculations & Capacity Check
     const enrolledCount = await getProgramEnrollmentCount(program.id);
+    const batchEnrolledCount = await getBatchEnrollmentCount(batch.id);
     const remainingCapacity =
       program.capacity > 0 ? Math.max(0, program.capacity - enrolledCount) : 999999;
 
@@ -152,6 +178,12 @@ export async function validateImportFileAction(formData: FormData): Promise<
           enrolledCount,
           remainingCapacity
         },
+        batch: {
+          id: batch.id,
+          name: batch.name,
+          status: batch.status,
+          enrolledCount: batchEnrolledCount
+        },
         totalRows,
         validCount,
         invalidCount,
@@ -170,6 +202,7 @@ export async function validateImportFileAction(formData: FormData): Promise<
 
 export async function executeBulkImportAction(input: {
   programId: number;
+  batchId?: string;
   rows: ValidatedImportRow[];
   sendEmails: boolean;
 }): Promise<
@@ -183,7 +216,7 @@ export async function executeBulkImportAction(input: {
       return { success: false, error: 'Unauthorized access.' };
     }
 
-    const { programId, rows, sendEmails } = input;
+    const { programId, batchId, rows, sendEmails } = input;
 
     // 2. Program Resolution
     const allPrograms = await getPrograms();
@@ -192,13 +225,27 @@ export async function executeBulkImportAction(input: {
       return { success: false, error: 'Program not found.' };
     }
 
+    // 3. Batch Resolution & Consistency Verification
+    if (!batchId) {
+      return { success: false, error: 'Target batch is required.' };
+    }
+
+    const batch = await getBatchById(batchId);
+    if (!batch) {
+      return { success: false, error: 'Selected batch not found.' };
+    }
+
+    if (batch.programId !== program.id) {
+      return { success: false, error: 'Selected batch does not belong to the selected program.' };
+    }
+
     // Filter only valid rows to import
     const validRowsToImport = rows.filter((r) => r.status === 'valid');
     if (validRowsToImport.length === 0) {
       return { success: false, error: 'No valid rows available to import.' };
     }
 
-    // 3. Server-Side Capacity Verification
+    // 4. Server-Side Capacity Verification
     const enrolledCount = await getProgramEnrollmentCount(program.id);
     const remainingCapacity =
       program.capacity > 0 ? Math.max(0, program.capacity - enrolledCount) : 999999;
@@ -210,7 +257,7 @@ export async function executeBulkImportAction(input: {
       };
     }
 
-    // 4. Batch Processing Loop
+    // 5. Batch Processing Loop
     let newStudentsCount = 0;
     let reusedStudentsCount = 0;
     let newEnrollmentsCount = 0;
@@ -221,13 +268,15 @@ export async function executeBulkImportAction(input: {
     for (const row of validRowsToImport) {
       const result = await createEnrollmentWithStudentProvisioning({
         programId: program.id,
+        batchId: batch.id,
         student: {
           fullName: row.fullName,
           email: row.email,
           phone: row.phone,
           collegeRollNumber: row.collegeRollNumber,
           branch: row.branch,
-          year: row.year
+          year: row.year,
+          collegeId: batch.collegeId || program.collegeId || null
         }
       });
 
@@ -249,7 +298,8 @@ export async function executeBulkImportAction(input: {
       // Optional Phase 3 Email Dispatch (strictly post-commit)
       if (sendEmails) {
         try {
-          if (result.activation) {
+          // Send activation invitation only for newly provisioned students
+          if (result.isNewStudent && result.activation) {
             const studentPortalUrl = process.env.STUDENT_APP_URL || 'https://student.rms-careers.com';
             const activationResult = await sendStudentActivationEmail({
               studentName: result.student.fullName,
@@ -259,13 +309,14 @@ export async function executeBulkImportAction(input: {
             });
             if (!activationResult.success) emailFailuresCount++;
           }
+
           const emailResult = await sendEnrollmentConfirmationEmail({
             studentName: result.student.fullName,
             studentEmail: result.student.email,
-            programName: program.name,
+            programName: `${program.name} (${batch.name})`,
             programCode: program.code,
-            startDate: program.startDate,
-            endDate: program.endDate,
+            startDate: batch.startDate || program.startDate,
+            endDate: batch.endDate || program.endDate,
             status: 'pending'
           });
 
@@ -282,8 +333,9 @@ export async function executeBulkImportAction(input: {
       }
     }
 
-    // Revalidate admin enrollments cache
+    // Revalidate admin enrollments & batches cache
     revalidatePath('/enrollments');
+    revalidatePath('/batches');
 
     return {
       success: true,

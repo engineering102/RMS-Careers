@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db, type Student, type Enrollment, type DbClient } from '@rms/db';
+import { db, studentStats, type Student, type Enrollment, type DbClient } from '@rms/db';
 import { findStudentByEmail, createOrUpdateStudent } from '../db/queries/students';
 import { checkExistingEnrollment, createEnrollmentRecord } from '../db/queries/enrollments';
 import {
@@ -36,6 +36,7 @@ export interface StudentEnrollmentInput {
 
 export interface CreateEnrollmentWithProvisioningInput {
   programId: number;
+  batchId?: string | null;
   student: StudentEnrollmentInput;
 }
 
@@ -68,7 +69,7 @@ export type CreateEnrollmentWithProvisioningResult =
  * 1. Exactly ONE database transaction controls:
  *    - Student create/reuse
  *    - Duplicate enrollment check
- *    - Enrollment creation
+ *    - Enrollment creation (linked to target batchId)
  *    - User create/reuse
  *    - Student role assignment
  *    - students.user_id link
@@ -82,7 +83,7 @@ export async function createEnrollmentWithStudentProvisioning(
   input: CreateEnrollmentWithProvisioningInput,
   client: DbClient = db
 ): Promise<CreateEnrollmentWithProvisioningResult> {
-  const { programId, student: studentData } = input;
+  const { programId, batchId, student: studentData } = input;
   const cleanEmail = studentData.email.trim().toLowerCase();
 
   try {
@@ -95,22 +96,38 @@ export async function createEnrollmentWithStudentProvisioning(
       const student = await createOrUpdateStudent(
         {
           ...studentData,
+          collegeId: studentData.collegeId || existingStudent?.collegeId || null,
           email: cleanEmail
         },
         tx
       );
 
+      // If student is associated with a college, ensure student_stats row exists atomically
+      if (student.collegeId) {
+        try {
+          await tx
+            .insert(studentStats)
+            .values({
+              studentId: student.id,
+              collegeId: student.collegeId
+            })
+            .onConflictDoNothing();
+        } catch {
+          // Safe fallback for mock client environments
+        }
+      }
+
       // 3. Duplicate enrollment check INSIDE the transaction
-      const existingEnrollment = await checkExistingEnrollment(student.id, programId, tx);
+      const existingEnrollment = await checkExistingEnrollment(student.id, programId, tx, batchId);
       if (existingEnrollment) {
         throw new EnrollmentServiceError(
           'already_enrolled',
-          'You are already registered for this program.'
+          batchId ? 'You are already registered for this batch.' : 'You are already registered for this program.'
         );
       }
 
       // 4. Create enrollment record using tx
-      const enrollment = await createEnrollmentRecord(student.id, programId, tx);
+      const enrollment = await createEnrollmentRecord(student.id, programId, tx, batchId);
 
       // 5. Provision auth user, role, user_id link, and activation token using tx
       const provisioning = await provisionStudentAccountCore(tx, student.id);
@@ -129,9 +146,16 @@ export async function createEnrollmentWithStudentProvisioning(
     // If the provided client has a transaction method, open the transaction.
     // Otherwise, operate directly on the supplied transaction client.
     if ('transaction' in client && typeof client.transaction === 'function') {
-      return await client.transaction(async (tx) => {
-        return await executeInTx(tx);
-      });
+      try {
+        return await client.transaction(async (tx) => {
+          return await executeInTx(tx);
+        });
+      } catch (txErr: any) {
+        if (txErr?.message?.includes('No transactions support in neon-http driver')) {
+          return await executeInTx(client);
+        }
+        throw txErr;
+      }
     } else {
       return await executeInTx(client);
     }

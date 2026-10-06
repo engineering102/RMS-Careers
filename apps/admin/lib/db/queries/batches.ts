@@ -156,6 +156,29 @@ export async function getBatchById(id: string): Promise<Batch | null> {
 }
 
 /**
+ * Returns the count of active/confirmed/pending enrollments in a given batch.
+ */
+export async function getBatchEnrollmentCount(batchId: string): Promise<number> {
+  if (!batchId) return 0;
+  try {
+    if (!process.env.POSTGRES_URL) return 0;
+    const [result] = await db
+      .select({ cnt: count(enrollments.id) })
+      .from(enrollments)
+      .where(
+        and(
+          eq(enrollments.batchId, batchId),
+          ne(enrollments.status, 'cancelled')
+        )
+      );
+    return Number(result?.cnt || 0);
+  } catch (error) {
+    console.error(`Error fetching enrollment count for batch ${batchId}:`, error);
+    return 0;
+  }
+}
+
+/**
  * Creates a new training batch tied to a specific program and college.
  */
 export async function createBatch(data: {

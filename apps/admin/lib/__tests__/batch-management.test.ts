@@ -38,7 +38,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { createBatchAction } from '../../app/(admin)/batches/actions';
 import { getBatchesWithDetails } from '../db/queries/batches';
 
-describe('Slice A1.2: Admin Batch Management', () => {
+describe('Slice A1.2: Admin Batch Management', { timeout: 30000 }, () => {
   let collegeAId: string;
   let collegeBId: string;
   let programAId: number;

@@ -20,12 +20,16 @@ const mockGetPrograms = vi.fn();
 const mockGetProgramEnrollmentCount = vi.fn();
 const mockMarkEnrollmentConfirmationSent = vi.fn();
 const mockGetExistingEnrollmentsByEmails = vi.fn();
+const mockGetBatchById = vi.fn();
+const mockGetBatchEnrollmentCount = vi.fn();
 
 vi.mock('@/lib/db', () => ({
   getPrograms: (...args: any[]) => mockGetPrograms(...args),
   getProgramEnrollmentCount: (...args: any[]) => mockGetProgramEnrollmentCount(...args),
   markEnrollmentConfirmationSent: (...args: any[]) => mockMarkEnrollmentConfirmationSent(...args),
-  getExistingEnrollmentsByEmails: (...args: any[]) => mockGetExistingEnrollmentsByEmails(...args)
+  getExistingEnrollmentsByEmails: (...args: any[]) => mockGetExistingEnrollmentsByEmails(...args),
+  getBatchById: (...args: any[]) => mockGetBatchById(...args),
+  getBatchEnrollmentCount: (...args: any[]) => mockGetBatchEnrollmentCount(...args)
 }));
 
 const mockCreateEnrollmentWithStudentProvisioning = vi.fn();
@@ -36,9 +40,9 @@ vi.mock('@/lib/services/enrollment-orchestration', () => ({
 
 const mockSendEmail = vi.fn();
 vi.mock('@/lib/email', () => ({
-  sendEnrollmentConfirmationEmail: (...args: any[]) => mockSendEmail(...args)
+  sendEnrollmentConfirmationEmail: (...args: any[]) => mockSendEmail(...args),
+  sendStudentActivationEmail: vi.fn().mockResolvedValue({ success: true })
 }));
-
 
 import {
   validateImportFileAction,
@@ -52,10 +56,20 @@ import type { ValidatedImportRow } from '../csv/validator';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createMockFormData(programId?: string, filename = 'import.csv', content = ''): FormData {
+function createMockFormData(
+  programId?: string,
+  filename = 'import.csv',
+  content = '',
+  batchId?: string
+): FormData {
   const formData = new FormData();
   if (programId !== undefined) {
     formData.append('programId', programId);
+  }
+  if (batchId !== undefined) {
+    if (batchId !== '') formData.append('batchId', batchId);
+  } else if (programId !== undefined) {
+    formData.append('batchId', 'batch-uuid-1');
   }
   if (filename && content !== null) {
     const file = new File([content], filename, { type: 'text/csv' });
@@ -86,6 +100,17 @@ describe('Bulk Import Server Actions', () => {
     code: 'FSD-2026',
     status: 'active',
     capacity: 50,
+    collegeId: 'college-uuid-1',
+    startDate: new Date('2026-11-01'),
+    endDate: new Date('2027-04-30')
+  };
+
+  const sampleBatch = {
+    id: 'batch-uuid-1',
+    name: 'Batch Alpha 2026',
+    programId: 1,
+    collegeId: 'college-uuid-1',
+    status: 'active',
     startDate: new Date('2026-11-01'),
     endDate: new Date('2027-04-30')
   };
@@ -94,6 +119,8 @@ describe('Bulk Import Server Actions', () => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue(adminSession);
     mockGetPrograms.mockResolvedValue([sampleProgram]);
+    mockGetBatchById.mockResolvedValue(sampleBatch);
+    mockGetBatchEnrollmentCount.mockResolvedValue(5);
     mockGetProgramEnrollmentCount.mockResolvedValue(10);
     mockGetExistingEnrollmentsByEmails.mockResolvedValue(new Set<string>());
     mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
@@ -246,6 +273,41 @@ describe('Bulk Import Server Actions', () => {
         expect(result.error).toMatch(/contains no data rows/i);
       }
     });
+
+    it('returns error when batchId is missing', async () => {
+      const formData = createMockFormData('1', 'test.csv', makeValidCsv(), '');
+
+      const result = await validateImportFileAction(formData);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/select a target batch/i);
+      }
+    });
+
+    it('returns error when batch is not found', async () => {
+      mockGetBatchById.mockResolvedValue(null);
+      const formData = createMockFormData('1', 'test.csv', makeValidCsv(), 'nonexistent-batch');
+
+      const result = await validateImportFileAction(formData);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/batch not found/i);
+      }
+    });
+
+    it('returns error when batch does not belong to selected program', async () => {
+      mockGetBatchById.mockResolvedValue({ ...sampleBatch, programId: 99 });
+      const formData = createMockFormData('1', 'test.csv', makeValidCsv(), 'batch-uuid-1');
+
+      const result = await validateImportFileAction(formData);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/does not belong to the selected program/i);
+      }
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -277,6 +339,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -292,6 +355,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 999,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -302,9 +366,55 @@ describe('Bulk Import Server Actions', () => {
       }
     });
 
+    it('fails when batchId is missing', async () => {
+      const result = await executeBulkImportAction({
+        programId: 1,
+        rows: [validRow],
+        sendEmails: false
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/Target batch is required/i);
+      }
+    });
+
+    it('fails when batch is not found', async () => {
+      mockGetBatchById.mockResolvedValue(null);
+
+      const result = await executeBulkImportAction({
+        programId: 1,
+        batchId: 'nonexistent-batch',
+        rows: [validRow],
+        sendEmails: false
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/Selected batch not found/i);
+      }
+    });
+
+    it('fails when batch does not belong to program', async () => {
+      mockGetBatchById.mockResolvedValue({ ...sampleBatch, programId: 99 });
+
+      const result = await executeBulkImportAction({
+        programId: 1,
+        batchId: 'batch-uuid-1',
+        rows: [validRow],
+        sendEmails: false
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toMatch(/does not belong to the selected program/i);
+      }
+    });
+
     it('fails when there are no valid rows to import', async () => {
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [invalidRow],
         sendEmails: false
       });
@@ -321,6 +431,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -336,13 +447,14 @@ describe('Bulk Import Server Actions', () => {
         success: true,
         isNewStudent: true,
         student: { id: 10, ...validRow },
-        enrollment: { id: 100, studentId: 10, programId: 1 },
+        enrollment: { id: 100, studentId: 10, programId: 1, batchId: 'batch-uuid-1' },
         userId: 'student-user',
         activation: null
       });
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -359,16 +471,19 @@ describe('Bulk Import Server Actions', () => {
 
       expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalledWith({
         programId: 1,
+        batchId: 'batch-uuid-1',
         student: {
           fullName: 'Vikram Joshi',
           email: 'vikram.j@example.com',
           phone: '9876543210',
           collegeRollNumber: '21CS99',
           branch: 'CSE',
-          year: 3
+          year: 3,
+          collegeId: 'college-uuid-1'
         }
       });
       expect(mockRevalidatePath).toHaveBeenCalledWith('/enrollments');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/batches');
     });
 
     it('reuses existing student record when student is already in database', async () => {
@@ -377,13 +492,14 @@ describe('Bulk Import Server Actions', () => {
         success: true,
         isNewStudent: false,
         student: existingStudent,
-        enrollment: { id: 101, studentId: 25, programId: 1 },
+        enrollment: { id: 101, studentId: 25, programId: 1, batchId: 'batch-uuid-1' },
         userId: 'student-user',
         activation: null
       });
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -404,6 +520,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: false
       });
@@ -420,7 +537,7 @@ describe('Bulk Import Server Actions', () => {
         success: true,
         isNewStudent: true,
         student: { id: 10, ...validRow },
-        enrollment: { id: 100, studentId: 10, programId: 1 },
+        enrollment: { id: 100, studentId: 10, programId: 1, batchId: 'batch-uuid-1' },
         userId: 'student-user',
         activation: null
       });
@@ -430,6 +547,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: true
       });
@@ -448,7 +566,7 @@ describe('Bulk Import Server Actions', () => {
         success: true,
         isNewStudent: true,
         student: { id: 10, ...validRow },
-        enrollment: { id: 100, studentId: 10, programId: 1 },
+        enrollment: { id: 100, studentId: 10, programId: 1, batchId: 'batch-uuid-1' },
         userId: 'student-user',
         activation: null
       });
@@ -457,6 +575,7 @@ describe('Bulk Import Server Actions', () => {
 
       const result = await executeBulkImportAction({
         programId: 1,
+        batchId: 'batch-uuid-1',
         rows: [validRow],
         sendEmails: true
       });

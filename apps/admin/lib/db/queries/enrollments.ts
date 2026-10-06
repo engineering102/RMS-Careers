@@ -106,19 +106,30 @@ export async function getEnrollmentSummaryStats(): Promise<EnrollmentSummaryStat
 export async function checkExistingEnrollment(
   studentId: number,
   programId: number,
-  client: DbClient = db
+  client: DbClient = db,
+  batchId?: string | null
 ): Promise<Enrollment | null> {
   try {
     if (!process.env.POSTGRES_URL) return null;
+
+    let condition;
+    if (batchId) {
+      condition = and(
+        eq(enrollments.studentId, studentId),
+        eq(enrollments.batchId, batchId),
+        inArray(enrollments.status, ['active', 'confirmed', 'pending'])
+      );
+    } else {
+      condition = and(
+        eq(enrollments.studentId, studentId),
+        eq(enrollments.programId, programId)
+      );
+    }
+
     const results = await client
       .select()
       .from(enrollments)
-      .where(
-        and(
-          eq(enrollments.studentId, studentId),
-          eq(enrollments.programId, programId)
-        )
-      )
+      .where(condition)
       .limit(1);
     return results[0] || null;
   } catch (error) {
@@ -131,13 +142,15 @@ export async function checkExistingEnrollment(
 export async function createEnrollmentRecord(
   studentId: number,
   programId: number,
-  client: DbClient = db
+  client: DbClient = db,
+  batchId?: string | null
 ): Promise<Enrollment> {
   const [created] = await client
     .insert(enrollments)
     .values({
       studentId,
       programId,
+      batchId: batchId || null,
       status: 'pending'
     })
     .returning();
@@ -388,7 +401,8 @@ export async function getEnrollmentsWithDetails(
 
 export async function getExistingEnrollmentsByEmails(
   programId: number,
-  emails: string[]
+  emails: string[],
+  batchId?: string
 ): Promise<Set<string>> {
   const enrolledEmails = new Set<string>();
   try {
@@ -396,16 +410,22 @@ export async function getExistingEnrollmentsByEmails(
 
     const lowerEmails = emails.map((e) => e.trim().toLowerCase());
 
+    const condition = batchId
+      ? and(
+          eq(enrollments.batchId, batchId),
+          inArray(enrollments.status, ['active', 'confirmed', 'pending']),
+          sql`LOWER(${students.email}) IN ${lowerEmails}`
+        )
+      : and(
+          eq(enrollments.programId, programId),
+          sql`LOWER(${students.email}) IN ${lowerEmails}`
+        );
+
     const rows = await db
       .select({ email: students.email })
       .from(enrollments)
       .innerJoin(students, eq(enrollments.studentId, students.id))
-      .where(
-        and(
-          eq(enrollments.programId, programId),
-          sql`LOWER(${students.email}) IN ${lowerEmails}`
-        )
-      );
+      .where(condition);
 
     rows.forEach((r) => enrolledEmails.add(r.email.toLowerCase()));
     return enrolledEmails;

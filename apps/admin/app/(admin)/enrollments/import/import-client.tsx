@@ -52,20 +52,29 @@ import {
 } from './actions';
 import { type ValidatedImportRow } from '@/lib/csv/validator';
 import { toast } from 'sonner';
-import type { Program } from '@/lib/db';
+import type { Program, Batch, College } from '@/lib/db';
+import { Layers } from 'lucide-react';
 
 interface BulkImportClientProps {
   programs: Program[];
+  colleges?: College[];
+  batches?: Batch[];
 }
 
-export function BulkImportClient({ programs }: BulkImportClientProps) {
+export function BulkImportClient({
+  programs,
+  colleges = [],
+  batches = []
+}: BulkImportClientProps) {
   const router = useRouter();
 
   // Active step: 1 = Upload/Select, 2 = Preview, 3 = Processing, 4 = Summary
   const [step, setStep] = React.useState<1 | 2 | 3 | 4>(1);
 
   // Form states
+  const [selectedCollegeId, setSelectedCollegeId] = React.useState<string>('all');
   const [selectedProgramId, setSelectedProgramId] = React.useState<string>('');
+  const [selectedBatchId, setSelectedBatchId] = React.useState<string>('');
   const [file, setFile] = React.useState<File | null>(null);
   const [sendEmails, setSendEmails] = React.useState<boolean>(false);
 
@@ -79,7 +88,41 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
   const [summaryData, setSummaryData] = React.useState<ImportSummaryData | null>(null);
   const [tableFilter, setTableFilter] = React.useState<'all' | 'valid' | 'invalid' | 'duplicates'>('all');
 
+  // Filtered programs and batches
+  const availablePrograms = React.useMemo(() => {
+    if (!selectedCollegeId || selectedCollegeId === 'all') return programs;
+    return programs.filter((p) => p.collegeId === selectedCollegeId);
+  }, [programs, selectedCollegeId]);
+
+  const availableBatches = React.useMemo(() => {
+    if (!selectedProgramId) return [];
+    return batches.filter((b) => b.programId === Number(selectedProgramId));
+  }, [batches, selectedProgramId]);
+
   const selectedProgram = programs.find((p) => String(p.id) === selectedProgramId);
+  const selectedBatch = batches.find((b) => b.id === selectedBatchId);
+
+  // Handle college change
+  const handleCollegeChange = (collegeId: string) => {
+    setSelectedCollegeId(collegeId);
+    if (selectedProgramId) {
+      const p = programs.find((pr) => String(pr.id) === selectedProgramId);
+      if (p && collegeId !== 'all' && p.collegeId !== collegeId) {
+        setSelectedProgramId('');
+        setSelectedBatchId('');
+      }
+    }
+  };
+
+  // Handle program change
+  const handleProgramChange = (programId: string) => {
+    setSelectedProgramId(programId);
+    setSelectedBatchId(''); // Clear incompatible batch!
+    const p = programs.find((pr) => String(pr.id) === programId);
+    if (p?.collegeId && selectedCollegeId === 'all') {
+      setSelectedCollegeId(p.collegeId);
+    }
+  };
 
   // 1. Download Sample CSV Template
   async function handleDownloadTemplate() {
@@ -109,6 +152,10 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
       toast.error('Please select a program first.');
       return;
     }
+    if (!selectedBatchId) {
+      toast.error('Please select a target batch.');
+      return;
+    }
     if (!file) {
       toast.error('Please upload a CSV or Excel file.');
       return;
@@ -117,6 +164,7 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
     setIsValidating(true);
     const formData = new FormData();
     formData.append('programId', selectedProgramId);
+    formData.append('batchId', selectedBatchId);
     formData.append('file', file);
 
     try {
@@ -172,6 +220,7 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
     try {
       const result = await executeBulkImportAction({
         programId: previewData.program.id,
+        batchId: previewData.batch.id,
         rows: previewData.rows,
         sendEmails
       });
@@ -305,9 +354,14 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
           >
             <ArrowLeft className="h-4 w-4" /> Change File or Program
           </Button>
-          <Badge variant="outline" className="font-mono text-xs">
-            Program: {previewData.program.name} ({previewData.program.code})
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="font-mono text-xs">
+              Program: {previewData.program.name} ({previewData.program.code})
+            </Badge>
+            <Badge variant="secondary" className="font-mono text-xs flex items-center gap-1 bg-primary/10 text-primary">
+              <Layers className="h-3 w-3" /> Batch: {previewData.batch.name}
+            </Badge>
+          </div>
         </div>
 
         {/* Capacity & Error Warning Banner */}
@@ -506,17 +560,39 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
               </div>
             )}
 
+            {/* Optional College Filter */}
+            {colleges.length > 0 && (
+              <div className="space-y-2">
+                <label htmlFor="collegeSelect" className="text-sm font-medium flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4 text-muted-foreground" /> College / Institution Filter
+                </label>
+                <Select value={selectedCollegeId} onValueChange={handleCollegeChange}>
+                  <SelectTrigger id="collegeSelect" className="h-11">
+                    <SelectValue placeholder="-- All Colleges --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Colleges / Standalone</SelectItem>
+                    {colleges.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} ({c.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Target Program Selection */}
             <div className="space-y-2">
               <label htmlFor="programSelect" className="text-sm font-medium">
                 Target Academy Program <span className="text-destructive">*</span>
               </label>
-              <Select value={selectedProgramId} onValueChange={setSelectedProgramId}>
+              <Select value={selectedProgramId} onValueChange={handleProgramChange}>
                 <SelectTrigger id="programSelect" className="h-11">
                   <SelectValue placeholder="-- Select Target Program --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {programs.map((p) => (
+                  {availablePrograms.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)} disabled={p.status === 'archived'}>
                       {p.name} ({p.code}) — {p.status.toUpperCase()} {p.capacity > 0 ? `| Capacity: ${p.capacity}` : ''}
                     </SelectItem>
@@ -535,6 +611,71 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
                 {selectedProgram.description && (
                   <p className="text-muted-foreground">{selectedProgram.description}</p>
                 )}
+              </div>
+            )}
+
+            {/* Target Batch Selection (Scoped to Program) */}
+            <div className="space-y-2">
+              <label htmlFor="batchSelect" className="text-sm font-medium flex items-center justify-between">
+                <span>
+                  Target Batch / Cohort <span className="text-destructive">*</span>
+                </span>
+                {selectedProgramId && (
+                  <span className="text-xs text-muted-foreground">
+                    {availableBatches.length} batch{availableBatches.length === 1 ? '' : 'es'} available
+                  </span>
+                )}
+              </label>
+              <Select
+                value={selectedBatchId}
+                onValueChange={setSelectedBatchId}
+                disabled={!selectedProgramId || availableBatches.length === 0}
+              >
+                <SelectTrigger id="batchSelect" className="h-11">
+                  <SelectValue
+                    placeholder={
+                      !selectedProgramId
+                        ? '-- Select a Program first --'
+                        : availableBatches.length === 0
+                        ? '-- No Batches available for this Program --'
+                        : '-- Select Target Batch --'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableBatches.map((b) => (
+                    <SelectItem key={b.id} value={b.id} disabled={b.status === 'archived'}>
+                      {b.name} ({b.status.toUpperCase()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedProgramId && availableBatches.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  No batches exist for this program yet. Please create a batch in the Batches tab first.
+                </p>
+              )}
+            </div>
+
+            {/* Batch Info Card */}
+            {selectedBatch && (
+              <div className="p-3.5 rounded-lg border bg-primary/5 border-primary/20 text-xs space-y-1 animate-in fade-in-50">
+                <div className="flex justify-between items-center font-medium">
+                  <span className="text-foreground font-semibold flex items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 text-primary" /> {selectedBatch.name}
+                  </span>
+                  <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                    {selectedBatch.status}
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground text-[11px] flex gap-4">
+                  {selectedBatch.startDate && (
+                    <span>Starts: {new Date(selectedBatch.startDate).toLocaleDateString()}</span>
+                  )}
+                  {selectedBatch.endDate && (
+                    <span>Ends: {new Date(selectedBatch.endDate).toLocaleDateString()}</span>
+                  )}
+                </div>
               </div>
             )}
 
@@ -590,7 +731,7 @@ export function BulkImportClient({ programs }: BulkImportClientProps) {
           <CardFooter className="pt-2 flex justify-end">
             <Button
               type="submit"
-              disabled={!selectedProgramId || !file || isValidating}
+              disabled={!selectedProgramId || !selectedBatchId || !file || isValidating}
               className="h-11 px-6 font-medium gap-2"
             >
               {isValidating ? (
