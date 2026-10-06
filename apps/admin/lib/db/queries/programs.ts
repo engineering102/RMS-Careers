@@ -83,6 +83,21 @@ export async function getProgramByCode(code: string): Promise<Program | null> {
   }
 }
 
+/**
+ * Retrieves a single program by its integer ID.
+ */
+export async function getProgramById(id: number): Promise<Program | null> {
+  if (!id || typeof id !== 'number') return null;
+  try {
+    if (!process.env.POSTGRES_URL) return null;
+    const results = await db.select().from(programs).where(eq(programs.id, id)).limit(1);
+    return results[0] || null;
+  } catch (error) {
+    console.error(`Error fetching program by id ${id}:`, error);
+    return null;
+  }
+}
+
 export async function getProgramEnrollmentCount(programId: number): Promise<number> {
   try {
     if (!process.env.POSTGRES_URL) return 0;

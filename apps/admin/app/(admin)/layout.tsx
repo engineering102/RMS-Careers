@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   GraduationCap,
   BookOpen,
+  Layers,
   ClipboardList,
   PanelLeft,
   Settings
@@ -68,6 +69,10 @@ function DesktopNav() {
           <BookOpen className="h-5 w-5" />
         </NavItem>
 
+        <NavItem href="/batches" label="Batches">
+          <Layers className="h-5 w-5" />
+        </NavItem>
+
         <NavItem href="/enrollments" label="Enrollments">
           <ClipboardList className="h-5 w-5" />
         </NavItem>
@@ -117,6 +122,13 @@ function MobileNav() {
           >
             <BookOpen className="h-5 w-5" />
             Programs
+          </Link>
+          <Link
+            href="/batches"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <Layers className="h-5 w-5" />
+            Batches
           </Link>
           <Link
             href="/enrollments"
