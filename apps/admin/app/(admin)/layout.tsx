@@ -4,6 +4,7 @@ import {
   BookOpen,
   Layers,
   ClipboardList,
+  FileText,
   PanelLeft,
   Settings
 } from 'lucide-react';
@@ -76,6 +77,10 @@ function DesktopNav() {
         <NavItem href="/enrollments" label="Enrollments">
           <ClipboardList className="h-5 w-5" />
         </NavItem>
+
+        <NavItem href="/content" label="Content Library">
+          <FileText className="h-5 w-5" />
+        </NavItem>
       </nav>
       <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
         <Tooltip>
@@ -136,6 +141,13 @@ function MobileNav() {
           >
             <ClipboardList className="h-5 w-5" />
             Enrollments
+          </Link>
+          <Link
+            href="/content"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <FileText className="h-5 w-5" />
+            Content Library
           </Link>
         </nav>
       </SheetContent>
