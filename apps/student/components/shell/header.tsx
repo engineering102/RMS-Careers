@@ -4,12 +4,22 @@ import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
 import { signOutAction } from '@/lib/actions/auth';
 
+import { NotificationBell } from './notification-bell';
+import type { NotificationItem } from '@/lib/types/notifications';
+
 interface HeaderProps {
   context: StudentEntitlementContext;
   onOpenMobileNav: () => void;
+  initialUnreadCount?: number;
+  initialNotifications?: NotificationItem[];
 }
 
-export function Header({ context, onOpenMobileNav }: HeaderProps) {
+export function Header({
+  context,
+  onOpenMobileNav,
+  initialUnreadCount = 0,
+  initialNotifications = []
+}: HeaderProps) {
   const student = context.student;
   const primaryBatch = context.activeBatches[0];
 
@@ -62,6 +72,12 @@ export function Header({ context, onOpenMobileNav }: HeaderProps) {
             <span>Pending Batch</span>
           </div>
         )}
+
+        {/* Notification Bell */}
+        <NotificationBell
+          initialUnreadCount={initialUnreadCount}
+          initialNotifications={initialNotifications}
+        />
 
         {/* Student Avatar */}
         <div

@@ -5,6 +5,7 @@ import {
   Code2,
   ClipboardCheck,
   Trophy,
+  Bell,
   User,
   type LucideIcon
 } from 'lucide-react';
@@ -54,6 +55,12 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     href: '/leaderboards',
     icon: Trophy,
     description: 'College & batch peer rankings'
+  },
+  {
+    title: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
+    description: 'In-app alert drawer & milestone updates'
   },
   {
     title: 'Profile',
