@@ -1,10 +1,12 @@
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
 import { getStudentOverview } from '@/lib/db/queries/overview';
+import { getStudentActivityLedger } from '@/lib/db/queries/activities';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { XpCard } from '@/components/overview/xp-card';
 import { StreakCard } from '@/components/overview/streak-card';
 import { DeadlinesCard } from '@/components/overview/deadlines-card';
 import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
+import { ActivityLedger } from '@/components/overview/activity-ledger';
 import { Building2, Calendar, BookOpen } from 'lucide-react';
 
 export const metadata = {
@@ -23,8 +25,11 @@ export default async function OverviewPage() {
   const primaryBatch = context.activeBatches[0];
   const activeBatchIds = context.activeBatches.map((b) => b.batchId);
 
-  // Fetch server-authoritative overview data
-  const overviewData = await getStudentOverview(student.id, activeBatchIds);
+  // Fetch server-authoritative overview data and activity ledger
+  const [overviewData, activityLedger] = await Promise.all([
+    getStudentOverview(student.id, activeBatchIds),
+    getStudentActivityLedger(student.id, { limit: 10 })
+  ]);
 
   return (
     <div className="space-y-8">
@@ -119,6 +124,15 @@ export default async function OverviewPage() {
             </article>
           ))}
         </div>
+      </section>
+
+      {/* 5. Chronological Activity Ledger & Streak Log (Slice 15) */}
+      <section>
+        <ActivityLedger
+          activities={activityLedger.activities}
+          totalCount={activityLedger.totalCount}
+          streakDetails={activityLedger.streakDetails}
+        />
       </section>
     </div>
   );

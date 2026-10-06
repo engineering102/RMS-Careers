@@ -225,6 +225,17 @@ describe('Slice 10: DSA Practice Center', () => {
 
     mockDsaProgress = [];
     mockActivities = [];
+    const yesterdayDate = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(d);
+    })();
+
     mockStudentStats = [
       {
         studentId: 101,
@@ -234,7 +245,7 @@ describe('Slice 10: DSA Practice Center', () => {
         currentStreak: 2,
         longestStreak: 5,
         dsaSolvedCount: 1,
-        lastActivityDateIst: '2026-10-04'
+        lastActivityDateIst: yesterdayDate
       }
     ];
 
