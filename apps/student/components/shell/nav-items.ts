@@ -66,8 +66,6 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     title: 'Profile',
     href: '/profile',
     icon: User,
-    badge: 'Coming Soon',
-    disabled: true,
     description: 'Academic details, portfolio links & 30-day heatmap'
   }
 ];
