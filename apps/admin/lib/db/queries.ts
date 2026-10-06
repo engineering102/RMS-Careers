@@ -19,3 +19,5 @@ export * from './queries/colleges';
 export * from './queries/batches';
 export * from './queries/tokens';
 export * from './queries/student-provisioning';
+export * from './queries/content';
+export * from './queries/curriculum';

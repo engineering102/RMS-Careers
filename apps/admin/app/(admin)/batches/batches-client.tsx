@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Layers,
@@ -521,6 +522,7 @@ export function BatchesClient({
                 <TableHead className="font-semibold">Timeline</TableHead>
                 <TableHead className="font-semibold text-center">Status</TableHead>
                 <TableHead className="font-semibold text-right">Enrolled Students</TableHead>
+                <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -593,6 +595,16 @@ export function BatchesClient({
                         {batch.enrollmentCount === 1 ? 'student' : 'students'}
                       </span>
                     </div>
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell className="text-right">
+                    <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                      <Link href={`/batches/${batch.id}/curriculum`}>
+                        <BookOpen className="h-3 w-3" />
+                        Curriculum
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
