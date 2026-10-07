@@ -17,6 +17,7 @@ import {
 } from '@rms/db';
 import { eq, and, sql, asc } from 'drizzle-orm';
 import { assertBatchEntitlement } from './entitlements';
+import { getBatchProgressSummary } from './progress';
 import type { ContentType, ContentItemMetadata } from '@/lib/types/library';
 import type {
   CurriculumItem,
@@ -132,51 +133,8 @@ export async function getBatchWorkspace(
         asc(batchCurriculum.id)
       );
 
-    // 5. Query student completion records
-    const completedQuizContentItemIds = new Set<string>();
-    const completedAssignmentContentItemIds = new Set<string>();
-    const completedDsaSlugs = new Set<string>();
-
-    if (curriculumRows.length > 0) {
-      // Completed / passed quizzes
-      const passedQuizzes = await db
-        .select({ contentItemId: quizzes.contentItemId })
-        .from(quizAttempts)
-        .innerJoin(quizzes, eq(quizzes.id, quizAttempts.quizId))
-        .where(
-          and(
-            eq(quizAttempts.studentId, studentId),
-            eq(quizAttempts.isPassed, true)
-          )
-        );
-      passedQuizzes.forEach((pq) => {
-        if (pq.contentItemId) completedQuizContentItemIds.add(pq.contentItemId);
-      });
-
-      // Submitted project assignments
-      const submittedProjects = await db
-        .select({ contentItemId: assignments.contentItemId })
-        .from(assignmentSubmissions)
-        .innerJoin(assignments, eq(assignments.id, assignmentSubmissions.assignmentId))
-        .where(eq(assignmentSubmissions.studentId, studentId));
-      submittedProjects.forEach((sp) => {
-        if (sp.contentItemId) completedAssignmentContentItemIds.add(sp.contentItemId);
-      });
-
-      // Solved DSA problems
-      const solvedDsa = await db
-        .select({ problemSlug: studentDsaProgress.problemSlug })
-        .from(studentDsaProgress)
-        .where(
-          and(
-            eq(studentDsaProgress.studentId, studentId),
-            eq(studentDsaProgress.isCompleted, true)
-          )
-        );
-      solvedDsa.forEach((d) => {
-        if (d.problemSlug) completedDsaSlugs.add(d.problemSlug);
-      });
-    }
+    // 5. Query canonical progress summary via unified resolver
+    const progressSummary = await getBatchProgressSummary(studentId, batchId);
 
     // 6. Map and group curriculum items by weekNumber
     const now = new Date();
@@ -186,14 +144,10 @@ export async function getBatchWorkspace(
     for (const row of curriculumRows) {
       const meta = (row.metadata as ContentItemMetadata) || {};
 
-      let isCompleted = false;
-      if (row.contentType === 'quiz') {
-        isCompleted = completedQuizContentItemIds.has(row.contentItemId);
-      } else if (row.contentType === 'project') {
-        isCompleted = completedAssignmentContentItemIds.has(row.contentItemId);
-      } else if (row.contentType === 'dsa_sheet') {
-        isCompleted = completedDsaSlugs.has(row.slug);
-      }
+      const progressRecord = progressSummary.itemsMap[row.contentItemId];
+      const isCompleted = progressRecord?.status === 'completed';
+      const isRevision = progressRecord?.status === 'needs_revision';
+      const isInReview = progressRecord?.status === 'in_progress';
 
       if (isCompleted) {
         totalCompleted++;
@@ -209,6 +163,10 @@ export async function getBatchWorkspace(
       let status: CurriculumItemStatus = 'pending';
       if (isCompleted) {
         status = 'completed';
+      } else if (isRevision) {
+        status = 'needs_revision';
+      } else if (isInReview) {
+        status = 'in_review';
       } else if (isLocked) {
         status = 'locked';
       } else if (isOverdue) {

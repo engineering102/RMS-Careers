@@ -1,6 +1,13 @@
 import type { ContentType, ContentItemMetadata } from './library';
 
-export type CurriculumItemStatus = 'completed' | 'pending' | 'locked' | 'overdue' | 'archived';
+export type CurriculumItemStatus =
+  | 'completed'
+  | 'in_review'
+  | 'needs_revision'
+  | 'pending'
+  | 'locked'
+  | 'overdue'
+  | 'archived';
 
 export interface CurriculumItem {
   id: number; // batch_curriculum.id

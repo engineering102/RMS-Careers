@@ -1,7 +1,9 @@
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
 import { getStudentOverview } from '@/lib/db/queries/overview';
 import { getStudentActivityLedger } from '@/lib/db/queries/activities';
+import { getResumeLearningTarget } from '@/lib/services/resume-learning';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
+import { ResumeLearningCard } from '@/components/dashboard/resume-learning-card';
 import { XpCard } from '@/components/overview/xp-card';
 import { StreakCard } from '@/components/overview/streak-card';
 import { DeadlinesCard } from '@/components/overview/deadlines-card';
@@ -25,10 +27,11 @@ export default async function OverviewPage() {
   const primaryBatch = context.activeBatches[0];
   const activeBatchIds = context.activeBatches.map((b) => b.batchId);
 
-  // Fetch server-authoritative overview data and activity ledger
-  const [overviewData, activityLedger] = await Promise.all([
+  // Fetch server-authoritative overview data, activity ledger, and resume target
+  const [overviewData, activityLedger, resumeTarget] = await Promise.all([
     getStudentOverview(student.id, activeBatchIds),
-    getStudentActivityLedger(student.id, { limit: 10 })
+    getStudentActivityLedger(student.id, { limit: 10 }),
+    getResumeLearningTarget(student.id)
   ]);
 
   return (
@@ -66,7 +69,10 @@ export default async function OverviewPage() {
         </div>
       </section>
 
-      {/* 2. Top Summary Stat Cards: XP and Streak */}
+      {/* 2. Resume Learning Hero Card (Slice 4) */}
+      <ResumeLearningCard target={resumeTarget} />
+
+      {/* 3. Top Summary Stat Cards: XP and Streak */}
       <section className="grid gap-6 sm:grid-cols-2">
         <XpCard stats={overviewData.stats} />
         <StreakCard stats={overviewData.stats} />

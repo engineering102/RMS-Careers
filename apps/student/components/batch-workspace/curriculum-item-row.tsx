@@ -125,6 +125,10 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
       className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4.5 transition-all ${
         item.isCompleted
           ? 'border-emerald-900/40 bg-emerald-950/10 hover:border-emerald-800/60'
+          : item.status === 'needs_revision'
+          ? 'border-rose-900/50 bg-rose-950/20 hover:border-rose-800/70'
+          : item.status === 'in_review'
+          ? 'border-amber-900/40 bg-amber-950/10 hover:border-amber-800/60'
           : item.isOverdue
           ? 'border-rose-900/40 bg-rose-950/10 hover:border-rose-800/60'
           : item.isLocked
@@ -228,6 +232,22 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
               <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
               Completed
             </span>
+          ) : item.status === 'needs_revision' ? (
+            <span
+              className="flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-rose-400"
+              aria-label="Needs Revision"
+            >
+              <AlertCircle className="h-3 w-3" aria-hidden="true" />
+              Needs Revision
+            </span>
+          ) : item.status === 'in_review' ? (
+            <span
+              className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400"
+              aria-label="In Review"
+            >
+              <Clock className="h-3 w-3" aria-hidden="true" />
+              In Review
+            </span>
           ) : item.isLocked ? (
             <span
               className="flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400"
@@ -263,7 +283,15 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-2.5 h-7 gap-1"
           >
             <Link href={meta.defaultHref}>
-              <span>{item.isCompleted ? 'Review' : meta.actionLabel}</span>
+              <span>
+                {item.isCompleted
+                  ? 'Review'
+                  : item.status === 'needs_revision'
+                  ? 'Revise'
+                  : item.status === 'in_review'
+                  ? 'View'
+                  : meta.actionLabel}
+              </span>
               <ExternalLink className="h-3 w-3" />
             </Link>
           </Button>

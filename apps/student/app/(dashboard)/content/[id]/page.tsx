@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
 import { getContentItem } from '@/lib/db/queries/content';
+import { getNextCurriculumItem } from '@/lib/services/resume-learning';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { ContentHeader } from '@/components/content-player/content-header';
 import { EmbeddedVideoPlayer } from '@/components/content-player/embedded-video-player';
 import { ResourceViewer } from '@/components/content-player/resource-viewer';
 import { CompletionButton } from '@/components/content-player/completion-button';
+import { NextLessonBanner } from '@/components/content-player/next-lesson-banner';
 import { UnsupportedContentView } from '@/components/content-player/unsupported-content-view';
 import { getProjectAssignmentForStudent } from '@/lib/db/queries/projects';
 import { ProjectSubmissionWorkspace } from '@/components/projects/project-submission-workspace';
@@ -37,6 +39,11 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
   // Server-authoritative query (validates entitlement, throws notFound() if unauthorized)
   const item = await getContentItem(context.student.id, id, batchId);
+
+  const effectiveBatchId = batchId || item.relatedBatchContext?.batchId;
+  const nextItem = effectiveBatchId
+    ? await getNextCurriculumItem(context.student.id, item.id, effectiveBatchId)
+    : null;
 
   const isLecture = item.contentType === 'lecture';
   const isResource = item.contentType === 'notes' || item.contentType === 'resource';
@@ -129,6 +136,18 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
           title={item.title}
           description={item.description}
         />
+      )}
+
+      {/* 3. Next Lesson Navigation / Cohort Continuity Banner */}
+      {effectiveBatchId && (
+        <div className="pt-4 border-t border-slate-800/80">
+          <NextLessonBanner
+            batchId={effectiveBatchId}
+            batchName={item.relatedBatchContext?.batchName}
+            nextItem={nextItem}
+            isCurrentItemCompleted={item.isCompleted}
+          />
+        </div>
       )}
     </div>
   );
