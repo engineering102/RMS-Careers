@@ -13,7 +13,8 @@ import {
   FilterX,
   Search,
   FileQuestion,
-  FolderGit2
+  FolderGit2,
+  Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -618,6 +619,12 @@ export function BatchesClient({
                         <Link href={`/batches/${batch.id}/curriculum`}>
                           <BookOpen className="h-3 w-3" />
                           Curriculum
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                        <Link href={`/batches/${batch.id}/external-assessments`}>
+                          <Award className="h-3 w-3 text-emerald-600" />
+                          External
                         </Link>
                       </Button>
                     </div>

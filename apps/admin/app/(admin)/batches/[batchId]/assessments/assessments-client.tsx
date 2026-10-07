@@ -230,6 +230,13 @@ export function BatchAssessmentsClient({
           </Button>
 
           <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
+            <Link href={`/batches/${batch.id}/external-assessments`}>
+              <Award className="h-3.5 w-3.5 text-emerald-600" />
+              External
+            </Link>
+          </Button>
+
+          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
             <Link href={`/batches/${batch.id}/curriculum`}>
               <BookOpen className="h-3.5 w-3.5" />
               Curriculum Builder

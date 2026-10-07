@@ -355,6 +355,12 @@ export function BatchProjectsClient({
             </Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">
+            <Link href={`/batches/${batch.id}/external-assessments`}>
+              <Award className="h-3.5 w-3.5 text-emerald-600" />
+              <span>External</span>
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">
             <Link href={`/batches/${batch.id}/curriculum`}>
               <BookOpen className="h-3.5 w-3.5 text-blue-600" />
               <span>Curriculum</span>
