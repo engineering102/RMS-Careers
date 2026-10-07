@@ -23,3 +23,4 @@ export * from './queries/content';
 export * from './queries/curriculum';
 export * from './queries/quiz-authoring';
 export * from './queries/batch-assessments';
+export * from './queries/batch-projects';

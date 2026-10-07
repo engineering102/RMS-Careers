@@ -23,7 +23,8 @@ import {
   ShieldAlert,
   Users,
   Award,
-  HelpCircle
+  HelpCircle,
+  FolderGit2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -221,6 +222,13 @@ export function BatchAssessmentsClient({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
+            <Link href={`/batches/${batch.id}/projects`}>
+              <FolderGit2 className="h-3.5 w-3.5 text-amber-600" />
+              Projects
+            </Link>
+          </Button>
+
           <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
             <Link href={`/batches/${batch.id}/curriculum`}>
               <BookOpen className="h-3.5 w-3.5" />

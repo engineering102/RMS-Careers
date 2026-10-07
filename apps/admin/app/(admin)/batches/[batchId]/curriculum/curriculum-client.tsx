@@ -21,7 +21,8 @@ import {
   Check,
   CalendarDays,
   Sparkles,
-  FileQuestion
+  FileQuestion,
+  FolderGit2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -366,6 +367,12 @@ export function BatchCurriculumClient({
             <Link href={`/batches/${batch.id}/assessments`}>
               <FileQuestion className="h-4 w-4 text-violet-600" />
               Assessment Operations
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="gap-1.5 h-9 text-xs">
+            <Link href={`/batches/${batch.id}/projects`}>
+              <FolderGit2 className="h-4 w-4 text-amber-600" />
+              Projects
             </Link>
           </Button>
           {!isReadOnly && (
