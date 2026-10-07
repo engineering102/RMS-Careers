@@ -24,7 +24,8 @@ import {
   Users,
   Award,
   HelpCircle,
-  FolderGit2
+  FolderGit2,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -222,6 +223,13 @@ export function BatchAssessmentsClient({
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8 border-primary/30 hover:bg-primary/5">
+            <Link href={`/batches/${batch.id}/analytics`}>
+              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              Analytics
+            </Link>
+          </Button>
+
           <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
             <Link href={`/batches/${batch.id}/projects`}>
               <FolderGit2 className="h-3.5 w-3.5 text-amber-600" />

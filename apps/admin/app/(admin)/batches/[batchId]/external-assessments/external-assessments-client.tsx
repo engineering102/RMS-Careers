@@ -23,7 +23,8 @@ import {
   Trash2,
   RefreshCw,
   Sparkles,
-  ArrowUpDown
+  ArrowUpDown,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -392,6 +393,13 @@ export function BatchExternalAssessmentsClient({
           >
             <Upload className="h-3.5 w-3.5" />
             <span>Import CSV</span>
+          </Button>
+
+          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm border-primary/30 hover:bg-primary/5">
+            <Link href={`/batches/${batch.id}/analytics`}>
+              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              <span>Analytics</span>
+            </Link>
           </Button>
 
           <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">

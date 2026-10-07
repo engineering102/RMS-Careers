@@ -25,3 +25,4 @@ export * from './queries/quiz-authoring';
 export * from './queries/batch-assessments';
 export * from './queries/batch-projects';
 export * from './queries/batch-external-assessments';
+export * from './queries/batch-analytics';

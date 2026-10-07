@@ -14,7 +14,8 @@ import {
   Search,
   FileQuestion,
   FolderGit2,
-  Award
+  Award,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -603,6 +604,12 @@ export function BatchesClient({
                   {/* Actions */}
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-primary/30 hover:bg-primary/5">
+                        <Link href={`/batches/${batch.id}/analytics`}>
+                          <BarChart3 className="h-3 w-3 text-primary" />
+                          Analytics
+                        </Link>
+                      </Button>
                       <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
                         <Link href={`/batches/${batch.id}/assessments`}>
                           <FileQuestion className="h-3 w-3 text-violet-600" />
