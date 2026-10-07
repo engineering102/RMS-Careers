@@ -11,7 +11,8 @@ import {
   Building2,
   BookOpen,
   FilterX,
-  Search
+  Search,
+  FileQuestion
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -599,12 +600,20 @@ export function BatchesClient({
 
                   {/* Actions */}
                   <TableCell className="text-right">
-                    <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-                      <Link href={`/batches/${batch.id}/curriculum`}>
-                        <BookOpen className="h-3 w-3" />
-                        Curriculum
-                      </Link>
-                    </Button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                        <Link href={`/batches/${batch.id}/assessments`}>
+                          <FileQuestion className="h-3 w-3 text-violet-600" />
+                          Assessments
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                        <Link href={`/batches/${batch.id}/curriculum`}>
+                          <BookOpen className="h-3 w-3" />
+                          Curriculum
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

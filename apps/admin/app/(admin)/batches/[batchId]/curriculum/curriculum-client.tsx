@@ -20,7 +20,8 @@ import {
   Search,
   Check,
   CalendarDays,
-  Sparkles
+  Sparkles,
+  FileQuestion
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -359,13 +360,21 @@ export function BatchCurriculumClient({
           </div>
         </div>
 
-        {/* Action Button */}
-        {!isReadOnly && (
-          <Button onClick={() => handleOpenAdd()} className="gap-2 shrink-0">
-            <PlusCircle className="h-4 w-4" />
-            Add Content
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" asChild className="gap-1.5 h-9 text-xs">
+            <Link href={`/batches/${batch.id}/assessments`}>
+              <FileQuestion className="h-4 w-4 text-violet-600" />
+              Assessment Operations
+            </Link>
           </Button>
-        )}
+          {!isReadOnly && (
+            <Button onClick={() => handleOpenAdd()} className="gap-2 h-9 text-xs">
+              <PlusCircle className="h-4 w-4" />
+              Add Content
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Read-Only Banner */}
