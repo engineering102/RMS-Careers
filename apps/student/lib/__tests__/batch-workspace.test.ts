@@ -32,21 +32,39 @@ vi.mock('@rms/db', async (importOriginal) => {
     db: {
       select: (fields?: any) => ({
         from: (table: any) => {
+          function extractStringsFromSql(obj: any, visited = new Set<any>()): string[] {
+            if (!obj || typeof obj !== 'object' || visited.has(obj)) return [];
+            visited.add(obj);
+            const results: string[] = [];
+            if (typeof obj.value === 'string') results.push(obj.value);
+            if (Array.isArray(obj.queryChunks)) {
+              for (const chunk of obj.queryChunks) {
+                results.push(...extractStringsFromSql(chunk, visited));
+              }
+            }
+            return results;
+          }
+
           // If table is enrollments
           if (table === actual.enrollments) {
-            const makeQueryResult = () => {
-              const p = Promise.resolve(mockEnrollments);
-              (p as any).limit = () => Promise.resolve(mockEnrollments);
+            const makeQueryResult = (clause?: any) => {
+              const strings = extractStringsFromSql(clause);
+              const targetBatch = mockEnrollments.find((e) => strings.includes(e.batchId));
+              const list = targetBatch
+                ? mockEnrollments.filter((e) => e.batchId === targetBatch.batchId)
+                : mockEnrollments;
+              const p = Promise.resolve(list);
+              (p as any).limit = () => Promise.resolve(list);
               return p;
             };
 
             return {
               innerJoin: (t2: any, onClause2: any) => ({
                 innerJoin: (t3: any, onClause3: any) => ({
-                  where: (clause: any) => makeQueryResult()
+                  where: (clause: any) => makeQueryResult(clause)
                 })
               }),
-              where: (clause: any) => makeQueryResult()
+              where: (clause: any) => makeQueryResult(clause)
             };
           }
 
@@ -56,7 +74,14 @@ vi.mock('@rms/db', async (importOriginal) => {
               innerJoin: (t2: any, onClause2: any) => ({
                 leftJoin: (t3: any, onClause3: any) => ({
                   where: (clause: any) => ({
-                    limit: () => Promise.resolve(mockBatches)
+                    limit: () => {
+                      const strings = extractStringsFromSql(clause);
+                      const targetBatch = mockBatches.find((b) => strings.includes(b.id));
+                      const filtered = targetBatch
+                        ? mockBatches.filter((b) => b.id === targetBatch.id)
+                        : mockBatches;
+                      return Promise.resolve(filtered);
+                    }
                   })
                 })
               })
@@ -69,9 +94,13 @@ vi.mock('@rms/db', async (importOriginal) => {
               innerJoin: (t2: any, onClause2: any) => ({
                 where: (clause: any) => ({
                   orderBy: () => {
-                    // Filter curriculum by published content items
+                    const strings = extractStringsFromSql(clause);
+                    const targetBatch = mockBatches.find((b) => strings.includes(b.id));
+
+                    // Filter curriculum by published content items and targetBatch
                     const result = mockCurriculum
                       .filter((c) => {
+                        if (targetBatch && c.batchId !== targetBatch.id) return false;
                         const content = mockContentItems.find((ci) => ci.id === c.contentItemId);
                         return content && content.isPublished;
                       })
@@ -168,7 +197,8 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
         programId,
         programName: 'Fullstack Track',
         programCode: 'FSE',
-        status: 'active'
+        status: 'active',
+        enrollmentStatus: 'active'
       }
     ];
 
@@ -218,6 +248,7 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
         contentItemId: 'content-01',
         weekNumber: 1,
         sequenceOrder: 1,
+        isRequired: true,
         availableFrom: new Date('2026-09-01'),
         dueAt: new Date(Date.now() + 86400000) // tomorrow
       },
@@ -227,6 +258,7 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
         contentItemId: 'content-02',
         weekNumber: 1,
         sequenceOrder: 2,
+        isRequired: false, // Optional
         availableFrom: new Date('2026-09-01'),
         dueAt: new Date(Date.now() + 86400000 * 2)
       },
@@ -236,6 +268,7 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
         contentItemId: 'content-03',
         weekNumber: 2,
         sequenceOrder: 1,
+        isRequired: true,
         availableFrom: new Date(Date.now() + 86400000 * 7), // next week (locked)
         dueAt: new Date(Date.now() + 86400000 * 14)
       },
@@ -245,6 +278,7 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
         contentItemId: 'content-04', // unpublished draft
         weekNumber: 2,
         sequenceOrder: 2,
+        isRequired: true,
         availableFrom: new Date('2026-09-01'),
         dueAt: null
       }
@@ -357,6 +391,114 @@ describe('Slice 8: Student Batch Workspace & getBatchWorkspace', () => {
     expect(data.totalMilestones).toBe(0);
     expect(data.completedMilestones).toBe(0);
     expect(data.overallProgressPercent).toBe(0);
+  });
+
+  it('correctly exposes isRequired as true or false on each curriculum item', async () => {
+    const data = await getBatchWorkspace(studentId, authorizedBatchId);
+
+    const week1 = data.weeks[0];
+    const lecture = week1.items.find((i) => i.contentType === 'lecture')!;
+    const quiz = week1.items.find((i) => i.contentType === 'quiz')!;
+
+    expect(lecture.isRequired).toBe(true);
+    expect(quiz.isRequired).toBe(false);
+  });
+
+  it('supports completed batch enrollments in read-only mode', async () => {
+    mockEnrollments[0].status = 'completed';
+    mockEnrollments[0].enrollmentStatus = 'completed';
+
+    const data = await getBatchWorkspace(studentId, authorizedBatchId);
+    expect(data.isReadOnly).toBe(true);
+    expect(data.enrollmentStatus).toBe('completed');
+  });
+
+  it('properly identifies and flags archived content items in curriculum', async () => {
+    mockContentItems.push({
+      id: 'content-archived',
+      title: 'Legacy Python Overview',
+      slug: 'legacy-python',
+      contentType: 'notes',
+      description: 'Historical notes.',
+      metadata: { isArchived: true },
+      isPublished: true
+    });
+
+    mockCurriculum.push({
+      id: 99,
+      batchId: authorizedBatchId,
+      contentItemId: 'content-archived',
+      weekNumber: 3,
+      sequenceOrder: 1,
+      isRequired: false,
+      availableFrom: new Date('2026-09-01'),
+      dueAt: null
+    });
+
+    const data = await getBatchWorkspace(studentId, authorizedBatchId);
+    const week3 = data.weeks.find((w) => w.weekNumber === 3)!;
+    const item = week3.items[0];
+
+    expect(item.isArchived).toBe(true);
+    expect(item.status).toBe('archived');
+  });
+
+  it('preserves multi-batch isolation so curriculum is scoped exclusively to the requested batch', async () => {
+    const batchBetaId = 'batch-uuid-beta-202';
+    mockEnrollments.push({
+      enrollmentId: 2,
+      studentId,
+      batchId: batchBetaId,
+      batchName: 'Beta Cohort 2026',
+      programId: 2,
+      programName: 'Systems Track',
+      programCode: 'SYS',
+      status: 'active',
+      enrollmentStatus: 'active'
+    });
+
+    mockBatches.push({
+      id: batchBetaId,
+      name: 'Beta Cohort 2026',
+      programId: 2,
+      programName: 'Systems Track',
+      programCode: 'SYS',
+      startDate: new Date('2026-10-01'),
+      endDate: new Date('2027-02-28'),
+      collegeName: 'Institute of Technology'
+    });
+
+    mockContentItems.push({
+      id: 'content-systems-01',
+      title: 'Operating Systems Kernel',
+      slug: 'os-kernel',
+      contentType: 'lecture',
+      description: 'Kernel architectures.',
+      metadata: {},
+      isPublished: true
+    });
+
+    mockCurriculum.push({
+      id: 101,
+      batchId: batchBetaId,
+      contentItemId: 'content-systems-01',
+      weekNumber: 1,
+      sequenceOrder: 1,
+      isRequired: true,
+      availableFrom: new Date('2026-10-01'),
+      dueAt: null
+    });
+
+    // Request Alpha Batch
+    const alphaData = await getBatchWorkspace(studentId, authorizedBatchId);
+    const alphaTitles = alphaData.weeks.flatMap((w) => w.items.map((i) => i.title));
+    expect(alphaTitles).not.toContain('Operating Systems Kernel');
+
+    // Request Beta Batch
+    const betaData = await getBatchWorkspace(studentId, batchBetaId);
+    const betaTitles = betaData.weeks.flatMap((w) => w.items.map((i) => i.title));
+    expect(betaTitles).toContain('Operating Systems Kernel');
+    expect(betaTitles).not.toContain('Week 1 Lecture: Foundations');
   });
 
   it('handles missing student ID or unset POSTGRES_URL by calling notFound', async () => {

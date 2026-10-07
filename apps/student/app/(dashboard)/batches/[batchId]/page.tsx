@@ -39,6 +39,7 @@ export default async function BatchWorkspacePage({ params }: BatchWorkspacePageP
         overallProgressPercent={data.overallProgressPercent}
         weeksCount={data.weeks.length}
         activeEnrolledBatches={data.activeEnrolledBatches}
+        isReadOnly={data.isReadOnly}
       />
 
       {/* 2. Workspace Navigation */}

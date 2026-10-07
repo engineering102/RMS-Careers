@@ -251,12 +251,34 @@ export async function getPracticeQuizForRunner(
   }
   if (batchIds.length > 0) {
     entitlementConditions.push(
-      sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN ${batchIds})`
+      sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN ${batchIds} AND (${batchCurriculum.availableFrom} IS NULL OR ${batchCurriculum.availableFrom} <= NOW()))`
     );
   }
 
   if (entitlementConditions.length === 0) {
     notFound();
+  }
+
+  if (batchId && isValidUuid(batchId)) {
+    if (!batchIds.includes(batchId)) {
+      notFound();
+    }
+
+    const [placement] = await db
+      .select({ availableFrom: batchCurriculum.availableFrom })
+      .from(batchCurriculum)
+      .innerJoin(quizzes, eq(quizzes.contentItemId, batchCurriculum.contentItemId))
+      .where(
+        and(
+          eq(batchCurriculum.batchId, batchId),
+          or(eq(quizzes.id, quizOrContentId), eq(quizzes.contentItemId, quizOrContentId))
+        )
+      )
+      .limit(1);
+
+    if (placement?.availableFrom && new Date(placement.availableFrom).getTime() > Date.now()) {
+      notFound();
+    }
   }
 
   // 2. Fetch the quiz by quizzes.id OR contentItems.id
@@ -274,7 +296,7 @@ export async function getPracticeQuizForRunner(
     })
     .from(quizzes)
     .innerJoin(contentItems, eq(contentItems.id, quizzes.contentItemId))
-    .innerJoin(programs, eq(programs.id, contentItems.programId))
+    .leftJoin(programs, eq(programs.id, contentItems.programId))
     .where(
       and(
         or(
@@ -359,8 +381,8 @@ export async function getPracticeQuizForRunner(
   return {
     id: row.id,
     contentItemId: row.contentItemId,
-    programName: row.programName,
-    programCode: row.programCode,
+    programName: row.programName || 'General',
+    programCode: row.programCode || 'GEN',
     title: row.title,
     description: row.description,
     passingScorePercent: row.passingScorePercent,
@@ -643,7 +665,7 @@ export async function getFormalAssessmentForRunner(
     .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
     .innerJoin(quizzes, eq(quizzes.contentItemId, contentItems.id))
     .innerJoin(batches, eq(batches.id, batchCurriculum.batchId))
-    .innerJoin(programs, eq(programs.id, contentItems.programId))
+    .leftJoin(programs, eq(programs.id, contentItems.programId))
     .where(
       and(
         or(
@@ -827,8 +849,8 @@ export async function getFormalAssessmentForRunner(
   return {
     id: row.id,
     contentItemId: row.contentItemId,
-    programName: row.programName,
-    programCode: row.programCode,
+    programName: row.programName || 'General',
+    programCode: row.programCode || 'GEN',
     batchId: row.batchId,
     batchName: row.batchName,
     title: row.title,

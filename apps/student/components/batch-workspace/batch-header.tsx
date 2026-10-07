@@ -21,6 +21,7 @@ interface BatchHeaderProps {
   overallProgressPercent: number;
   weeksCount: number;
   activeEnrolledBatches: EnrolledBatchSummary[];
+  isReadOnly?: boolean;
 }
 
 export function BatchHeader({
@@ -29,7 +30,8 @@ export function BatchHeader({
   completedMilestones,
   overallProgressPercent,
   weeksCount,
-  activeEnrolledBatches
+  activeEnrolledBatches,
+  isReadOnly
 }: BatchHeaderProps) {
   const hasMultipleBatches = activeEnrolledBatches.length > 1;
 
@@ -67,6 +69,14 @@ export function BatchHeader({
             >
               {batch.programCode}
             </Badge>
+            {isReadOnly && (
+              <Badge
+                variant="outline"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-300 text-[11px] font-semibold uppercase tracking-wider"
+              >
+                Read-Only (Completed)
+              </Badge>
+            )}
           </div>
 
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-100">

@@ -188,6 +188,29 @@ export async function submitProjectAssignment(
       };
     }
 
+    // 4b. Verify project release availability in batch curriculum
+    const [curriculumRecord] = await db
+      .select({ availableFrom: batchCurriculum.availableFrom })
+      .from(batchCurriculum)
+      .where(
+        and(
+          eq(batchCurriculum.batchId, batchId),
+          eq(batchCurriculum.contentItemId, contentItemId)
+        )
+      )
+      .limit(1);
+
+    if (
+      curriculumRecord?.availableFrom &&
+      new Date(curriculumRecord.availableFrom).getTime() > Date.now()
+    ) {
+      return {
+        success: false,
+        error: 'This project assignment is not yet available for submission.',
+        code: 'NOT_YET_AVAILABLE'
+      };
+    }
+
     // 5. Lightweight GitHub HEAD validation
     const repoCheck = await verifyPublicGithubRepo(cleanGithubUrl);
     if (!repoCheck.valid) {

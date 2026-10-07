@@ -1,6 +1,6 @@
-import type { ContentType, ContentItemMetadata } from '@/lib/types/library';
+import type { ContentType, ContentItemMetadata } from './library';
 
-export type CurriculumItemStatus = 'completed' | 'pending' | 'locked' | 'overdue';
+export type CurriculumItemStatus = 'completed' | 'pending' | 'locked' | 'overdue' | 'archived';
 
 export interface CurriculumItem {
   id: number; // batch_curriculum.id
@@ -13,11 +13,13 @@ export interface CurriculumItem {
   metadata: ContentItemMetadata;
   weekNumber: number;
   sequenceOrder: number;
+  isRequired: boolean;
   availableFrom: Date | null;
   dueAt: Date | null;
   isCompleted: boolean;
   isLocked: boolean;
   isOverdue: boolean;
+  isArchived?: boolean;
   status: CurriculumItemStatus;
 }
 
@@ -53,4 +55,6 @@ export interface BatchWorkspaceData {
   completedMilestones: number;
   overallProgressPercent: number;
   activeEnrolledBatches: EnrolledBatchSummary[];
+  isReadOnly?: boolean;
+  enrollmentStatus?: string;
 }

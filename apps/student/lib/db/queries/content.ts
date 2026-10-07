@@ -125,17 +125,18 @@ export async function getContentItem(
   }
 
   try {
-    // 1. Resolve student's active enrollments to establish entitlement boundaries
+    // 1. Resolve student's enrollments to establish entitlement boundaries
     const activeEnrollments = await db
       .select({
         programId: enrollments.programId,
-        batchId: enrollments.batchId
+        batchId: enrollments.batchId,
+        status: enrollments.status
       })
       .from(enrollments)
       .where(
         and(
           eq(enrollments.studentId, studentId),
-          sql`${enrollments.status} IN ('active', 'confirmed')`
+          sql`${enrollments.status} IN ('active', 'confirmed', 'completed')`
         )
       );
 
@@ -164,7 +165,40 @@ export async function getContentItem(
       notFound();
     }
 
-    // 3. Query the content item joined with its program
+    // 3. Check release date availability if placed in student's batch(es)
+    let batchPlacements: { batchId: string; availableFrom: Date | null }[] = [];
+    if (batchIds.length > 0) {
+      batchPlacements = await db
+        .select({
+          batchId: batchCurriculum.batchId,
+          availableFrom: batchCurriculum.availableFrom
+        })
+        .from(batchCurriculum)
+        .where(
+          and(
+            eq(batchCurriculum.contentItemId, contentItemId),
+            inArray(batchCurriculum.batchId, batchIds)
+          )
+        );
+
+      if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
+        // When accessed with specific enrolled batchId, verify release availability for that batch
+        const targetPlacement = batchPlacements.find((p) => p.batchId === batchId);
+        if (targetPlacement?.availableFrom && new Date(targetPlacement.availableFrom).getTime() > Date.now()) {
+          notFound();
+        }
+      } else if (batchPlacements.length > 0) {
+        // If no batchId specified or unenrolled batchId, but placed in student's enrolled batch(es), ensure at least one placement is released
+        const hasAnyUnlocked = batchPlacements.some(
+          (p) => !p.availableFrom || new Date(p.availableFrom).getTime() <= Date.now()
+        );
+        if (!hasAnyUnlocked) {
+          notFound();
+        }
+      }
+    }
+
+    // 4. Query the content item joined with its program (leftJoin so global content works)
     const [row] = await db
       .select({
         id: contentItems.id,
@@ -179,7 +213,7 @@ export async function getContentItem(
         isPublished: contentItems.isPublished
       })
       .from(contentItems)
-      .innerJoin(programs, eq(programs.id, contentItems.programId))
+      .leftJoin(programs, eq(programs.id, contentItems.programId))
       .where(
         and(
           eq(contentItems.id, contentItemId),
@@ -213,8 +247,9 @@ export async function getContentItem(
 
     // 5. If batchId is provided, verify student has access and retrieve batch metadata
     let relatedBatchContext: RelatedBatchContext | null = null;
-    if (batchId && isValidUuid(batchId)) {
-      if (batchIds.includes(batchId)) {
+    if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
+      const isPlacedInBatch = batchPlacements.some((p) => p.batchId === batchId);
+      if (isPlacedInBatch) {
         const [batchRecord] = await db
           .select({
             id: batches.id,
@@ -238,8 +273,8 @@ export async function getContentItem(
     return {
       id: row.id,
       programId: row.programId,
-      programName: row.programName,
-      programCode: row.programCode,
+      programName: row.programName || 'General',
+      programCode: row.programCode || 'GEN',
       title: row.title,
       slug: row.slug,
       contentType: row.contentType,

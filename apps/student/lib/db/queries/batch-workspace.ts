@@ -49,8 +49,8 @@ export async function getBatchWorkspace(
     notFound();
   }
 
-  // 1. Authorize: Throws 404 via Next.js notFound() if student is not actively enrolled in batchId
-  await assertBatchEntitlement(studentId, batchId);
+  // 1. Authorize: Throws 404 via Next.js notFound() if student is not actively/confirmed/completed enrolled in batchId
+  const entitlement = await assertBatchEntitlement(studentId, batchId);
 
   try {
     // 2. Query Batch and Program details
@@ -108,6 +108,7 @@ export async function getBatchWorkspace(
         contentItemId: batchCurriculum.contentItemId,
         weekNumber: batchCurriculum.weekNumber,
         sequenceOrder: batchCurriculum.sequenceOrder,
+        isRequired: batchCurriculum.isRequired,
         availableFrom: batchCurriculum.availableFrom,
         dueAt: batchCurriculum.dueAt,
         title: contentItems.title,
@@ -203,6 +204,7 @@ export async function getBatchWorkspace(
 
       const isLocked = Boolean(availableFrom && availableFrom.getTime() > now.getTime());
       const isOverdue = Boolean(dueAt && dueAt.getTime() < now.getTime() && !isCompleted);
+      const isArchived = Boolean(meta.isArchived === true || meta.status === 'archived');
 
       let status: CurriculumItemStatus = 'pending';
       if (isCompleted) {
@@ -211,6 +213,8 @@ export async function getBatchWorkspace(
         status = 'locked';
       } else if (isOverdue) {
         status = 'overdue';
+      } else if (isArchived) {
+        status = 'archived';
       }
 
       const item: CurriculumItem = {
@@ -224,11 +228,13 @@ export async function getBatchWorkspace(
         metadata: meta,
         weekNumber: row.weekNumber,
         sequenceOrder: row.sequenceOrder,
+        isRequired: row.isRequired ?? true,
         availableFrom,
         dueAt,
         isCompleted,
         isLocked,
         isOverdue,
+        isArchived,
         status
       };
 
@@ -266,7 +272,9 @@ export async function getBatchWorkspace(
       totalMilestones,
       completedMilestones: totalCompleted,
       overallProgressPercent,
-      activeEnrolledBatches
+      activeEnrolledBatches,
+      isReadOnly: entitlement.enrollmentStatus === 'completed',
+      enrollmentStatus: entitlement.enrollmentStatus
     };
   } catch (error: any) {
     if (error?.message === 'NEXT_NOT_FOUND' || error?.digest?.startsWith('NEXT_NOT_FOUND')) {

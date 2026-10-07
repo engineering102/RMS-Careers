@@ -463,5 +463,28 @@ describe('Slice 13: Project Submissions & GitHub Validator', () => {
         expect(result.code).toBe('UNAUTHORIZED_BATCH');
       }
     });
+
+    it('blocks submission if project is not yet released (future availableFrom)', async () => {
+      mockBatchCurriculum = [
+        {
+          batchId: TEST_BATCH_ID,
+          contentItemId: TEST_CONTENT_ITEM_ID,
+          availableFrom: new Date(Date.now() + 86400000 * 7), // 7 days in the future
+          dueAt: null
+        }
+      ];
+
+      const result = await submitProjectAssignment({
+        assignmentId: TEST_ASSIGNMENT_ID,
+        contentItemId: TEST_CONTENT_ITEM_ID,
+        batchId: TEST_BATCH_ID,
+        githubUrl: 'https://github.com/student/valid-repo'
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.code).toBe('NOT_YET_AVAILABLE');
+      }
+    });
   });
 });

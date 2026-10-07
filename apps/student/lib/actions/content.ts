@@ -50,9 +50,9 @@ export async function markLectureWatched(
       return { success: false, error: 'Content not found', code: 'NOT_FOUND' };
     }
 
-    // 3. Verify student entitlement to this content item
+    // 3. Verify student entitlement to this content item and release availability
     try {
-      await getContentItem(studentId, contentItemId);
+      await getContentItem(studentId, contentItemId, batchId);
     } catch {
       return { success: false, error: 'Content not found', code: 'NOT_FOUND' };
     }
@@ -61,20 +61,27 @@ export async function markLectureWatched(
     let verifiedBatchId: string | null = null;
     if (batchId && UUID_REGEX.test(batchId)) {
       const [enrollment] = await db
-        .select({ batchId: enrollments.batchId })
+        .select({ batchId: enrollments.batchId, status: enrollments.status })
         .from(enrollments)
         .where(
           and(
             eq(enrollments.studentId, studentId),
-            eq(enrollments.batchId, batchId),
-            sql`${enrollments.status} IN ('active', 'confirmed')`
+            eq(enrollments.batchId, batchId)
           )
         )
         .limit(1);
 
-      if (enrollment) {
-        verifiedBatchId = batchId;
+      if (!enrollment || (enrollment.status !== 'active' && enrollment.status !== 'confirmed')) {
+        return {
+          success: false,
+          error: enrollment?.status === 'completed'
+            ? 'This batch is completed and in read-only mode.'
+            : 'You do not have active entitlement to this batch.',
+          code: 'UNAUTHORIZED_BATCH'
+        };
       }
+
+      verifiedBatchId = batchId;
     }
 
     // 5. Check if completion is already recorded in activities

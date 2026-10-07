@@ -280,9 +280,27 @@ describe('Slice 5: Server-Side Entitlement Guards', () => {
   });
 
   it('assertBatchEntitlement succeeds when student is enrolled in target batch', async () => {
+    mockEnrollments[0].enrollmentStatus = 'active';
     const result = await assertBatchEntitlement(101, 'batch-101');
     expect(result.batchId).toBe('batch-101');
     expect(result.batchName).toBe('Full Stack Alpha');
+  });
+
+  it('assertBatchEntitlement allows completed enrollment for read-only viewing', async () => {
+    mockEnrollments = [
+      {
+        enrollmentId: 1,
+        enrollmentStatus: 'completed',
+        batchId: 'batch-101',
+        batchName: 'Full Stack Alpha',
+        programId: 10,
+        programName: 'Full Stack'
+      }
+    ];
+
+    const result = await assertBatchEntitlement(101, 'batch-101');
+    expect(result.batchId).toBe('batch-101');
+    expect(result.enrollmentStatus).toBe('completed');
   });
 
   it('assertBatchEntitlement triggers 404 notFound when student is not enrolled in batch (anti-probing)', async () => {

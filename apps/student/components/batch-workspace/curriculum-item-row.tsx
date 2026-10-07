@@ -164,6 +164,29 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
               {meta.label}
             </Badge>
+            {item.isRequired ? (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 px-1.5 border-amber-500/30 bg-amber-500/10 text-amber-300 font-medium"
+              >
+                Required
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 px-1.5 border-slate-700 bg-slate-800 text-slate-400 font-medium"
+              >
+                Optional
+              </Badge>
+            )}
+            {item.isArchived && (
+              <Badge
+                variant="outline"
+                className="text-[10px] py-0 px-1.5 border-zinc-700 bg-zinc-800/80 text-zinc-400 font-medium"
+              >
+                Archived
+              </Badge>
+            )}
             {item.metadata.topic && (
               <span className="text-[11px] text-slate-400 font-medium">
                 · {item.metadata.topic}
@@ -198,13 +221,19 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
       <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
         <div className="flex items-center gap-2">
           {item.isCompleted ? (
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-              <CheckCircle2 className="h-3 w-3" />
+            <span
+              className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400"
+              aria-label="Completed"
+            >
+              <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
               Completed
             </span>
           ) : item.isLocked ? (
-            <span className="flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400">
-              <Lock className="h-3 w-3" />
+            <span
+              className="flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400"
+              aria-label={item.availableFrom ? `Locked until ${new Date(item.availableFrom).toLocaleDateString()}` : 'Locked'}
+            >
+              <Lock className="h-3 w-3" aria-hidden="true" />
               Locked
             </span>
           ) : dueInfo ? (
@@ -216,8 +245,9 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
                   ? 'text-amber-400'
                   : 'text-slate-400'
               }`}
+              aria-label={dueInfo.isOverdue ? `Overdue deadline: ${dueInfo.text}` : dueInfo.text}
             >
-              {dueInfo.isOverdue && <AlertCircle className="h-3 w-3" />}
+              {dueInfo.isOverdue && <AlertCircle className="h-3 w-3" aria-hidden="true" />}
               {dueInfo.text}
             </span>
           ) : (

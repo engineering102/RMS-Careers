@@ -110,15 +110,23 @@ vi.mock('@rms/db', async (importOriginal) => {
 
           // If table is contentItems
           if (table === actual.contentItems) {
-            return {
-              innerJoin: (t2: any, onClause: any) => ({
-                where: (clause: any) => ({
-                  limit: () => {
-                    // Filter content item logic
-                    return Promise.resolve(mockContentItems);
-                  }
-                })
+            const joinHandler = () => ({
+              where: (clause: any) => ({
+                limit: () => {
+                  return Promise.resolve(mockContentItems);
+                }
               })
+            });
+            return {
+              innerJoin: joinHandler,
+              leftJoin: joinHandler
+            };
+          }
+
+          // If table is batchCurriculum
+          if (table === actual.batchCurriculum) {
+            return {
+              where: () => Promise.resolve(mockCurriculum)
             };
           }
 
@@ -315,6 +323,29 @@ describe('Slice 9: Video & Resource Player', () => {
 
       expect(item.relatedBatchContext).toBeNull();
     });
+
+    it('returns null relatedBatchContext when content item is not placed in the requested batch (multi-batch isolation)', async () => {
+      const secondBatchId = '33333333-3333-4333-8333-333333333333';
+      mockEnrollments.push({
+        id: 2,
+        studentId: 101,
+        programId: 1,
+        batchId: secondBatchId,
+        status: 'active'
+      });
+      mockBatches.push({
+        id: secondBatchId,
+        programId: 1,
+        name: 'Cohort Beta 2026',
+        startDate: new Date('2026-02-01'),
+        endDate: new Date('2026-07-31')
+      });
+
+      // validContentId is only placed in validBatchId, not in secondBatchId
+      const item = await getContentItem(101, validContentId, secondBatchId);
+
+      expect(item.relatedBatchContext).toBeNull();
+    });
   });
 
   describe('2. Content Types and Metadata Mapping', () => {
@@ -466,6 +497,43 @@ describe('Slice 9: Video & Resource Player', () => {
         expect(result.message).toBe('Already marked as completed');
       }
       expect(mockActivities.length).toBe(1); // No duplicate rows created
+    });
+
+    it('rejects completion and throws notFound when content is locked with a future availableFrom', async () => {
+      mockCurriculum = [
+        {
+          batchId: validBatchId,
+          contentItemId: validContentId,
+          availableFrom: new Date(Date.now() + 86400000 * 7) // 7 days in the future
+        }
+      ];
+
+      await expect(getContentItem(101, validContentId, validBatchId)).rejects.toThrow(
+        'NEXT_NOT_FOUND'
+      );
+
+      const actionRes = await markLectureWatched(validContentId, validBatchId);
+      expect(actionRes.success).toBe(false);
+      if (!actionRes.success) {
+        expect(actionRes.error).toBe('Content not found');
+      }
+    });
+
+    it('rejects completion when student enrollment in batch is completed (read-only)', async () => {
+      mockCurriculum = [
+        {
+          batchId: validBatchId,
+          contentItemId: validContentId,
+          availableFrom: new Date('2026-09-01')
+        }
+      ];
+      mockEnrollments[0].status = 'completed';
+
+      const actionRes = await markLectureWatched(validContentId, validBatchId);
+      expect(actionRes.success).toBe(false);
+      if (!actionRes.success) {
+        expect(actionRes.error).toBe('This batch is completed and in read-only mode.');
+      }
     });
   });
 });

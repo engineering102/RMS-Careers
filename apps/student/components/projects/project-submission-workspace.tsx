@@ -42,8 +42,8 @@ export function ProjectSubmissionWorkspace({
   const [isPending, startTransition] = useTransition();
 
   const status: ProjectSubmissionStatus | 'draft' = submission?.status || 'draft';
-  const isLocked = status === 'under_review' || status === 'approved';
-  const canSubmit = !isLocked;
+  const isLocked = status === 'under_review' || status === 'approved' || !assignment.isAvailable;
+  const canSubmit = !isLocked && assignment.isAvailable;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +135,22 @@ export function ProjectSubmissionWorkspace({
   return (
     <div className="space-y-8">
       {/* 1. Status Banner */}
+      {!assignment.isAvailable && (
+        <div className="p-4 sm:p-5 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-300 flex items-start gap-4">
+          <Lock className="h-6 w-6 shrink-0 mt-0.5 text-slate-400" />
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-slate-200">Assignment Locked</h4>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              This project assignment is not yet open for submission. It unlocks on{' '}
+              {assignment.availableFrom
+                ? new Date(assignment.availableFrom).toLocaleDateString()
+                : 'a scheduled date'}
+              .
+            </p>
+          </div>
+        </div>
+      )}
+
       {status === 'approved' && (
         <div className="p-4 sm:p-5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-emerald-300 flex items-start gap-4">
           <CheckCircle2 className="h-6 w-6 shrink-0 mt-0.5 text-emerald-400" />

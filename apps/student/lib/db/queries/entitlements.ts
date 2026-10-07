@@ -235,9 +235,11 @@ export async function requireStudentEntitlement(): Promise<StudentEntitlementCon
  */
 export async function assertBatchEntitlement(
   studentId: number,
-  batchId: string
+  batchId: string,
+  options?: { allowCompleted?: boolean }
 ): Promise<{
   enrollmentId: number;
+  enrollmentStatus: string;
   batchId: string;
   batchName: string;
   programId: number;
@@ -247,10 +249,16 @@ export async function assertBatchEntitlement(
     notFound();
   }
 
+  const allowCompleted = options?.allowCompleted ?? true;
+  const statusCondition = allowCompleted
+    ? sql`${enrollments.status} IN ('active', 'confirmed', 'completed')`
+    : sql`${enrollments.status} IN ('active', 'confirmed')`;
+
   try {
     const [row] = await db
       .select({
         enrollmentId: enrollments.id,
+        enrollmentStatus: enrollments.status,
         batchId: batches.id,
         batchName: batches.name,
         programId: programs.id,
@@ -263,7 +271,7 @@ export async function assertBatchEntitlement(
         and(
           eq(enrollments.studentId, studentId),
           eq(enrollments.batchId, batchId),
-          sql`${enrollments.status} IN ('active', 'confirmed')`
+          statusCondition
         )
       )
       .limit(1);
@@ -272,7 +280,14 @@ export async function assertBatchEntitlement(
       notFound();
     }
 
-    return row;
+    return {
+      enrollmentId: row.enrollmentId,
+      enrollmentStatus: row.enrollmentStatus || (row as any).status || 'active',
+      batchId: row.batchId,
+      batchName: row.batchName,
+      programId: row.programId,
+      programName: row.programName
+    };
   } catch (error: any) {
     if (error?.message === 'NEXT_NOT_FOUND' || error?.digest?.startsWith('NEXT_NOT_FOUND')) {
       throw error;
