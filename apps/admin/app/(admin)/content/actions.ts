@@ -8,6 +8,7 @@ import {
   updateContentItem,
   updateContentLifecycle,
   getProgramById,
+  getOrCreateQuizForContentItem,
   type ContentItemWithDetails
 } from '@/lib/db/queries';
 import {
@@ -98,6 +99,15 @@ export async function createContentAction(
       isPublished: data.isPublished,
       metadata
     });
+
+    // 5b. If content item is a quiz, ensure 1-to-1 canonical quiz record is provisioned
+    if (newItem.contentType === 'quiz') {
+      try {
+        await getOrCreateQuizForContentItem(newItem.id);
+      } catch (quizErr) {
+        console.warn('Could not auto-provision quiz row upon content creation:', quizErr);
+      }
+    }
 
     // 6. Invalidate content route cache
     revalidatePath('/content');

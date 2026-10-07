@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   FileText,
@@ -15,7 +16,8 @@ import {
   XCircle,
   ExternalLink,
   Layers,
-  Sparkles
+  Sparkles,
+  FileQuestion
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -718,6 +720,21 @@ export function ContentClient({
                         {/* Actions */}
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Quiz Workbench Shortcut for Quiz items */}
+                            {item.contentType === 'quiz' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                asChild
+                                className="h-8 w-8 p-0 text-violet-600 hover:text-violet-700 hover:bg-violet-500/10"
+                                title="Manage Quiz & Question Bank"
+                              >
+                                <Link href={`/content/${item.id}/quiz`}>
+                                  <FileQuestion className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            )}
+
                             {/* Edit Button */}
                             <Button
                               size="sm"
@@ -904,6 +921,32 @@ export function ContentClient({
                   />
                 </div>
               </div>
+
+              {/* Quiz Configuration Workbench Link for Quizzes */}
+              {editType === 'quiz' && (
+                <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-3 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      <FileQuestion className="h-4 w-4 text-violet-600" />
+                      Quiz & Question Bank Workbench
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Configure practice/formal mode, timing, passing grade, and question choices.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    asChild
+                    className="border-violet-500/30 text-violet-700 dark:text-violet-300 hover:bg-violet-500/10 shrink-0"
+                  >
+                    <Link href={`/content/${editingItem.id}/quiz`}>
+                      Open Quiz Workbench
+                    </Link>
+                  </Button>
+                </div>
+              )}
 
               <DialogFooter className="pt-4">
                 <Button
