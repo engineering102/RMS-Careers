@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
+import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { MobileNav } from './mobile-nav';
@@ -10,6 +10,7 @@ import type { NotificationItem } from '@/lib/types/notifications';
 
 interface DashboardShellProps {
   context: StudentEntitlementContext;
+  activeCohort?: StudentBatchItem | null;
   children: React.ReactNode;
   initialUnreadCount?: number;
   initialNotifications?: NotificationItem[];
@@ -17,6 +18,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({
   context,
+  activeCohort = null,
   children,
   initialUnreadCount = 0,
   initialNotifications = []
@@ -26,11 +28,12 @@ export function DashboardShell({
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden">
       {/* Desktop Sidebar */}
-      <Sidebar context={context} />
+      <Sidebar context={context} activeCohort={activeCohort} />
 
       {/* Mobile Drawer */}
       <MobileNav
         context={context}
+        activeCohort={activeCohort}
         open={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
       />
@@ -40,6 +43,7 @@ export function DashboardShell({
         {/* Top Header */}
         <Header
           context={context}
+          activeCohort={activeCohort}
           onOpenMobileNav={() => setMobileNavOpen(true)}
           initialUnreadCount={initialUnreadCount}
           initialNotifications={initialNotifications}

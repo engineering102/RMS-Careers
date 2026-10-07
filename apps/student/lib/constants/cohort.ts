@@ -1,0 +1,4 @@
+export const ACTIVE_COHORT_COOKIE_NAME = 'rms_active_cohort';
+export const COHORT_COOKIE_NAME = ACTIVE_COHORT_COOKIE_NAME;
+export const ACTIVE_COHORT_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days (2,592,000 seconds)
+export const COHORT_COOKIE_MAX_AGE = ACTIVE_COHORT_COOKIE_MAX_AGE;

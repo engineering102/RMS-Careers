@@ -1,14 +1,16 @@
 'use client';
 
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
-import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
+import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { signOutAction } from '@/lib/actions/auth';
+import { CohortSwitcher } from './cohort-switcher';
 
 import { NotificationBell } from './notification-bell';
 import type { NotificationItem } from '@/lib/types/notifications';
 
 interface HeaderProps {
   context: StudentEntitlementContext;
+  activeCohort?: StudentBatchItem | null;
   onOpenMobileNav: () => void;
   initialUnreadCount?: number;
   initialNotifications?: NotificationItem[];
@@ -16,12 +18,12 @@ interface HeaderProps {
 
 export function Header({
   context,
+  activeCohort = null,
   onOpenMobileNav,
   initialUnreadCount = 0,
   initialNotifications = []
 }: HeaderProps) {
   const student = context.student;
-  const primaryBatch = context.activeBatches[0];
 
   const initials = student?.fullName
     ? student.fullName
@@ -60,18 +62,13 @@ export function Header({
         </div>
       </div>
 
-      {/* Right: Batch Context Badge + Profile + Sign Out */}
+      {/* Right: Batch Context Switcher + Profile + Sign Out */}
       <div className="flex items-center gap-3">
-        {primaryBatch ? (
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
-            <span className="font-medium truncate max-w-[200px]">{primaryBatch.batchName}</span>
-          </div>
-        ) : (
-          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs text-amber-300">
-            <span>Pending Batch</span>
-          </div>
-        )}
+        <CohortSwitcher
+          activeBatches={context.activeBatches}
+          activeCohort={activeCohort}
+          variant="header"
+        />
 
         {/* Notification Bell */}
         <NotificationBell

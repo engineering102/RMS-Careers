@@ -1,6 +1,8 @@
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { cookies } from 'next/headers';
+import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentNotifications } from '@/lib/db/queries/notifications';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
+import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import type { NotificationItem } from '@/lib/types/notifications';
 
 export const metadata = {
@@ -15,6 +17,11 @@ export default async function DashboardLayout({
 }) {
   // Server-side entitlement guard asserts valid authenticated Student
   const context = await requireStudentEntitlement();
+
+  // Read active cohort cookie and resolve active cohort server-authoritatively
+  const cookieStore = await cookies();
+  const cookieBatchId = cookieStore.get(COHORT_COOKIE_NAME)?.value;
+  const activeCohort = resolveActiveCohort(context.activeBatches, { cookieBatchId });
 
   let initialNotifications: NotificationItem[] = [];
   let initialUnreadCount = 0;
@@ -32,6 +39,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       context={context}
+      activeCohort={activeCohort}
       initialNotifications={initialNotifications}
       initialUnreadCount={initialUnreadCount}
     >

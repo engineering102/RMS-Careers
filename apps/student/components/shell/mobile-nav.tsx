@@ -4,20 +4,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, LogOut, GraduationCap, Building2, CheckCircle2 } from 'lucide-react';
 import { STUDENT_NAV_ITEMS } from './nav-items';
-import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
+import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { signOutAction } from '@/lib/actions/auth';
+import { CohortSwitcher } from './cohort-switcher';
 import { cn } from '@/lib/utils';
 
 interface MobileNavProps {
   context: StudentEntitlementContext;
+  activeCohort?: StudentBatchItem | null;
   open: boolean;
   onClose: () => void;
 }
 
-export function MobileNav({ context, open, onClose }: MobileNavProps) {
+export function MobileNav({ context, activeCohort = null, open, onClose }: MobileNavProps) {
   const pathname = usePathname();
   const student = context.student;
-  const primaryBatch = context.activeBatches[0];
 
   if (!open) return null;
 
@@ -51,21 +52,27 @@ export function MobileNav({ context, open, onClose }: MobileNavProps) {
           </button>
         </div>
 
-        {/* Current Cohort Badge */}
+        {/* Current Cohort Switcher */}
         <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Cohort</p>
-          {primaryBatch ? (
-            <p className="mt-0.5 font-semibold text-slate-200 truncate">{primaryBatch.batchName}</p>
-          ) : (
-            <p className="mt-0.5 text-amber-400 font-medium">No Active Batch</p>
-          )}
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Cohort</p>
+          <CohortSwitcher
+            activeBatches={context.activeBatches}
+            activeCohort={activeCohort}
+            variant="sidebar"
+          />
         </div>
 
         {/* Navigation Items */}
         <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto" aria-label="Mobile Navigation">
           {STUDENT_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/overview' && pathname.startsWith(item.href));
+            const itemHref =
+              item.href === '/batches' && activeCohort
+                ? `/batches/${activeCohort.batchId}`
+                : item.href;
+            const isActive =
+              pathname === itemHref ||
+              (item.href !== '/overview' && pathname.startsWith(item.href));
 
             if (item.disabled) {
               return (

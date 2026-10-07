@@ -296,3 +296,61 @@ export async function assertBatchEntitlement(
     notFound();
   }
 }
+
+/**
+ * Resolves the active cohort for the student using the strict precedence hierarchy:
+ * 1. Explicit route parameter (/batches/[batchId])
+ * 2. Query parameter (?batchId=...)
+ * 3. Validated cookie (rms_active_cohort)
+ * 4. Fallback: first active batch (activeBatches[0])
+ * 5. null (no active batches)
+ *
+ * Security: Validates that candidate batch IDs belong strictly to the student's activeBatches.
+ */
+export function resolveActiveCohort(
+  batchesOrContext: StudentBatchItem[] | StudentEntitlementContext | null | undefined,
+  options?: {
+    routeBatchId?: string | null;
+    queryBatchId?: string | null;
+    cookieBatchId?: string | null;
+  }
+): StudentBatchItem | null {
+  if (!batchesOrContext) {
+    return null;
+  }
+
+  const activeBatches = Array.isArray(batchesOrContext)
+    ? batchesOrContext
+    : (batchesOrContext.activeBatches ?? []);
+
+  if (activeBatches.length === 0) {
+    return null;
+  }
+
+  // 1. Explicit route param
+  if (options?.routeBatchId) {
+    const match = activeBatches.find((b) => b.batchId === options.routeBatchId);
+    if (match) return match;
+  }
+
+  // 2. Query param
+  if (options?.queryBatchId) {
+    const match = activeBatches.find((b) => b.batchId === options.queryBatchId);
+    if (match) return match;
+  }
+
+  // 3. Validated cookie
+  if (options?.cookieBatchId) {
+    const match = activeBatches.find((b) => b.batchId === options.cookieBatchId);
+    if (match) return match;
+  }
+
+  // 4. Fallback: first active batch
+  return activeBatches[0] ?? null;
+}
+
+export {
+  ACTIVE_COHORT_COOKIE_NAME,
+  ACTIVE_COHORT_COOKIE_MAX_AGE
+} from '@/lib/constants/cohort';
+
