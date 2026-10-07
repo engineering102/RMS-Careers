@@ -1,4 +1,5 @@
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { cookies } from 'next/headers';
+import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentOverview } from '@/lib/db/queries/overview';
 import { getStudentActivityLedger } from '@/lib/db/queries/activities';
 import { getResumeLearningTarget } from '@/lib/services/resume-learning';
@@ -9,6 +10,7 @@ import { StreakCard } from '@/components/overview/streak-card';
 import { DeadlinesCard } from '@/components/overview/deadlines-card';
 import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
 import { ActivityLedger } from '@/components/overview/activity-ledger';
+import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { Building2, Calendar, BookOpen } from 'lucide-react';
 
 export const metadata = {
@@ -16,7 +18,13 @@ export const metadata = {
   description: 'Aggregated student learning feed, XP progress, daily streaks, deadlines, and activity heatmap.'
 };
 
-export default async function OverviewPage() {
+interface OverviewPageProps {
+  searchParams?: Promise<{
+    batchId?: string;
+  }>;
+}
+
+export default async function OverviewPage({ searchParams }: OverviewPageProps) {
   const context = await requireStudentEntitlement();
 
   if (!context.hasActiveEntitlement || !context.student) {
@@ -24,7 +32,17 @@ export default async function OverviewPage() {
   }
 
   const student = context.student;
-  const primaryBatch = context.activeBatches[0];
+  const cookieStore = await cookies();
+  const cookieBatchId = cookieStore.get(COHORT_COOKIE_NAME)?.value;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const queryBatchId = resolvedSearchParams?.batchId;
+
+  // Precedence: Query batchId > Validated Cookie > Fallback activeBatches[0]
+  const activeCohort = resolveActiveCohort(context.activeBatches, {
+    queryBatchId,
+    cookieBatchId
+  });
+
   const activeBatchIds = context.activeBatches.map((b) => b.batchId);
 
   // Fetch server-authoritative overview data, activity ledger, and resume target
@@ -57,13 +75,21 @@ export default async function OverviewPage() {
           </div>
 
           {/* Active Cohort Pill */}
-          {primaryBatch && (
+          {activeCohort && (
             <div className="flex flex-col sm:items-end justify-center rounded-xl border border-blue-800/40 bg-blue-950/40 p-4 shrink-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                Primary Cohort
-              </span>
-              <p className="text-sm font-semibold text-slate-100 mt-0.5">{primaryBatch.batchName}</p>
-              <p className="text-xs text-slate-400">{primaryBatch.programName}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
+                  Active Cohort
+                </span>
+                {context.activeBatches.length > 1 && (
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    ({context.activeBatches.length} Enrolled)
+                  </span>
+                )}
+              </div>
+              <p className="text-sm font-semibold text-slate-100 mt-0.5">{activeCohort.batchName}</p>
+              <p className="text-xs text-slate-400">{activeCohort.programName}</p>
             </div>
           )}
         </div>
