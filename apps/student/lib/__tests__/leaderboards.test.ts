@@ -23,6 +23,10 @@ let mockColleges: any[] = [];
 let mockStudents: any[] = [];
 let mockStudentStats: any[] = [];
 let mockActivities: any[] = [];
+let mockBatchAllTimeEntries: any[] = [];
+let mockBatchWeeklyEntries: any[] = [];
+let mockUserBatchXp = 0;
+let mockUserStreak = 0;
 
 vi.mock('@rms/db', async () => {
   const actual = await vi.importActual<typeof import('@rms/db')>('@rms/db');
@@ -41,7 +45,14 @@ vi.mock('@rms/db', async () => {
             };
           }
 
-          // Enrollments with innerJoin(batches)
+          // Activities fallback query (e.g. for user standing outside top 50)
+          if (table === actual.activities) {
+            return {
+              where: () => Promise.resolve([{ batchXp: mockUserBatchXp }])
+            };
+          }
+
+          // Enrollments with innerJoin(batches) or innerJoin(students)
           if (table === actual.enrollments) {
             const makeEnrollmentsChain = () => {
               const p = Promise.resolve(mockEnrollments);
@@ -50,11 +61,22 @@ vi.mock('@rms/db', async () => {
                 if (joinTable === actual.students) {
                   return {
                     leftJoin: () => ({
-                      leftJoin: () => ({
+                      leftJoin: (_actTable: any, condition: any) => ({
                         where: () => ({
                           groupBy: () => ({
                             orderBy: () => ({
-                              limit: () => Promise.resolve(mockActivities)
+                              limit: () => {
+                                function hasDateParam(obj: any): boolean {
+                                  if (!obj) return false;
+                                  if (typeof obj.value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(obj.value)) return true;
+                                  if (Array.isArray(obj.queryChunks)) {
+                                    return obj.queryChunks.some(hasDateParam);
+                                  }
+                                  return false;
+                                }
+                                const isWeekly = hasDateParam(condition);
+                                return Promise.resolve(isWeekly ? mockBatchWeeklyEntries : mockBatchAllTimeEntries);
+                              }
                             })
                           })
                         })
@@ -109,7 +131,9 @@ vi.mock('@rms/db', async () => {
                 })
               }),
               where: () => ({
-                limit: () => Promise.resolve(mockStudentStats)
+                limit: () => Promise.resolve([
+                  { currentStreak: mockUserStreak, totalXp: 320 }
+                ])
               })
             };
           }
@@ -123,7 +147,7 @@ vi.mock('@rms/db', async () => {
   };
 });
 
-describe('Slice 16: Leaderboards & Peer Rankings', () => {
+describe('Slice 16 & Phase 4: Scoped Leaderboards & Batch XP Isolation', () => {
   beforeEach(() => {
     mockColleges = [{ name: 'RMS Institute of Technology' }];
 
@@ -162,6 +186,47 @@ describe('Slice 16: Leaderboards & Peer Rankings', () => {
       }
     ];
 
+    mockBatchAllTimeEntries = [
+      {
+        studentId: PEER_STUDENT_ID_1,
+        fullName: 'Aarav Sharma',
+        branch: 'CSE',
+        xp: 450,
+        currentStreak: 7
+      },
+      {
+        studentId: TEST_STUDENT_ID,
+        fullName: 'Mohith Student',
+        branch: 'CSE',
+        xp: 320,
+        currentStreak: 4
+      },
+      {
+        studentId: PEER_STUDENT_ID_2,
+        fullName: 'Diya Patel',
+        branch: 'ECE',
+        xp: 210,
+        currentStreak: 2
+      }
+    ];
+
+    mockBatchWeeklyEntries = [
+      {
+        studentId: TEST_STUDENT_ID,
+        fullName: 'Mohith Student',
+        branch: 'CSE',
+        xp: 80,
+        currentStreak: 4
+      },
+      {
+        studentId: PEER_STUDENT_ID_1,
+        fullName: 'Aarav Sharma',
+        branch: 'CSE',
+        xp: 60,
+        currentStreak: 7
+      }
+    ];
+
     mockActivities = [
       {
         studentId: TEST_STUDENT_ID,
@@ -178,6 +243,9 @@ describe('Slice 16: Leaderboards & Peer Rankings', () => {
         currentStreak: 7
       }
     ];
+
+    mockUserBatchXp = 320;
+    mockUserStreak = 4;
   });
 
   describe('1. getStartOfWeekIst Calendar Arithmetic', () => {
@@ -197,7 +265,7 @@ describe('Slice 16: Leaderboards & Peer Rankings', () => {
   });
 
   describe('2. getBatchLeaderboard Query & Authorization', () => {
-    it('fetches all-time batch leaderboard and ranks students by total XP', async () => {
+    it('fetches all-time batch leaderboard and ranks students by batch-attributed XP', async () => {
       const data = await getBatchLeaderboard(
         TEST_STUDENT_ID,
         TEST_COLLEGE_ID,
@@ -237,7 +305,7 @@ describe('Slice 16: Leaderboards & Peer Rankings', () => {
       });
     });
 
-    it('fetches weekly batch leaderboard with weekly XP aggregation', async () => {
+    it('fetches weekly batch leaderboard with weekly batch-scoped XP aggregation', async () => {
       const data = await getBatchLeaderboard(
         TEST_STUDENT_ID,
         TEST_COLLEGE_ID,
@@ -275,8 +343,102 @@ describe('Slice 16: Leaderboards & Peer Rankings', () => {
     });
   });
 
-  describe('3. getCollegeLeaderboard Query & Scope', () => {
-    it('fetches college leaderboard scoped strictly to student college', async () => {
+  describe('3. Phase 4 Scoped Leaderboards Scenarios (A through F)', () => {
+    it('Scenario A & C: isolates Batch A XP from Batch B XP in all-time leaderboard', async () => {
+      // Student has 500 XP in Batch A, but 800 global XP across other batches
+      mockBatchAllTimeEntries = [
+        {
+          studentId: TEST_STUDENT_ID,
+          fullName: 'Mohith Student',
+          branch: 'CSE',
+          xp: 500, // Batch A attributed only
+          currentStreak: 5
+        }
+      ];
+
+      const data = await getBatchLeaderboard(
+        TEST_STUDENT_ID,
+        TEST_COLLEGE_ID,
+        TEST_BATCH_ID,
+        'all_time'
+      );
+
+      expect(data.entries[0].xp).toBe(500);
+      expect(data.userStanding.xp).toBe(500);
+    });
+
+    it('Scenario B: unscoped activities (batchId = null) do not inflate batch rankings', async () => {
+      // General DSA practice (batchId = null) gives global stats, but batch entries only sum batch XP
+      mockBatchAllTimeEntries = [
+        {
+          studentId: TEST_STUDENT_ID,
+          fullName: 'Mohith Student',
+          branch: 'CSE',
+          xp: 150, // Only 150 earned in Batch A, ignoring 50 DSA practice
+          currentStreak: 3
+        }
+      ];
+
+      const data = await getBatchLeaderboard(
+        TEST_STUDENT_ID,
+        TEST_COLLEGE_ID,
+        TEST_BATCH_ID,
+        'all_time'
+      );
+
+      expect(data.entries[0].xp).toBe(150);
+    });
+
+    it('Scenario D: student outside top 50 calculates batch-scoped individual standing', async () => {
+      // Top entries do not include TEST_STUDENT_ID
+      mockBatchAllTimeEntries = [
+        {
+          studentId: PEER_STUDENT_ID_1,
+          fullName: 'Aarav Sharma',
+          branch: 'CSE',
+          xp: 800,
+          currentStreak: 10
+        }
+      ];
+      mockUserBatchXp = 75; // Batch-attributed XP specifically
+      mockUserStreak = 2;
+
+      const data = await getBatchLeaderboard(
+        TEST_STUDENT_ID,
+        TEST_COLLEGE_ID,
+        TEST_BATCH_ID,
+        'all_time'
+      );
+
+      expect(data.userStanding.rank).toBeNull();
+      expect(data.userStanding.xp).toBe(75);
+      expect(data.userStanding.currentStreak).toBe(2);
+    });
+
+    it('Scenario E: weekly batch leaderboard isolates weekly activities by batchId', async () => {
+      // Weekly XP specifically earned in this batch
+      mockBatchWeeklyEntries = [
+        {
+          studentId: TEST_STUDENT_ID,
+          fullName: 'Mohith Student',
+          branch: 'CSE',
+          xp: 40,
+          currentStreak: 4
+        }
+      ];
+
+      const data = await getBatchLeaderboard(
+        TEST_STUDENT_ID,
+        TEST_COLLEGE_ID,
+        TEST_BATCH_ID,
+        'weekly'
+      );
+
+      expect(data.entries[0].xp).toBe(40);
+      expect(data.userStanding.xp).toBe(40);
+    });
+
+    it('Scenario F: college leaderboard preserves college-wide scope across all student XP', async () => {
       const data = await getCollegeLeaderboard(
         TEST_STUDENT_ID,
         TEST_COLLEGE_ID,

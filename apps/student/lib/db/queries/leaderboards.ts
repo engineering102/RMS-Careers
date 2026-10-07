@@ -62,32 +62,7 @@ export async function getBatchLeaderboard(
   }> = [];
 
   if (timeframe === 'all_time') {
-    // All-time batch leaderboard (Top 50)
-    rawEntries = await db
-      .select({
-        studentId: students.id,
-        fullName: students.fullName,
-        branch: students.branch,
-        xp: studentStats.totalXp,
-        currentStreak: studentStats.currentStreak
-      })
-      .from(studentStats)
-      .innerJoin(students, eq(students.id, studentStats.studentId))
-      .innerJoin(enrollments, eq(enrollments.studentId, students.id))
-      .where(
-        and(
-          eq(enrollments.batchId, batchId),
-          inArray(enrollments.status, ['active', 'confirmed'])
-        )
-      )
-      .orderBy(
-        desc(studentStats.totalXp),
-        desc(studentStats.currentStreak),
-        asc(students.id)
-      )
-      .limit(50);
-  } else {
-    // Weekly batch leaderboard (Top 50)
+    // All-time batch leaderboard (Top 50) — strictly batch-attributed XP
     rawEntries = await db
       .select({
         studentId: students.id,
@@ -103,6 +78,45 @@ export async function getBatchLeaderboard(
         activities,
         and(
           eq(activities.studentId, students.id),
+          eq(activities.batchId, batchId)
+        )
+      )
+      .where(
+        and(
+          eq(enrollments.batchId, batchId),
+          inArray(enrollments.status, ['active', 'confirmed'])
+        )
+      )
+      .groupBy(
+        students.id,
+        students.fullName,
+        students.branch,
+        studentStats.currentStreak
+      )
+      .orderBy(
+        desc(sql`coalesce(sum(${activities.xpAwarded}), 0)::int`),
+        desc(sql`coalesce(${studentStats.currentStreak}, 0)::int`),
+        asc(students.id)
+      )
+      .limit(50);
+  } else {
+    // Weekly batch leaderboard (Top 50) — strictly batch-attributed weekly XP
+    rawEntries = await db
+      .select({
+        studentId: students.id,
+        fullName: students.fullName,
+        branch: students.branch,
+        xp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`,
+        currentStreak: sql<number>`coalesce(${studentStats.currentStreak}, 0)::int`
+      })
+      .from(enrollments)
+      .innerJoin(students, eq(students.id, enrollments.studentId))
+      .leftJoin(studentStats, eq(studentStats.studentId, students.id))
+      .leftJoin(
+        activities,
+        and(
+          eq(activities.studentId, students.id),
+          eq(activities.batchId, batchId),
           gte(activities.activityDateIst, startOfWeekIst)
         )
       )
@@ -150,10 +164,22 @@ export async function getBatchLeaderboard(
       totalParticipants: entries.length
     };
   } else {
-    // Current user outside top 50: fetch individual metrics
-    const [userStats] = await db
+    // Current user outside top 50: fetch batch-attributed individual metrics
+    const [userBatchXpRow] = await db
       .select({
-        totalXp: studentStats.totalXp,
+        batchXp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`
+      })
+      .from(activities)
+      .where(
+        and(
+          eq(activities.studentId, studentId),
+          eq(activities.batchId, batchId),
+          timeframe === 'weekly' ? gte(activities.activityDateIst, startOfWeekIst) : sql`true`
+        )
+      );
+
+    const [userStreakRow] = await db
+      .select({
         currentStreak: studentStats.currentStreak
       })
       .from(studentStats)
@@ -162,8 +188,8 @@ export async function getBatchLeaderboard(
 
     userStanding = {
       rank: null,
-      xp: userStats?.totalXp ?? 0,
-      currentStreak: userStats?.currentStreak ?? 0,
+      xp: userBatchXpRow?.batchXp ?? 0,
+      currentStreak: userStreakRow?.currentStreak ?? 0,
       totalParticipants: entries.length
     };
   }
