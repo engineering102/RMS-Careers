@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { AnnouncementBar } from '@/components/homepage/announcement-bar';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+
+const GA_MEASUREMENT_ID = 'G-LXYJZEJ8QE';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.rms-careers.com'),
@@ -34,6 +37,10 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1
     }
+  },
+  verification: {
+    google: 'v33BR8a1AASR_xWCcbwGHTvGJ_8mtQ6t5D7nIgrM7Tw',
+    other: { 'msvalidate.01': 'CC61C87EC9F863C131A82061457EEAE6' }
   },
   icons: {
     icon: '/images/homepage/branding/favicon.ico',
@@ -100,6 +107,15 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
       </body>
     </html>
   );
