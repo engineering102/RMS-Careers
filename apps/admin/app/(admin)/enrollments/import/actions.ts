@@ -16,6 +16,7 @@ import { parseImportFile } from '@/lib/csv/parser';
 import { validateImportRows, type ValidatedImportRow } from '@/lib/csv/validator';
 import { generateCsvTemplate, generateErrorReportCsv } from '@/lib/csv/template';
 import { sendEnrollmentConfirmationEmail, sendStudentActivationEmail } from '@/lib/email';
+import { getStudentPortalUrl } from '@/lib/email/student-portal-url';
 import { revalidatePath } from 'next/cache';
 
 export interface ImportPreviewData {
@@ -300,7 +301,7 @@ export async function executeBulkImportAction(input: {
         try {
           // Send activation invitation only for newly provisioned students
           if (result.isNewStudent && result.activation) {
-            const studentPortalUrl = process.env.STUDENT_APP_URL || 'https://student.rms-careers.com';
+            const studentPortalUrl = getStudentPortalUrl();
             const activationResult = await sendStudentActivationEmail({
               studentName: result.student.fullName,
               studentEmail: result.student.email,

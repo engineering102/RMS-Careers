@@ -3,6 +3,7 @@ import 'server-only';
 import { db, notifications, students, users } from '@rms/db';
 import { eq } from 'drizzle-orm';
 import type { DomainEvent } from '@/lib/types/notifications';
+import { renderActivationLinkEmail, renderPasswordResetEmail } from '@/lib/email/account-emails';
 
 export interface EmailDispatchResult {
   sent: boolean;
@@ -44,6 +45,11 @@ async function resolveStudentIdentity(studentId: number): Promise<{ userId: stri
 export const inAppNotificationConsumer: DomainEventConsumer = {
   name: 'InAppNotificationConsumer',
   handle: async (event: DomainEvent) => {
+    // Account-link events are email-only; they carry raw tokens and must never be persisted.
+    if (event.type === 'ACTIVATION_LINK_REQUESTED' || event.type === 'PASSWORD_RESET_REQUESTED') {
+      return null;
+    }
+
     let targetUserId = 'userId' in event && event.userId ? event.userId : null;
 
     if (!targetUserId && 'studentId' in event && event.studentId) {
@@ -126,6 +132,8 @@ export const emailNotificationConsumer: DomainEventConsumer = {
   handle: async (event: DomainEvent): Promise<EmailDispatchResult> => {
     // Only critical events trigger email dispatches
     const isCritical =
+      event.type === 'ACTIVATION_LINK_REQUESTED' ||
+      event.type === 'PASSWORD_RESET_REQUESTED' ||
       event.type === 'STUDENT_ACTIVATED' ||
       event.type === 'PROJECT_REVIEWED' ||
       event.type === 'ASSESSMENT_DUE_SOON';
@@ -136,7 +144,8 @@ export const emailNotificationConsumer: DomainEventConsumer = {
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey || apiKey.trim() === '') {
-      // Graceful provider skip
+      // Graceful provider skip, but visible in logs (never includes tokens or links).
+      console.warn(`[EmailNotificationConsumer] RESEND_API_KEY not configured; skipped ${event.type} email.`);
       return { sent: false, reason: 'provider_not_configured' };
     }
 
@@ -154,8 +163,18 @@ export const emailNotificationConsumer: DomainEventConsumer = {
 
     let subject = '';
     let textContent = '';
+    let htmlContent: string | undefined;
 
-    if (event.type === 'STUDENT_ACTIVATED') {
+    if (event.type === 'ACTIVATION_LINK_REQUESTED' || event.type === 'PASSWORD_RESET_REQUESTED') {
+      const input = { name: event.name, token: event.rawToken, expiresAt: event.expiresAt };
+      const rendered =
+        event.type === 'ACTIVATION_LINK_REQUESTED'
+          ? renderActivationLinkEmail(input)
+          : renderPasswordResetEmail(input);
+      subject = rendered.subject;
+      textContent = rendered.text;
+      htmlContent = rendered.html;
+    } else if (event.type === 'STUDENT_ACTIVATED') {
       subject = 'Welcome to RMS Careers — Account Activated';
       textContent = 'Your student account is now fully active. Log in to start learning at https://student.rms-careers.com';
     } else if (event.type === 'PROJECT_REVIEWED') {
@@ -179,13 +198,17 @@ export const emailNotificationConsumer: DomainEventConsumer = {
           from: fromAddress,
           to: [recipientEmail],
           subject,
-          text: textContent
+          text: textContent,
+          ...(htmlContent ? { html: htmlContent } : {})
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[EmailNotificationConsumer] Resend API error:', errorText);
+        console.error(
+          `[EmailNotificationConsumer] Resend API error for ${event.type} (HTTP ${response.status}):`,
+          errorText
+        );
         return { sent: false, reason: 'failed', error: errorText };
       }
 

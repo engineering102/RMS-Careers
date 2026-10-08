@@ -149,3 +149,19 @@ When addressing any task in this codebase, follow this strict sequence:
 ```
 
 If a proposed change impacts database schemas, authentication boundaries, or multi-app routing, explain the rationale and confirm before proceeding.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues (`engineering102/RMS-Careers` via `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical triage roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context (`GLOSSARY-MAP.md` at root pointing to per-package and per-app glossaries, with ADRs in `docs/decisions/` and `docs/adr/`). See `docs/agents/domain.md`.

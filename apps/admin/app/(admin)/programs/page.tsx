@@ -1,4 +1,4 @@
-import { getProgramsWithCounts } from '@/lib/db/queries';
+import { getProgramsWithCounts, getColleges } from '@/lib/db/queries';
 import { ProgramsClient } from './programs-client';
 
 export const metadata = {
@@ -8,7 +8,10 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function ProgramsPage() {
-  const programsList = await getProgramsWithCounts();
+  const [programsList, collegesList] = await Promise.all([
+    getProgramsWithCounts(),
+    getColleges()
+  ]);
 
-  return <ProgramsClient initialPrograms={programsList} />;
+  return <ProgramsClient initialPrograms={programsList} colleges={collegesList} />;
 }

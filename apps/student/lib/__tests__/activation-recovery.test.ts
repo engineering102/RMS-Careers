@@ -162,7 +162,36 @@ vi.mock('@rms/db', async (importOriginal) => {
           })
         })
       }),
+      // Mirrors drizzle-orm/neon-http: interactive transactions are unsupported.
+      // Any flow that still calls db.transaction() must fail loudly in tests.
+      transaction: async () => {
+        throw new Error('No transactions support in neon-http driver');
+      }
+    }
+  };
+});
+
+// @rms/db/tx: the transactional client. Restores the in-memory tables when the callback throws,
+// mimicking BEGIN/ROLLBACK.
+vi.mock('@rms/db/tx', async () => {
+  const actual = await import('@rms/db');
+  const snapshot = () => ({
+    users: structuredClone(mockUsers),
+    students: structuredClone(mockStudents),
+    roles: structuredClone(mockUserRoles),
+    tokens: structuredClone(mockTokens)
+  });
+  const restore = (snap: ReturnType<typeof snapshot>) => {
+    mockUsers.splice(0, mockUsers.length, ...snap.users);
+    mockStudents.splice(0, mockStudents.length, ...snap.students);
+    mockUserRoles.splice(0, mockUserRoles.length, ...snap.roles);
+    mockTokens.splice(0, mockTokens.length, ...snap.tokens);
+  };
+
+  return {
+    dbTx: {
       transaction: async (cb: any) => {
+        const snap = snapshot();
         const tx = {
           select: (fields?: any) => ({
             from: (table: any) => ({
@@ -218,7 +247,12 @@ vi.mock('@rms/db', async (importOriginal) => {
             })
           })
         };
-        return cb(tx);
+        try {
+          return await cb(tx);
+        } catch (err) {
+          restore(snap);
+          throw err;
+        }
       }
     }
   };
@@ -366,6 +400,24 @@ describe('Slice 4: Student Account Activation Pipeline', () => {
     // 2nd activation fails
     const second = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
     expect(second.success).toBe(false);
+  });
+
+  it('rolls back the token consumption when the identity is ineligible (no student role)', async () => {
+    mockUserRoles = [];
+    const result = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
+    expect(result.success).toBe(false);
+    // The token was consumed inside the transaction, then the eligibility check threw.
+    expect(mockTokens[0].consumedAt).toBeNull();
+    expect(mockUsers[0].status).toBe('pending_activation');
+    expect(mockUsers[0].passwordHash).toBeNull();
+  });
+
+  it('rolls back when the user is not pending activation', async () => {
+    mockUsers[0].status = 'active';
+    const result = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
+    expect(result.success).toBe(false);
+    expect(mockTokens[0].consumedAt).toBeNull();
+    expect(mockUsers[0].passwordHash).toBeNull();
   });
 
   it('enforces anti-enumeration on activation resend', async () => {
@@ -531,6 +583,24 @@ describe('Slice 4: Self-Service Password Recovery Flow', () => {
       expect(result.error).toContain('at least 12 characters');
     }
     expect(mockTokens[0].consumedAt).toBeNull();
+  });
+
+  it('rolls back the token consumption when the identity is ineligible (suspended user)', async () => {
+    const oldHash = mockUsers[0].passwordHash;
+    mockUsers[0].status = 'suspended';
+    const result = await resetStudentPassword(rawResetToken, 'NewSecurePassword123!');
+    expect(result.success).toBe(false);
+    expect(mockTokens[0].consumedAt).toBeNull();
+    expect(mockUsers[0].passwordHash).toBe(oldHash);
+  });
+
+  it('rolls back when the student role is missing', async () => {
+    const oldHash = mockUsers[0].passwordHash;
+    mockUserRoles = [];
+    const result = await resetStudentPassword(rawResetToken, 'NewSecurePassword123!');
+    expect(result.success).toBe(false);
+    expect(mockTokens[0].consumedAt).toBeNull();
+    expect(mockUsers[0].passwordHash).toBe(oldHash);
   });
 
   it('prevents reset token replay / reuse after successful reset', async () => {

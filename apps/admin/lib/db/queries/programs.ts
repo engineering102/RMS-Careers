@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { db, programs, enrollments, type Program } from '@rms/db';
+import { db, programs, enrollments, batches, type Program } from '@rms/db';
 import { eq, ilike, desc, count, and, ne, sql } from 'drizzle-orm';
 
 export async function getPrograms(search?: string): Promise<Program[]> {
@@ -123,6 +123,7 @@ export async function createProgram(data: {
   description?: string;
   status?: 'draft' | 'active' | 'archived';
   capacity: number;
+  collegeId?: string | null;
   startDate?: Date | null;
   endDate?: Date | null;
 }): Promise<Program> {
@@ -134,6 +135,7 @@ export async function createProgram(data: {
       description: data.description || null,
       status: data.status || 'draft',
       capacity: data.capacity,
+      collegeId: data.collegeId || null,
       startDate: data.startDate || null,
       endDate: data.endDate || null
     })
@@ -151,6 +153,41 @@ export async function updateProgramStatus(
     .where(eq(programs.id, id))
     .returning();
   return updated || null;
+}
+
+/**
+ * Sets (or clears, with null) the college a program belongs to.
+ */
+export async function updateProgramCollege(
+  id: number,
+  collegeId: string | null
+): Promise<Program | null> {
+  const [updated] = await db
+    .update(programs)
+    .set({ collegeId })
+    .where(eq(programs.id, id))
+    .returning();
+  return updated || null;
+}
+
+/**
+ * Counts batches of a program that belong to a college other than `collegeId`.
+ * Batches require program.college_id === batch.college_id, so a program's college
+ * cannot change while such batches exist.
+ */
+export async function countProgramBatchesOutsideCollege(
+  programId: number,
+  collegeId: string | null
+): Promise<number> {
+  const rows = await db
+    .select({ count: count() })
+    .from(batches)
+    .where(
+      collegeId
+        ? and(eq(batches.programId, programId), ne(batches.collegeId, collegeId))
+        : eq(batches.programId, programId)
+    );
+  return rows[0]?.count ?? 0;
 }
 
 /**

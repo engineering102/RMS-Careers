@@ -13,6 +13,9 @@ importers:
       '@neondatabase/serverless':
         specifier: ^0.9.5
         version: 0.9.5
+      '@opennextjs/cloudflare':
+        specifier: ^1.20.8
+        version: 1.20.8(next@15.5.27(@types/node@20.17.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(wrangler@4.147.0(@types/node@20.17.6))
       '@radix-ui/react-dialog':
         specifier: ^1.1.4
         version: 1.1.23(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -134,12 +137,18 @@ importers:
       vitest:
         specifier: 2.0.0
         version: 2.0.0(@types/node@20.17.6)(terser@5.16.9)
+      wrangler:
+        specifier: ^4.147.0
+        version: 4.147.0(@types/node@20.17.6)
 
   apps/student:
     dependencies:
       '@neondatabase/serverless':
         specifier: ^0.9.5
         version: 0.9.5
+      '@opennextjs/cloudflare':
+        specifier: ^1.20.8
+        version: 1.20.8(next@15.5.27(@types/node@20.17.6)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(wrangler@4.147.0(@types/node@20.17.6))
       '@radix-ui/react-dialog':
         specifier: ^1.1.4
         version: 1.1.23(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -219,12 +228,18 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.19(tsx@4.23.15)(yaml@2.9.1))
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
       typescript:
         specifier: 5.7.2
         version: 5.7.2
       vitest:
         specifier: 2.0.0
         version: 2.0.0(@types/node@20.17.6)(terser@5.16.9)
+      wrangler:
+        specifier: ^4.147.0
+        version: 4.147.0(@types/node@20.17.6)
 
   apps/web:
     dependencies:

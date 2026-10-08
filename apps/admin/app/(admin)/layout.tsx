@@ -6,7 +6,8 @@ import {
   ClipboardList,
   FileText,
   PanelLeft,
-  Settings
+  Settings,
+  Building2
 } from 'lucide-react';
 
 import {
@@ -24,23 +25,27 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { auth } from '@/lib/auth';
 import { User } from './user';
 import Providers from './providers';
 import { NavItem } from './nav-item';
 import { SearchInput } from './search';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+  const isSuperAdmin = session?.user?.role === 'super_admin';
+
   return (
     <Providers>
       <main className="flex min-h-screen w-full flex-col bg-muted/40">
-        <DesktopNav />
+        <DesktopNav isSuperAdmin={isSuperAdmin} />
         <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-            <MobileNav />
+            <MobileNav isSuperAdmin={isSuperAdmin} />
             <AdminBreadcrumb />
             <SearchInput />
             <User />
@@ -54,7 +59,7 @@ export default function AdminLayout({
   );
 }
 
-function DesktopNav() {
+function DesktopNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
@@ -69,6 +74,12 @@ function DesktopNav() {
         <NavItem href="/programs" label="Programs">
           <BookOpen className="h-5 w-5" />
         </NavItem>
+
+        {isSuperAdmin && (
+          <NavItem href="/colleges" label="Colleges">
+            <Building2 className="h-5 w-5" />
+          </NavItem>
+        )}
 
         <NavItem href="/batches" label="Batches">
           <Layers className="h-5 w-5" />
@@ -100,7 +111,7 @@ function DesktopNav() {
   );
 }
 
-function MobileNav() {
+function MobileNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -128,6 +139,15 @@ function MobileNav() {
             <BookOpen className="h-5 w-5" />
             Programs
           </Link>
+          {isSuperAdmin && (
+            <Link
+              href="/colleges"
+              className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <Building2 className="h-5 w-5" />
+              Colleges
+            </Link>
+          )}
           <Link
             href="/batches"
             className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"

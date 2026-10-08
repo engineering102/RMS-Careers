@@ -1,4 +1,6 @@
-# CLAUDE.md — RMS Careers Engineering Instructions
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 This document is the authoritative engineering instruction guide for **Claude Code** working inside the **RMS Careers** repository.
 
@@ -19,7 +21,8 @@ The repository is structured as a **pnpm monorepo** with strict surface separati
 ```text
 RMS-Careers/
 ├── apps/
-│   ├── web/        # Public Corporate Website (www.rms-careers.com, port 3001)
+│   ├── web/        # Public Corporate Website (www.rms-careers.com, port 3001; deployed to Cloudflare via OpenNext)
+│   ├── student/    # Authenticated Student Learning Portal (student.rms-careers.com, port 3002)
 │   └── admin/      # Institutional Control Plane & Admin Portal (admin.rms-careers.com, port 3000)
 ├── packages/
 │   ├── db/         # @rms/db — Drizzle ORM schema, Neon PostgreSQL client, migrations
@@ -28,7 +31,6 @@ RMS-Careers/
 ```
 
 ### Future Planned Surfaces:
-- `apps/student`: Authenticated Student Learning Portal (`student.rms-careers.com`)
 - `apps/tutor`: Authenticated Tutor Evaluation Workbench (`tutor.rms-careers.com`)
 
 ### Canonical Domain Architecture:
@@ -38,6 +40,16 @@ RMS-Careers/
 - **Admin Portal**: `https://admin.rms-careers.com`
 - **CRITICAL**: The hyphenated domain (`rms-careers.com`) is mandatory. Never introduce `rmscareers.com`.
 - **Surface Isolation**: Wildcard domain cookies (`.rms-careers.com`) and shared authentication across portals are **strictly prohibited**. Each application maintains independent session boundaries.
+
+### Cross-App Data Flow
+- All apps share one Neon database through `@rms/db` (`packages/db/src/schema.ts` is the single schema; `index.ts` exports `db` plus tables). Admin writes the institutional data (colleges, batches, students, content, assessments); the student portal reads it and writes student activity.
+- Each app imports `@rms/db` / `@rms/auth` directly as workspace packages and uses an `@/` path alias rooted at the app directory.
+
+### Student Portal (`apps/student`) Structure
+- **Auth**: Its own Auth.js instance (`lib/auth.ts` + edge-safe `lib/auth/config.ts`), credentials-only, `role: 'student'`, with a dedicated `AUTH_SECRET` that must never be shared with admin/tutor. `middleware.ts` protects everything except `api`, `login`, `activate`, `forgot-password`, `reset-password`, `resend-activation` — update the matcher when adding public routes.
+- **Layering**: `lib/actions/*` (Server Actions) → `lib/services/*` (cross-cutting logic, e.g. activity rewards, resume learning) → `lib/db/queries/*` (server-only Drizzle queries). Shared shapes live in `lib/types/*`.
+- **Multi-batch / cohort model**: A student can belong to several batches. The active cohort is persisted in the `rms_active_cohort` cookie (`lib/constants/cohort.ts`) and resolved server-side; leaderboards, deadlines, overview, and progress are scoped to batch-attributed activity. See `docs/specs/phase-4-multi-batch-alignment.md`.
+- **Domain events**: `lib/events/dispatcher.ts` fans domain events out to consumers (notifications rows, optional email; email reports `provider_not_configured` rather than failing when unset).
 
 ---
 
@@ -53,9 +65,10 @@ pnpm install
 # Start development servers
 pnpm dev:admin            # Runs @rms/admin on http://localhost:3000 (Turbopack)
 pnpm dev:web              # Runs @rms/web on http://localhost:3001
+pnpm dev:student          # Runs @rms/student on http://localhost:3002
 
 # Execute tests across all packages
-pnpm test                 # Runs Vitest across apps/web, apps/admin, packages/auth
+pnpm test                 # Runs Vitest in every workspace that defines `test` (web, admin, student, auth)
 
 # Run TypeScript type checking
 pnpm typecheck            # Runs tsc --noEmit across all workspaces
@@ -65,6 +78,7 @@ pnpm build                # Builds all apps in apps/* via Next.js
 
 # Database administration
 pnpm admin:seed           # Seeds initial Super Administrator account into PostgreSQL
+pnpm student:seed         # Seeds demo student data (apps/student/scripts/seed-student.ts)
 ```
 
 ### Scoped Package Commands
@@ -73,17 +87,30 @@ pnpm admin:seed           # Seeds initial Super Administrator account into Postg
 pnpm --filter @rms/admin test
 pnpm --filter @rms/web test
 pnpm --filter @rms/auth test
+pnpm --filter @rms/student test
+
+# Single test file / single test (Vitest; tests live in lib/__tests__/*.test.ts)
+pnpm --filter @rms/student exec vitest run lib/__tests__/cohort.test.ts
+pnpm --filter @rms/admin exec vitest run -t "test name substring"
 
 # Package-specific type checking
 pnpm --filter @rms/admin typecheck
 pnpm --filter @rms/web typecheck
+pnpm --filter @rms/student typecheck
 pnpm --filter @rms/db typecheck
 
 # Database migrations & tools (packages/db)
 pnpm --filter @rms/db db:generate    # Generate migration from schema changes
 pnpm --filter @rms/db db:migrate     # Apply migrations to database
 pnpm --filter @rms/db db:studio      # Open Drizzle Studio visual editor
+pnpm --filter @rms/db db:push        # Push schema directly (avoid for shared DBs; prefer generate + migrate)
+
+# Cloudflare (apps/web only, via @opennextjs/cloudflare + wrangler.jsonc)
+pnpm --filter @rms/web preview       # Build with OpenNext and preview locally in workerd
+pnpm --filter @rms/web deploy        # Build and deploy to Cloudflare (outward-facing — confirm first)
 ```
+
+`packages/db/drizzle.config.ts` loads `POSTGRES_URL` from `packages/db/.env.local`, then falls back to `apps/admin/.env.local`, then `.env`.
 
 ---
 
@@ -93,7 +120,7 @@ pnpm --filter @rms/db db:studio      # Open Drizzle Studio visual editor
 - **Framework**: Next.js 15 (App Router, React 19, Server Components & Server Actions)
 - **Styling**: Tailwind CSS + Vanilla CSS variables for dark/light themes. `clsx` and `tailwind-merge` for class composition.
 - **ORM & Database**: Drizzle ORM (`drizzle-orm/neon-http`) with `@neondatabase/serverless` PostgreSQL.
-- **Authentication**: Auth.js (`next-auth` v5 beta) with database credentials and GitHub OAuth in `@rms/admin`.
+- **Authentication**: Auth.js (`next-auth` v5 beta) — database credentials and GitHub OAuth in `@rms/admin`; credentials-only in `@rms/student`.
 - **Validation**: Zod v3 (`zod` and `drizzle-zod`).
 - **Icons**: `lucide-react`.
 - **Testing**: Vitest v2.

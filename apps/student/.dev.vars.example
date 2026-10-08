@@ -1,0 +1,12 @@
+# Local `pnpm --filter @rms/student preview` (Cloudflare workerd) reads secrets from apps/student/.dev.vars.
+# Copy this file to .dev.vars and fill in real values. .dev.vars is gitignored.
+# Production secrets are set with `wrangler secret put`, never committed.
+POSTGRES_URL=""
+# Isolated from Admin/Tutor. Generate with: openssl rand -base64 32
+AUTH_SECRET=""
+# Optional: without RESEND_API_KEY, activation/reset emails report provider_not_configured.
+RESEND_API_KEY=""
+EMAIL_FROM=""
+# Production value (also set in wrangler.jsonc vars): https://student.rms-careers.com
+# Local preview serves http://localhost:8787, so keep this pointing at the local origin there.
+STUDENT_APP_URL="http://localhost:8787"

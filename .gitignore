@@ -38,3 +38,10 @@ next-env.d.ts
 
 # scratch
 scratch/
+
+# cloudflare / opennext
+apps/*/.open-next/
+.dev.vars*
+!.dev.vars.example
+!apps/*/.dev.vars.example
+.wrangler/

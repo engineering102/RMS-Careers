@@ -8,6 +8,7 @@ import {
 } from '@/lib/db';
 import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
 import { sendEnrollmentConfirmationEmail, sendStudentActivationEmail } from '@/lib/email';
+import { getStudentPortalUrl } from '@/lib/email/student-portal-url';
 import { revalidatePath } from 'next/cache';
 
 const phoneRegex = /^(?:\+?91[\-\s]?)?[6-9]\d{9}$/;
@@ -160,14 +161,17 @@ export async function submitStudentEnrollment(
 
     // 6. Post-commit: Activation email dispatch (only if new activation token was generated)
     if (activation) {
-      const studentPortalUrl = process.env.STUDENT_APP_URL || 'https://student.rms-careers.com';
+      const studentPortalUrl = getStudentPortalUrl();
       try {
-        await sendStudentActivationEmail({
+        const activationResult = await sendStudentActivationEmail({
           studentName: student.fullName,
           studentEmail: student.email,
           activationUrl: new URL(`/activate?token=${activation.rawToken}`, studentPortalUrl).toString(),
           expiresAt: activation.expiresAt
         });
+        if (!activationResult.success) {
+          console.error('[Action] Activation email not sent:', activationResult.reason, activationResult.error ?? '');
+        }
       } catch (emailError) {
         console.error('Student activation email dispatch failed after provisioning:', emailError);
       }

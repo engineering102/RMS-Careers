@@ -9,7 +9,9 @@
     "build": "pnpm -r --filter \"./apps/*\" build",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r typecheck",
-    "admin:seed": "pnpm --filter @rms/admin admin:seed"
+    "admin:seed": "pnpm --filter @rms/admin admin:seed",
+    "student:seed": "pnpm --filter @rms/student student:seed",
+    "db:seed:student": "pnpm --filter @rms/student student:seed"
   },
   "packageManager": "pnpm@9.15.4"
 }

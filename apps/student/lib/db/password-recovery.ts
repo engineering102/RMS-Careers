@@ -1,9 +1,11 @@
 import 'server-only';
 
 import { db, accountTokens, userRoles, users, students } from '@rms/db';
+import { dbTx } from '@rms/db/tx';
 import { generateToken, hashPassword, hashToken, hasRole } from '@rms/auth';
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import { checkRateLimit } from '../rate-limit';
+import { dispatchDomainEvent } from '../events/dispatcher';
 
 export type PasswordRecoveryRequestResult =
   | { success: true; message: string }
@@ -99,6 +101,25 @@ export async function requestPasswordRecovery(
 
         if (process.env.NODE_ENV === 'development') {
           console.info(`[Password Recovery Dev] Reset link for ${user.email}: /reset-password?token=${rawToken}`);
+        }
+
+        // Post-commit and best-effort: the token is already committed, so a delivery failure
+        // must never fail the request or reveal whether the account exists.
+        try {
+          const results = await dispatchDomainEvent({
+            type: 'PASSWORD_RESET_REQUESTED',
+            email: user.email,
+            name: undefined,
+            rawToken,
+            expiresAt
+          });
+          const emailResult = results.find((r) => r.consumer === 'EmailNotificationConsumer');
+          const outcome = emailResult?.result as { sent?: boolean; reason?: string } | undefined;
+          if (!emailResult?.success || !outcome?.sent) {
+            console.error('[Password Recovery] Email not sent:', outcome?.reason ?? 'consumer_error');
+          }
+        } catch (dispatchErr) {
+          console.error('[Password Recovery] Email dispatch error:', dispatchErr instanceof Error ? dispatchErr.message : 'unknown');
         }
       }
     }
@@ -222,7 +243,7 @@ export async function resetStudentPassword(
     const passwordHash = await hashPassword(newPassword);
     const now = new Date();
 
-    return await db.transaction(async (tx) => {
+    return await dbTx.transaction(async (tx) => {
       // 1. Atomic compare-and-swap consumption
       const consumed = await tx
         .update(accountTokens)

@@ -364,7 +364,13 @@ vi.mock('@rms/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@rms/db')>();
   return {
     ...actual,
-    db: mockDb,
+    // Mirrors drizzle-orm/neon-http: the root client cannot run transactions.
+    db: {
+      ...mockDb,
+      transaction: async () => {
+        throw new Error('No transactions support in neon-http driver');
+      }
+    },
     students: { name: 'students', _: { name: 'students' } },
     enrollments: { name: 'enrollments', _: { name: 'enrollments' } },
     users: { name: 'users', _: { name: 'users' } },
@@ -372,6 +378,9 @@ vi.mock('@rms/db', async (importOriginal) => {
     accountTokens: { name: 'account_tokens', _: { name: 'account_tokens' } }
   };
 });
+
+// @rms/db/tx: the transactional client used by the orchestration service by default.
+vi.mock('@rms/db/tx', () => ({ dbTx: mockDb }));
 
 vi.mock('../db/queries/students', () => ({
   findStudentByEmail: vi.fn().mockImplementation(async (email: string, client: any) => {
@@ -724,6 +733,41 @@ describe('Phase 3.1 — Enrollment Orchestration Service & Transaction Boundarie
       // No extra roles or tokens
       expect(dbState.userRoles).toHaveLength(0);
       expect(dbState.accountTokens).toHaveLength(0);
+    });
+  });
+
+  describe('5a. Transaction failures are never converted into non-atomic execution', () => {
+    it('surfaces a driver "no transactions" error and performs no writes', async () => {
+      const writes: string[] = [];
+      const neonHttpLikeClient: any = new Proxy(
+        {
+          transaction: async () => {
+            throw new Error('No transactions support in neon-http driver');
+          }
+        },
+        {
+          get(target: any, prop) {
+            if (prop in target) return target[prop];
+            // Any direct statement on the client would be a non-atomic write/read.
+            writes.push(String(prop));
+            throw new Error(`unexpected direct client use: ${String(prop)}`);
+          },
+          has: (target, prop) => prop in target
+        }
+      );
+
+      const result = await createEnrollmentWithStudentProvisioning(
+        { programId: 1, student: sampleStudentInput },
+        neonHttpLikeClient
+      );
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error).toBe('database_error');
+      expect(writes).toEqual([]);
+      expect(dbState.students).toHaveLength(0);
+      expect(dbState.enrollments).toHaveLength(0);
+      expect(dbState.users).toHaveLength(0);
     });
   });
 

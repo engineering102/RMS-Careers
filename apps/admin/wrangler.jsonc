@@ -1,0 +1,42 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "rms-admin",
+    "main": ".open-next/worker.js",
+    "compatibility_date": "2026-10-04",
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+    },
+    "routes": [
+        {
+            "pattern": "admin.rms-careers.com",
+            "custom_domain": true
+        }
+    ],
+    "services": [
+        {
+            "binding": "WORKER_SELF_REFERENCE",
+            "service": "rms-admin"
+        }
+    ],
+    // Workers Paid. Admin hashes with bcryptjs (12 rounds, ~350 ms CPU each): admin login, and one
+    // placeholder hash per NEW student in bulk enrollment import (sequential, one request).
+    // 300000 ms is the Paid-plan maximum; lower it once import volume is known.
+    "limits": {
+        "cpu_ms": 300000
+    },
+    // Non-secret configuration.
+    "vars": {
+        "STUDENT_APP_URL": "https://student.rms-careers.com",
+        "EMAIL_LOGO_URL": "https://www.rms-careers.com/rms-logo.jpg"
+    },
+    // Secrets are never committed. Set with `wrangler secret put <NAME>` (or the dashboard).
+    // Optional: RESEND_API_KEY, EMAIL_FROM (email is skipped with provider_not_configured when unset).
+    "secrets": {
+        "required": ["POSTGRES_URL", "AUTH_SECRET", "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET"]
+    },
+    "observability": {
+        "enabled": true
+    }
+}

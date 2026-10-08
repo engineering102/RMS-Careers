@@ -1,0 +1,29 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "rms-web",
+    "main": ".open-next/worker.js",
+    "compatibility_date": "2026-10-04",
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+    },
+    "routes": [
+        {
+            "pattern": "www.rms-careers.com",
+            "custom_domain": true
+        }
+    ],
+    "services": [
+        {
+            "binding": "WORKER_SELF_REFERENCE",
+            "service": "rms-web"
+        }
+    ],
+    "secrets": {
+        "required": ["POSTGRES_URL"]
+    },
+    "observability": {
+        "enabled": true
+    }
+}

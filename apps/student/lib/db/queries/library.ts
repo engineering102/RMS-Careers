@@ -18,6 +18,10 @@ export type {
   LibraryQueryResult
 };
 
+/** Display fallbacks for program-independent (central) content. */
+export const DEFAULT_PROGRAM_NAME = 'RMS Careers';
+export const DEFAULT_PROGRAM_CODE = 'RMS';
+
 export const ALL_CONTENT_TYPES: ContentType[] = [
   'lecture',
   'notes',
@@ -175,7 +179,8 @@ export async function getLibraryItems(
         updatedAt: contentItems.updatedAt
       })
       .from(contentItems)
-      .innerJoin(programs, eq(programs.id, contentItems.programId))
+      // leftJoin: content_items.program_id is nullable (central content is placed via batch_curriculum)
+      .leftJoin(programs, eq(programs.id, contentItems.programId))
       .where(finalWhereClause)
       .orderBy(desc(contentItems.createdAt), asc(contentItems.title))
       .limit(pageSize)
@@ -212,8 +217,8 @@ export async function getLibraryItems(
       return {
         id: r.id,
         programId: r.programId,
-        programName: r.programName,
-        programCode: r.programCode,
+        programName: r.programName ?? DEFAULT_PROGRAM_NAME,
+        programCode: r.programCode ?? DEFAULT_PROGRAM_CODE,
         title: r.title,
         slug: r.slug,
         contentType: r.contentType as ContentType,

@@ -31,9 +31,23 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { EmptyState } from '@/components/admin/empty-state';
-import { createProgramAction, updateProgramStatusAction } from './actions';
+import {
+  createProgramAction,
+  updateProgramStatusAction,
+  updateProgramCollegeAction
+} from './actions';
+import { selectableColleges } from '@/lib/utils/college';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils/format-date';
+
+interface CollegeOption {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
+}
+
+const NO_COLLEGE = '__none__';
 
 interface ProgramItem {
   id: number;
@@ -42,6 +56,7 @@ interface ProgramItem {
   description: string | null;
   status: 'draft' | 'active' | 'archived';
   capacity: number;
+  collegeId: string | null;
   startDate: Date | null;
   endDate: Date | null;
   createdAt: Date;
@@ -49,7 +64,13 @@ interface ProgramItem {
   remainingCapacity?: number;
 }
 
-export function ProgramsClient({ initialPrograms }: { initialPrograms: ProgramItem[] }) {
+export function ProgramsClient({
+  initialPrograms,
+  colleges
+}: {
+  initialPrograms: ProgramItem[];
+  colleges: CollegeOption[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -68,6 +89,15 @@ export function ProgramsClient({ initialPrograms }: { initialPrograms: ProgramIt
       toast.success(`Program status updated to ${status}`);
     } else {
       toast.error(res.error || 'Failed to update status');
+    }
+  };
+
+  const handleCollegeChange = async (id: number, value: string) => {
+    const res = await updateProgramCollegeAction(id, value === NO_COLLEGE ? null : value);
+    if (res.success) {
+      toast.success('Program college updated');
+    } else {
+      toast.error(res.error || 'Failed to update college');
     }
   };
 
@@ -157,6 +187,24 @@ export function ProgramsClient({ initialPrograms }: { initialPrograms: ProgramIt
                     name="description"
                     placeholder="Brief description of the program"
                   />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="collegeId" className="text-sm font-medium">
+                    College
+                  </label>
+                  <Select name="collegeId" defaultValue={NO_COLLEGE}>
+                    <SelectTrigger id="collegeId">
+                      <SelectValue placeholder="No college" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_COLLEGE}>No college (unassigned)</SelectItem>
+                      {selectableColleges(colleges).map((col) => (
+                        <SelectItem key={col.id} value={col.id}>
+                          {col.name} ({col.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="grid gap-2">
@@ -257,6 +305,26 @@ export function ProgramsClient({ initialPrograms }: { initialPrograms: ProgramIt
                       />
                     </div>
                   )}
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-muted-foreground">College:</span>
+                    <Select
+                      defaultValue={prog.collegeId ?? NO_COLLEGE}
+                      onValueChange={(val) => handleCollegeChange(prog.id, val)}
+                    >
+                      <SelectTrigger className="h-7 w-[170px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_COLLEGE}>No college</SelectItem>
+                        {selectableColleges(colleges, prog.collegeId).map((col) => (
+                          <SelectItem key={col.id} value={col.id}>
+                            {col.name}
+                            {col.isActive ? '' : ' (inactive)'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {prog.startDate && (
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">Start Date:</span>

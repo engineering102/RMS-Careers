@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { db, enrollments, students, programs, type Enrollment, type DbClient } from '@rms/db';
+import { db, enrollments, students, programs, type Enrollment } from '@rms/db';
+import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { eq, desc, count, and, ne, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
 
 export interface DetailedEnrollment {
@@ -106,7 +107,7 @@ export async function getEnrollmentSummaryStats(): Promise<EnrollmentSummaryStat
 export async function checkExistingEnrollment(
   studentId: number,
   programId: number,
-  client: DbClient = db,
+  client: AnyDbClient = db,
   batchId?: string | null
 ): Promise<Enrollment | null> {
   try {
@@ -142,7 +143,7 @@ export async function checkExistingEnrollment(
 export async function createEnrollmentRecord(
   studentId: number,
   programId: number,
-  client: DbClient = db,
+  client: AnyDbClient = db,
   batchId?: string | null
 ): Promise<Enrollment> {
   const [created] = await client
@@ -449,7 +450,7 @@ export async function transferEnrollment(
   enrollmentId: number,
   newBatchId: string
 ): Promise<{ previousEnrollment: Enrollment; newEnrollment: Enrollment }> {
-  return await db.transaction(async (tx) => {
+  return await dbTx.transaction(async (tx) => {
     // 1. Fetch current enrollment
     const [current] = await tx
       .select()

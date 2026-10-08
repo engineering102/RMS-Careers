@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { db, studentStats, type Student, type Enrollment, type DbClient } from '@rms/db';
+import { studentStats, type Student, type Enrollment } from '@rms/db';
+import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { findStudentByEmail, createOrUpdateStudent } from '../db/queries/students';
 import { checkExistingEnrollment, createEnrollmentRecord } from '../db/queries/enrollments';
 import {
@@ -81,13 +82,13 @@ export type CreateEnrollmentWithProvisioningResult =
  */
 export async function createEnrollmentWithStudentProvisioning(
   input: CreateEnrollmentWithProvisioningInput,
-  client: DbClient = db
+  client: AnyDbClient = dbTx
 ): Promise<CreateEnrollmentWithProvisioningResult> {
   const { programId, batchId, student: studentData } = input;
   const cleanEmail = studentData.email.trim().toLowerCase();
 
   try {
-    const executeInTx = async (tx: DbClient): Promise<EnrollmentWithProvisioningSuccess> => {
+    const executeInTx = async (tx: AnyDbClient): Promise<EnrollmentWithProvisioningSuccess> => {
       // 1. Check if student already exists before insert/update to accurately track new vs reused
       const existingStudent = await findStudentByEmail(cleanEmail, tx);
       const isNewStudent = !existingStudent;
@@ -104,17 +105,15 @@ export async function createEnrollmentWithStudentProvisioning(
 
       // If student is associated with a college, ensure student_stats row exists atomically
       if (student.collegeId) {
-        try {
-          await tx
-            .insert(studentStats)
-            .values({
-              studentId: student.id,
-              collegeId: student.collegeId
-            })
-            .onConflictDoNothing();
-        } catch {
-          // Safe fallback for mock client environments
-        }
+        // onConflictDoNothing already tolerates an existing row. Do NOT swallow other errors:
+        // a failed statement aborts the Postgres transaction and must roll everything back.
+        await tx
+          .insert(studentStats)
+          .values({
+            studentId: student.id,
+            collegeId: student.collegeId
+          })
+          .onConflictDoNothing();
       }
 
       // 3. Duplicate enrollment check INSIDE the transaction
@@ -142,20 +141,13 @@ export async function createEnrollmentWithStudentProvisioning(
       };
     };
 
-    // Ensure ONE transaction owns the entire operation.
-    // If the provided client has a transaction method, open the transaction.
-    // Otherwise, operate directly on the supplied transaction client.
+    // Open a real interactive transaction on the neon-serverless Pool client (dbTx).
+    // Failures propagate; there is deliberately no non-atomic fallback. A caller passing an
+    // existing transaction client (no `transaction` method, or a savepoint-capable tx) joins it.
     if ('transaction' in client && typeof client.transaction === 'function') {
-      try {
-        return await client.transaction(async (tx) => {
-          return await executeInTx(tx);
-        });
-      } catch (txErr: any) {
-        if (txErr?.message?.includes('No transactions support in neon-http driver')) {
-          return await executeInTx(client);
-        }
-        throw txErr;
-      }
+      return await (client as typeof dbTx).transaction(async (tx) => {
+        return await executeInTx(tx);
+      });
     } else {
       return await executeInTx(client);
     }

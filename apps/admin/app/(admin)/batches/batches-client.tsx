@@ -57,6 +57,7 @@ import { toast } from 'sonner';
 import { createBatchAction } from './actions';
 import type { BatchWithDetails } from '@/lib/db/queries';
 import type { College, Program } from '@rms/db';
+import { selectableColleges } from '@/lib/utils/college';
 
 interface BatchesClientProps {
   initialBatches: BatchWithDetails[];
@@ -315,7 +316,7 @@ export function BatchesClient({
                       <SelectValue placeholder="Select college" />
                     </SelectTrigger>
                     <SelectContent>
-                      {colleges.map((col) => (
+                      {selectableColleges(colleges).map((col) => (
                         <SelectItem key={col.id} value={col.id}>
                           {col.name} ({col.code})
                         </SelectItem>

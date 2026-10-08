@@ -56,6 +56,12 @@ export async function createBatchAction(
         error: 'Selected college does not exist.'
       };
     }
+    if (!college.isActive) {
+      return {
+        success: false,
+        error: 'Selected college is inactive.'
+      };
+    }
 
     // 4. Verify referenced program exists
     const program = await getProgramById(programId);

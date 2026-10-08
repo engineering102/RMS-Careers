@@ -1,5 +1,21 @@
 export type DomainEvent =
   | {
+      /** Email-only. Carries a raw single-use token: never persist or log it. */
+      type: 'ACTIVATION_LINK_REQUESTED';
+      email: string;
+      name?: string;
+      rawToken: string;
+      expiresAt: Date;
+    }
+  | {
+      /** Email-only. Carries a raw single-use token: never persist or log it. */
+      type: 'PASSWORD_RESET_REQUESTED';
+      email: string;
+      name?: string;
+      rawToken: string;
+      expiresAt: Date;
+    }
+  | {
       type: 'STUDENT_ACTIVATED';
       userId: string;
       studentId: number;

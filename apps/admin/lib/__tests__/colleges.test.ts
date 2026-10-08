@@ -108,7 +108,7 @@ describe('Phase 1 — Institutional Foundation (Colleges Domain)', () => {
         name: 'Duplicate College Alpha',
         code: 'alpha_01'
       })
-    ).rejects.toThrow('duplicate key value violates unique constraint');
+    ).rejects.toThrow('College code ALPHA_01 already exists.');
   });
 
   it('retrieves an institution by code case-insensitively', async () => {

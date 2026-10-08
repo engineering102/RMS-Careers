@@ -57,7 +57,7 @@ vi.mock('@rms/db', async (importOriginal) => {
 
           if (table === actual.contentItems) {
             return {
-              innerJoin: (t2: any, onClause: any) => ({
+              leftJoin: (t2: any, onClause: any) => ({
                 where: (clause: any) => ({
                   orderBy: () => ({
                     limit: (limit: number) => ({

@@ -10,7 +10,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "admin:seed": "tsx scripts/seed-admin.ts"
+    "admin:seed": "tsx scripts/seed-admin.ts",
+    "cf:build": "node ../../scripts/check-cloudflare-build-env.mjs pre && opennextjs-cloudflare build && node ../../scripts/check-cloudflare-build-env.mjs post",
+    "preview": "pnpm cf:build && opennextjs-cloudflare preview",
+    "deploy": "pnpm cf:build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@rms/db": "workspace:*",
@@ -49,7 +52,8 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.7.2",
     "xlsx": "^0.18.5",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "@opennextjs/cloudflare": "^1.20.8"
   },
   "prettier": {
     "arrowParens": "always",
@@ -61,6 +65,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@vitest/coverage-v8": "2.0.0",
     "tsx": "^4.23.15",
-    "vitest": "2.0.0"
+    "vitest": "2.0.0",
+    "wrangler": "^4.147.0"
   }
 }

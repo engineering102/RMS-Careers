@@ -10,6 +10,7 @@ import {
 import { signIn } from '@/lib/auth';
 import { GraduationCap } from 'lucide-react';
 import { AuthError } from 'next-auth';
+import { redirect } from 'next/navigation';
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
@@ -49,8 +50,13 @@ export default async function LoginPage(props: {
                 });
               } catch (error) {
                 if (error instanceof AuthError) {
-                  throw error;
+                  const params = new URLSearchParams({ error: 'CredentialsSignin' });
+                  if (searchParams.callbackUrl) {
+                    params.set('callbackUrl', searchParams.callbackUrl);
+                  }
+                  redirect(`/login?${params.toString()}`);
                 }
+                // Rethrow so Next.js redirects (NEXT_REDIRECT) on success still work
                 throw error;
               }
             }}

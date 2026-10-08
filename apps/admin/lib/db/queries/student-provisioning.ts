@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { db, accountTokens, students, userRoles, users, type Student, type DbClient } from '@rms/db';
+import { db, accountTokens, students, userRoles, users, type Student } from '@rms/db';
+import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { generateToken, hashPassword, hashToken, hasRole } from '@rms/auth';
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 
@@ -36,7 +37,7 @@ export interface ProvisionedAccountPayload {
  * Throws `StudentProvisioningError` upon failure to ensure transactional rollbacks.
  */
 export async function provisionStudentAccountCore(
-  tx: DbClient,
+  tx: AnyDbClient,
   studentId: number
 ): Promise<ProvisionedAccountPayload> {
   if (!studentId) {
@@ -147,7 +148,7 @@ export async function provisionStudentAccountCore(
  */
 export async function provisionStudentAccount(
   studentId: number,
-  client?: DbClient
+  client?: AnyDbClient
 ): Promise<StudentProvisioningResult> {
   if (!studentId || !process.env.POSTGRES_URL) {
     return { success: false, error: 'provisioning_failed' };
@@ -167,7 +168,7 @@ export async function provisionStudentAccount(
   }
 
   try {
-    return await db.transaction(async (tx) => {
+    return await dbTx.transaction(async (tx) => {
       const result = await provisionStudentAccountCore(tx, studentId);
       return { success: true, ...result };
     });

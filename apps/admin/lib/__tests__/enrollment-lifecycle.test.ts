@@ -7,9 +7,7 @@ let mockEnrollmentsDb: any[] = [];
 
 vi.mock('@rms/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@rms/db')>();
-  return {
-    ...actual,
-    db: {
+  const mockClient: any = {
       transaction: vi.fn().mockImplementation(async (callback: any) => {
         const tx = {
           select: vi.fn().mockImplementation(() => ({
@@ -63,8 +61,22 @@ vi.mock('@rms/db', async (importOriginal) => {
         };
         return await callback(tx);
       })
-    }
   };
+
+  return {
+    ...actual,
+    // Mirrors drizzle-orm/neon-http: the root client cannot run transactions.
+    db: { ...mockClient, transaction: async () => {
+        throw new Error('No transactions support in neon-http driver');
+      } },
+    __txClient: mockClient
+  };
+});
+
+// @rms/db/tx: the transactional client under test.
+vi.mock('@rms/db/tx', async () => {
+  const mod: any = await import('@rms/db');
+  return { dbTx: mod.__txClient };
 });
 
 describe('Phase 1 — Enrollment Lifecycle & Transfer Semantics', () => {

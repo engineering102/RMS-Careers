@@ -5,9 +5,9 @@ import {
   students,
   studentStats,
   type Student,
-  type StudentStat,
-  type DbClient
+  type StudentStat
 } from '@rms/db';
+import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { ilike, desc, sql, eq } from 'drizzle-orm';
 
 export async function getStudents(search?: string): Promise<Student[]> {
@@ -43,7 +43,7 @@ export async function getStudentsByCollege(collegeId: string): Promise<Student[]
 
 export async function findStudentByEmail(
   email: string,
-  client: DbClient = db
+  client: AnyDbClient = db
 ): Promise<Student | null> {
   try {
     if (!process.env.POSTGRES_URL || !email) return null;
@@ -72,7 +72,7 @@ export async function createOrUpdateStudent(
     collegeId?: string | null;
     userId?: string | null;
   },
-  client: DbClient = db
+  client: AnyDbClient = db
 ): Promise<Student> {
   const cleanEmail = data.email.trim().toLowerCase();
   const existingStudent = await findStudentByEmail(cleanEmail, client);
@@ -123,7 +123,7 @@ export async function updateStudentCollege(
   studentId: number,
   newCollegeId: string
 ): Promise<{ student: Student; stats: StudentStat | null }> {
-  return await db.transaction(async (tx) => {
+  return await dbTx.transaction(async (tx) => {
     // 1. Update students table
     const [updatedStudent] = await tx
       .update(students)

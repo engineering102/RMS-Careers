@@ -15,6 +15,11 @@
       "types": "./src/schema.ts",
       "import": "./src/schema.ts",
       "default": "./src/schema.ts"
+    },
+    "./tx": {
+      "types": "./src/tx.ts",
+      "import": "./src/tx.ts",
+      "default": "./src/tx.ts"
     }
   },
   "scripts": {

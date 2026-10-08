@@ -1,0 +1,35 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "rms-student",
+    "main": ".open-next/worker.js",
+    "compatibility_date": "2026-10-04",
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+    },
+    "routes": [
+        {
+            "pattern": "student.rms-careers.com",
+            "custom_domain": true
+        }
+    ],
+    "services": [
+        {
+            "binding": "WORKER_SELF_REFERENCE",
+            "service": "rms-student"
+        }
+    ],
+    // Non-secret configuration. Used for emailed activation / reset links.
+    "vars": {
+        "STUDENT_APP_URL": "https://student.rms-careers.com"
+    },
+    // Secrets are never committed. Set with `wrangler secret put <NAME>` (or the dashboard).
+    // Optional: RESEND_API_KEY, EMAIL_FROM (email is skipped with provider_not_configured when unset).
+    "secrets": {
+        "required": ["POSTGRES_URL", "AUTH_SECRET"]
+    },
+    "observability": {
+        "enabled": true
+    }
+}

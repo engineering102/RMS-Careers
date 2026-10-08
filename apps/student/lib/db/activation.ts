@@ -1,8 +1,10 @@
 import 'server-only';
 
 import { db, accountTokens, students, userRoles, users } from '@rms/db';
+import { dbTx } from '@rms/db/tx';
 import { generateToken, hashPassword, hashToken, hasRole } from '@rms/auth';
 import { and, eq, gt, isNull, sql } from 'drizzle-orm';
+import { dispatchDomainEvent } from '../events/dispatcher';
 import { checkRateLimit } from '../rate-limit';
 
 export type ActivationResult = { success: true } | { success: false; error: string };
@@ -113,7 +115,7 @@ export async function activateStudentAccount(rawToken: string, password: string)
     const passwordHash = await hashPassword(password);
     const now = new Date();
 
-    return await db.transaction(async (tx) => {
+    return await dbTx.transaction(async (tx) => {
       const consumed = await tx
         .update(accountTokens)
         .set({ consumedAt: now })
@@ -231,6 +233,25 @@ export async function requestActivationResend(
 
         if (process.env.NODE_ENV === 'development') {
           console.info(`[Activation Resend Dev] Activation link for ${user.email}: /activate?token=${rawToken}`);
+        }
+
+        // Post-commit and best-effort: the token is already committed, so a delivery failure
+        // must never fail the request or reveal whether the account exists.
+        try {
+          const results = await dispatchDomainEvent({
+            type: 'ACTIVATION_LINK_REQUESTED',
+            email: user.email,
+            name: user.name ?? undefined,
+            rawToken,
+            expiresAt
+          });
+          const emailResult = results.find((r) => r.consumer === 'EmailNotificationConsumer');
+          const outcome = emailResult?.result as { sent?: boolean; reason?: string } | undefined;
+          if (!emailResult?.success || !outcome?.sent) {
+            console.error('[Activation Resend] Email not sent:', outcome?.reason ?? 'consumer_error');
+          }
+        } catch (dispatchErr) {
+          console.error('[Activation Resend] Email dispatch error:', dispatchErr instanceof Error ? dispatchErr.message : 'unknown');
         }
       }
     }

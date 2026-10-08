@@ -2,6 +2,11 @@ import 'server-only';
 
 import { db, colleges, type College, type NewCollege } from '@rms/db';
 import { eq, ilike, desc } from 'drizzle-orm';
+import {
+  DuplicateCollegeCodeError,
+  isUniqueViolation,
+  normalizeCollegeCode
+} from '@/lib/utils/college';
 
 /**
  * Retrieves all registered colleges, optionally filtered by name search.
@@ -68,21 +73,70 @@ export async function createCollege(data: {
   city?: string | null;
   state?: string | null;
 }): Promise<College> {
-  const cleanCode = data.code.trim().toUpperCase();
+  const cleanCode = normalizeCollegeCode(data.code);
   const cleanName = data.name.trim();
 
-  const [created] = await db
-    .insert(colleges)
-    .values({
-      name: cleanName,
-      code: cleanCode,
-      city: data.city || null,
-      state: data.state || null,
-      isActive: true
-    })
-    .returning();
+  try {
+    const [created] = await db
+      .insert(colleges)
+      .values({
+        name: cleanName,
+        code: cleanCode,
+        city: data.city || null,
+        state: data.state || null,
+        isActive: true
+      })
+      .returning();
+    return created;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new DuplicateCollegeCodeError(cleanCode);
+    throw error;
+  }
+}
 
-  return created;
+/**
+ * Updates editable college fields. The id is never changed.
+ * Returns null if the college does not exist.
+ */
+export async function updateCollege(
+  id: string,
+  data: { name: string; code: string; city?: string | null; state?: string | null }
+): Promise<College | null> {
+  const cleanCode = normalizeCollegeCode(data.code);
+  try {
+    const [updated] = await db
+      .update(colleges)
+      .set({
+        name: data.name.trim(),
+        code: cleanCode,
+        city: data.city || null,
+        state: data.state || null,
+        updatedAt: new Date()
+      })
+      .where(eq(colleges.id, id))
+      .returning();
+    return updated || null;
+  } catch (error) {
+    if (isUniqueViolation(error)) throw new DuplicateCollegeCodeError(cleanCode);
+    throw error;
+  }
+}
+
+/**
+ * Active colleges only — for selectors that offer a college as a new choice.
+ */
+export async function getActiveColleges(): Promise<College[]> {
+  try {
+    if (!process.env.POSTGRES_URL) return [];
+    return await db
+      .select()
+      .from(colleges)
+      .where(eq(colleges.isActive, true))
+      .orderBy(desc(colleges.createdAt));
+  } catch (error) {
+    console.error('Error fetching active colleges:', error);
+    return [];
+  }
 }
 
 /**
