@@ -16,7 +16,9 @@
     "test:all": "pnpm test && pnpm test:int",
     "test:db:bootstrap": "pnpm --filter @rms/db test:db:bootstrap",
     "admin:seed:test": "pnpm --filter @rms/admin admin:seed:test",
-    "student:seed:test": "pnpm --filter @rms/student student:seed:test"
+    "student:seed:test": "pnpm --filter @rms/student student:seed:test",
+    "ci:affected": "node scripts/ci/affected.mjs",
+    "test:ci-scripts": "node --test \"scripts/ci/__tests__/*.test.mjs\""
   },
   "packageManager": "pnpm@9.15.4"
 }
