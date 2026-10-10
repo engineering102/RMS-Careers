@@ -28,6 +28,15 @@ on:
         description: Which application to build and verify (web, admin or student).
         type: string
         required: true
+      sha:
+        description: Commit to build and verify (full SHA). Defaults to github.sha. Needed when the caller runs on another commit, e.g. workflow_run.
+        type: string
+        required: false
+        default: ''
+    outputs:
+      digest:
+        description: "<app>:<sha256 of manifest.json> published by the build job (the independent trust anchor)."
+        value: ${{ jobs.build.outputs.digest }}
 
 permissions:
   contents: read
@@ -45,6 +54,7 @@ jobs:
       digest: ${{ steps.package.outputs.digest }}
     env:
       APP: ${{ inputs.app }}
+      SOURCE_SHA: ${{ inputs.sha || github.sha }}
     steps:
       # artifact.mjs rejects anything but web|admin|student; fail before spending a build on a bad input.
       - name: Validate app input
@@ -52,6 +62,7 @@ jobs:
           case "$APP" in web|admin|student) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -85,9 +96,11 @@ jobs:
     timeout-minutes: 30
     env:
       APP: ${{ inputs.app }}
+      SOURCE_SHA: ${{ inputs.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -114,13 +127,17 @@ jobs:
           EXPECT_MANIFEST_SHA256: ${{ needs.build.outputs.digest }}
         run: >-
           node scripts/ci/artifact.mjs verify --app "$APP" --dir "$RUNNER_TEMP/artifact/$APP"
-          --expect-sha "$GITHUB_SHA" --expect-run-id "$GITHUB_RUN_ID"
+          --expect-sha "$SOURCE_SHA" --expect-run-id "$GITHUB_RUN_ID"
           --expect-manifest-sha256 "$EXPECT_MANIFEST_SHA256"
       - name: Embedded-environment guard on the extracted artifact
         working-directory: apps/${{ inputs.app }}
         run: node ../../scripts/check-cloudflare-build-env.mjs post
       - name: Negative tests (modified artifact, forged or edited manifest, injected or unlisted file, missing symlink target)
         run: node scripts/ci/artifact.mjs negative-tests --app "$APP" --dir "$RUNNER_TEMP/artifact/$APP"
+      # Runtime proof without credentials: run the extracted artifact in local workerd (wrangler dev --local on
+      # 127.0.0.1, placeholder variables) and smoke-test it. Refuses to run if any CLOUDFLARE_*/CF_*/WRANGLER_* is set.
+      - name: Local workerd smoke (no credentials; loopback only)
+        run: node scripts/ci/artifact.mjs local-smoke --app "$APP"
       # Refuses to run if any CLOUDFLARE_*/CF_*/WRANGLER_* variable is set; always passes --dry-run.
       - name: Dry run of the Worker bundle (wrangler --dry-run; no credentials, nothing is deployed)
         run: node scripts/ci/artifact.mjs dry-run --app "$APP" --out "$RUNNER_TEMP/dry-run/$APP"

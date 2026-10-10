@@ -1,5 +1,6 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import os from 'node:os';
@@ -8,7 +9,10 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import {
   APPS,
+  deployArgs,
   extractArchive,
+  localDevArgs,
+  localSmoke,
   parseExpectedDigest,
   symlinkPolicyProblems,
   workerImportProblems,
@@ -423,5 +427,97 @@ describe('hardening', () => {
     fs.writeFileSync(path.join(dir2, 'manifest.json'), JSON.stringify(m));
     const r = await verifyArtifact({ app: 'web', dir: dir2, repoRoot: repo, appDir: await cleanAppDir() });
     assert.ok(r.problems.some((p) => p.code === 'bad-manifest' && /archive file name/.test(p.message)));
+  });
+});
+
+describe('phase 4 building blocks (nothing deploys)', () => {
+  const SHA = 'a'.repeat(40);
+  const RUN = 'https://github.com/engineering102/RMS-Careers/actions/runs/123';
+
+  test('deployArgs: the exact production command shape, no overrides', () => {
+    const args = deployArgs('/x/wrangler.js', { sha: SHA, runUrl: RUN });
+    assert.deepEqual(args, ['/x/wrangler.js', 'deploy', '--config', 'wrangler.jsonc', '--keep-vars', '--tag', 'sha-aaaaaaaaaaaa', '--message', `${RUN} ${SHA}`]);
+    for (const forbidden of ['--var', '--secrets-file', '--name', '--routes', '--route', '--domains', '--env', '--dry-run', '--assets', '--no-bundle']) {
+      assert.ok(!args.includes(forbidden), forbidden);
+    }
+  });
+
+  test('deployArgs rejects a short SHA, an uppercase SHA and a run URL that is not a GitHub Actions run', () => {
+    for (const sha of ['abc', SHA.toUpperCase(), SHA + 'f', '']) assert.throws(() => deployArgs('w', { sha, runUrl: RUN }), /full 40/);
+    for (const runUrl of ['', 'http://github.com/o/r/actions/runs/1', 'https://evil.example/o/r/actions/runs/1', RUN + '; rm -rf /', 'https://github.com/o/r/actions/runs/x']) {
+      assert.throws(() => deployArgs('w', { sha: SHA, runUrl }), /GitHub Actions run/, runUrl);
+    }
+  });
+
+  test('deployArgs is NOT wired to any command or workflow yet', () => {
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+    const files = [];
+    const walk = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (e.name === 'node_modules' || e.name === '.git' || e.name === '.next' || e.name === '.open-next') continue;
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.(mjs|js|ts|yml|yaml)$/.test(e.name)) files.push(p);
+      }
+    };
+    walk(path.join(root, 'scripts'));
+    walk(path.join(root, '.github'));
+    const users = files.filter((f) => !/__tests__/.test(f) && /deployArgs\(/.test(fs.readFileSync(f, 'utf8')));
+    assert.deepEqual(users.map((f) => path.basename(f)), ['artifact.mjs'], 'only the definition may mention it');
+    const src = fs.readFileSync(path.join(root, 'scripts', 'ci', 'artifact.mjs'), 'utf8');
+    assert.equal([...src.matchAll(/deployArgs\(/g)].length, 1, 'defined once, called nowhere');
+  });
+
+  test('localDevArgs: loopback only, local mode, placeholder variables, never a deploy', () => {
+    for (const app of ['web', 'admin', 'student']) {
+      const args = localDevArgs('/x/wrangler.js', app, 8791);
+      assert.deepEqual(args.slice(0, 8), ['/x/wrangler.js', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8791', '--config']);
+      assert.ok(!args.includes('deploy') && !args.includes('--remote'));
+      const vars = args.filter((_, i) => args[i - 1] === '--var');
+      assert.ok(vars.some((v) => v.startsWith('POSTGRES_URL:postgres://smoke:smoke@127.0.0.1')), app);
+      for (const v of vars) assert.match(v, /127\.0\.0\.1|local-smoke/);
+    }
+    assert.throws(() => localDevArgs('w', 'tutor', 1), /unknown app/);
+  });
+
+  test('localSmoke refuses to start when a Cloudflare/Wrangler variable is present', async () => {
+    await assert.rejects(localSmoke({ app: 'web', repoRoot: repo, env: { CLOUDFLARE_API_TOKEN: 'x' } }), /credential-free/);
+    await assert.rejects(localSmoke({ app: 'web', repoRoot: repo, env: { CF_ACCOUNT_ID: 'x' } }), /credential-free/);
+  });
+});
+
+describe('SOURCE_SHA binds the artifact to the commit being built', () => {
+  const gitRepo = () => {
+    const r = makeRepo();
+    const git = (...a) => execFileSync('git', a, { cwd: r, encoding: 'utf8' }).trim();
+    git('init', '-q', '-b', 'main');
+    git('config', 'user.email', 't@example.test');
+    git('config', 'user.name', 't');
+    git('config', 'commit.gpgsign', 'false');
+    fs.writeFileSync(path.join(r, '.gitignore'), '_o*' + String.fromCharCode(10));
+    git('add', '.gitignore');
+    git('commit', '-q', '-m', 'init');
+    return { r, head: git('rev-parse', 'HEAD') };
+  };
+
+  test('matching checkout: recorded as the source SHA even if GITHUB_SHA differs (workflow_run case)', async () => {
+    const { r, head } = gitRepo();
+    try {
+      const m = await packageArtifact({ app: 'web', repoRoot: r, outDir: path.join(r, '_o'), env: { ...ENV, GITHUB_SHA: 'f'.repeat(40), SOURCE_SHA: head } });
+      assert.equal(m.source.sha, head);
+    } finally {
+      fs.rmSync(r, { recursive: true, force: true });
+    }
+  });
+
+  test('mismatching checkout, malformed SHA, and a non-git checkout all fail closed', async () => {
+    const { r } = gitRepo();
+    try {
+      await assert.rejects(packageArtifact({ app: 'web', repoRoot: r, outDir: path.join(r, '_o'), env: { ...ENV, SOURCE_SHA: 'e'.repeat(40) } }), /source-sha-mismatch/);
+      await assert.rejects(packageArtifact({ app: 'web', repoRoot: r, outDir: path.join(r, '_o'), env: { ...ENV, SOURCE_SHA: 'HEAD' } }), /source-sha-invalid/);
+    } finally {
+      fs.rmSync(r, { recursive: true, force: true });
+    }
+    await assert.rejects(packageArtifact({ app: 'web', repoRoot: repo, outDir: path.join(repo, '_o9'), env: { ...ENV, SOURCE_SHA: 'a'.repeat(40) } }), /not a git checkout/);
   });
 });

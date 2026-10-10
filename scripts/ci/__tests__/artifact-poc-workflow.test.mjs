@@ -100,7 +100,8 @@ describe('artifact PoC workflows: explicit per-application digest hand-off', () 
     assert.match(verify, /needs: build\n/);
     assert.match(verify, /EXPECT_MANIFEST_SHA256: \$\{\{ needs\.build\.outputs\.digest \}\}/);
     assert.match(verify, /--expect-manifest-sha256 "\$EXPECT_MANIFEST_SHA256"/);
-    assert.match(verify, /--expect-sha "\$GITHUB_SHA"/);
+    assert.match(verify, /--expect-sha "\$SOURCE_SHA"/);
+    assert.doesNotMatch(verify, /--expect-sha "\$GITHUB_SHA"/, 'GITHUB_SHA is not the CI commit under workflow_run');
     assert.match(verify, /--expect-run-id "\$GITHUB_RUN_ID"/);
     assert.doesNotMatch(verify, /allow-missing-expectations/);
     assert.equal([...appCode.matchAll(/needs\.[a-z-]+\.outputs/g)].length, 1, 'the only cross-job value is the digest');
@@ -110,6 +111,26 @@ describe('artifact PoC workflows: explicit per-application digest hand-off', () 
     assert.match(app, /name: open-next-\$\{\{ inputs\.app \}\}/);
     assert.equal([...app.matchAll(/open-next-\$\{\{ inputs\.app \}\}/g)].length, 2, 'upload and download use the same name');
     assert.doesNotMatch(app, /open-next-(web|admin|student)\b/);
+  });
+});
+
+describe('artifact PoC workflows: Phase 4 building blocks stay non-deploying', () => {
+  test('an optional sha input selects the commit; every checkout and the expectation use it', () => {
+    assert.match(appCode, /sha:\n {8}description: [^\n]+\n {8}type: string\n {8}required: false\n {8}default: ''/);
+    const checkouts = [...appCode.matchAll(/actions\/checkout@[0-9a-f]{40}[^\n]*\n {8}with:\n {10}ref: \$\{\{ inputs\.sha \|\| github\.sha \}\}\n {10}persist-credentials: false/g)];
+    assert.equal(checkouts.length, 2, 'both jobs check out the selected commit without persisting credentials');
+    assert.equal([...appCode.matchAll(/SOURCE_SHA: \$\{\{ inputs\.sha \|\| github\.sha \}\}/g)].length, 2);
+  });
+
+  test('the digest is exported as a workflow output (reusable-workflow outputs are read-only data, not credentials)', () => {
+    assert.match(appCode, /outputs:\n {6}digest:\n {8}description: [^\n]+\n {8}value: \$\{\{ jobs\.build\.outputs\.digest \}\}/);
+  });
+
+  test('the verify job runs the credential-free local workerd smoke before the dry run', () => {
+    const verify = jobBlock(app, 'verify');
+    assert.match(verify, /artifact\.mjs local-smoke --app "\$APP"/);
+    assert.ok(verify.indexOf('local-smoke') < verify.indexOf('artifact.mjs dry-run'));
+    assert.doesNotMatch(verify, /smoke\.mjs[^\n]*--production/, 'production is never contacted from the proof of concept');
   });
 });
 
