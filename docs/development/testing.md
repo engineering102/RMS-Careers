@@ -72,6 +72,10 @@ pnpm --filter @rms/admin test:coverage
 
 Integration suites are named `*.int.test.ts` (currently `admin`: `batch-management`, `batch-curriculum`, `content-library`, `multi-batch-import`; `student`: `multi-batch-schema`). They create and delete their own uniquely-prefixed rows.
 
+### CI
+
+`.github/workflows/ci.yml` is path-aware. `detect` runs `scripts/ci/affected.mjs` (pnpm workspace graph plus path rules) and only the needed jobs run: `check` (typecheck + unit tests of affected workspaces), `integration` (only when admin/student/db/auth/infra changed), `build` (`cf:build` per app whose bundle changed; never deployed), `workflow-lint` (only when workflow files change), and `ci-gate`, the single required status check (`scripts/ci/gate.mjs`). Docs-only changes run nothing but `detect` and `ci-gate`. Run the CI script tests with `pnpm test:ci-scripts`, and preview a decision with `pnpm ci:affected --base <sha> --head <sha> --pretty`. The only database secrets are `TEST_DATABASE_URL` and the `TEST_DATABASE_ENDPOINT` pin (the NonProd `test` branch, `integration` job only). `POSTGRES_URL`/`DATABASE_URL` are blanked, no production or Cloudflare secret is configured, nothing is deployed, and CI never reads a developer's `.env.local`. Add both secrets under *Settings → Secrets and variables → Actions*. Make `ci-gate` the required check in branch protection.
+
 ---
 
 ## 4. Test Suites Inventory
