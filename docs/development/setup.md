@@ -32,7 +32,8 @@ This guide provides instructions for setting up and running the RMS Careers mono
    ```
    Populate the following secrets in `apps/admin/.env.local`:
    ```env
-   POSTGRES_URL=postgresql://user:password@ep-xyz.neon.tech/neondb?sslmode=require
+   # A DEVELOPMENT database (name starts with rms_dev). Never put the production URL here.
+   POSTGRES_URL=postgresql://user:password@ep-xyz.neon.tech/rms_dev?sslmode=require
    NEXTAUTH_URL=http://localhost:3000
    AUTH_SECRET=your-random-32-char-secret
    AUTH_TRUST_HOST=true
@@ -62,7 +63,7 @@ Access points:
 
 ## 4. Seeding Initial Administrator
 
-To create or update the initial Super Administrator account in your database:
+To create or update the initial Super Administrator account in your **development** database. Seeds require an explicit target and refuse production, unknown and missing databases (use `pnpm admin:seed:test` for the test database). See [testing.md](./testing.md#2-database-environments-read-this-first).
 
 ```bash
 pnpm admin:seed [email] [password] [fullName]

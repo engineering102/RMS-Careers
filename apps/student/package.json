@@ -8,10 +8,14 @@
     "start": "next start -p 3002",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "student:seed": "tsx scripts/seed-student.ts",
+    "student:seed": "tsx scripts/seed-student.ts --target=development",
     "cf:build": "node ../../scripts/check-cloudflare-build-env.mjs pre && opennextjs-cloudflare build && node ../../scripts/check-cloudflare-build-env.mjs post",
     "preview": "pnpm cf:build && opennextjs-cloudflare preview",
-    "deploy": "pnpm cf:build && opennextjs-cloudflare deploy"
+    "deploy": "pnpm cf:build && opennextjs-cloudflare deploy",
+    "test:int": "vitest run -c vitest.int.config.ts",
+    "student:seed:test": "tsx scripts/seed-student.ts --target=test",
+    "student:verify-seed": "tsx scripts/verify-seed.ts --target=development",
+    "student:verify-seed:test": "tsx scripts/verify-seed.ts --target=test"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",

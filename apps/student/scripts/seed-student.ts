@@ -1,33 +1,9 @@
-import { loadEnvFile } from 'node:process';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-
-// Load .env candidates in order of priority
-const envCandidates = [
-  path.resolve(process.cwd(), '.env.local'),
-  path.resolve(process.cwd(), '.env'),
-  path.resolve(process.cwd(), '../../.env.local'),
-  path.resolve(process.cwd(), '../../.env'),
-  path.resolve(process.cwd(), '../admin/.env.local'),
-  path.resolve(process.cwd(), '../admin/.env')
-];
-
-for (const envPath of envCandidates) {
-  if (existsSync(envPath)) {
-    try {
-      loadEnvFile(envPath);
-      break;
-    } catch {
-      // Continue to next candidate
-    }
-  }
-}
-
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, sql } from 'drizzle-orm';
 import * as schema from '@rms/db/schema';
 import { hashPassword } from '@rms/auth';
+import { prepareSeedTarget } from '@rms/db/guard-env';
 
 // ============================================================================
 // CONSTANTS & SEED SPECIFICATIONS
@@ -138,24 +114,8 @@ async function runStudentSeeder() {
     process.exit(1);
   }
 
-  const connectionString = process.env.POSTGRES_URL;
-  if (!connectionString) {
-    console.error('[ERROR] POSTGRES_URL environment variable is missing.');
-    console.error('Please configure POSTGRES_URL in .env.local before running the demo seeder.');
-    process.exit(1);
-  }
-
-  const isProductionDb =
-    connectionString.includes('prod') &&
-    !connectionString.includes('non-prod') &&
-    !connectionString.includes('dummy') &&
-    process.env.ALLOW_PROD_SEED !== 'true';
-
-  if (isProductionDb) {
-    console.error('[SAFETY ERROR] POSTGRES_URL appears to target a production database.');
-    console.error('Demo seeder is restricted to local/development databases.');
-    process.exit(1);
-  }
+  // Slice 0 guard: explicit --target=test|development; production/unknown/missing are rejected.
+  const { url: connectionString } = prepareSeedTarget();
 
   console.log('=================================================================');
   console.log('       RMS CAREERS — STUDENT DEMO DATASET SEEDER (DEV ONLY)      ');

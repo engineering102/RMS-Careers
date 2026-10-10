@@ -68,7 +68,8 @@ pnpm dev:web              # Runs @rms/web on http://localhost:3001
 pnpm dev:student          # Runs @rms/student on http://localhost:3002
 
 # Execute tests across all packages
-pnpm test                 # Runs Vitest in every workspace that defines `test` (web, admin, student, auth)
+pnpm test                 # Unit tier only: Vitest in every workspace (web, admin, student, auth, db); cannot open a DB connection
+pnpm test:int             # Integration tier (*.int.test.ts); requires TEST_DATABASE_URL + TEST_DATABASE_ENDPOINT (RMS-Careers-NonProd/test), aborts otherwise
 
 # Run TypeScript type checking
 pnpm typecheck            # Runs tsc --noEmit across all workspaces
@@ -77,8 +78,11 @@ pnpm typecheck            # Runs tsc --noEmit across all workspaces
 pnpm build                # Builds all apps in apps/* via Next.js
 
 # Database administration
-pnpm admin:seed           # Seeds initial Super Administrator account into PostgreSQL
-pnpm student:seed         # Seeds demo student data (apps/student/scripts/seed-student.ts)
+pnpm admin:seed           # Seeds initial Super Administrator into the DEVELOPMENT db (rms_dev*); production is rejected
+pnpm student:seed         # Seeds demo student data into the DEVELOPMENT db (apps/student/scripts/seed-student.ts)
+pnpm admin:seed:test / student:seed:test   # Same, against TEST_DATABASE_URL
+pnpm test:db:bootstrap    # Migrate + sentinel for the empty NonProd test database
+# Database safety: see docs/development/testing.md. Tests/seeds never read .env.local; production is never a seed/test target.
 ```
 
 ### Scoped Package Commands

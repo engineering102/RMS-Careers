@@ -1,20 +1,14 @@
-import { loadEnvFile } from 'node:process';
-import { existsSync } from 'node:fs';
-
-// Load .env.local if present
-if (existsSync('.env.local')) {
-  loadEnvFile('.env.local');
-} else if (existsSync('.env')) {
-  loadEnvFile('.env');
-}
-
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, sql } from 'drizzle-orm';
 import * as schema from '@rms/db';
 import { hashPassword, hasAdminPrivileges } from '@rms/auth';
+import { prepareSeedTarget } from '@rms/db/guard-env';
 
 async function bootstrapAdmin() {
+  // Slice 0 guard: explicit --target=test|development, production is rejected (exits non-zero).
+  prepareSeedTarget();
+
   const connectionString = process.env.POSTGRES_URL;
   if (!connectionString) {
     console.error('ERROR: POSTGRES_URL environment variable is missing.');
@@ -22,9 +16,10 @@ async function bootstrapAdmin() {
   }
 
   // Accept credentials via CLI arguments or environment variables
-  const email = process.argv[2] || process.env.ADMIN_INITIAL_EMAIL;
-  const password = process.argv[3] || process.env.ADMIN_INITIAL_PASSWORD;
-  const name = process.argv[4] || process.env.ADMIN_INITIAL_NAME || 'RMS Lead Administrator';
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  const email = positional[0] || process.env.ADMIN_INITIAL_EMAIL;
+  const password = positional[1] || process.env.ADMIN_INITIAL_PASSWORD;
+  const name = positional[2] || process.env.ADMIN_INITIAL_NAME || 'RMS Lead Administrator';
 
   if (!email || !password) {
     console.log(`

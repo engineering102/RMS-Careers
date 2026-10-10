@@ -179,6 +179,8 @@ describe('Slice C1: Quiz & Assessment Admin Authoring Plane', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mocked db: the queries only check that a URL is set. Never rely on an env file for this.
+    process.env.POSTGRES_URL = 'postgres://mock:mock@localhost:5432/mock';
     mockAuth.mockResolvedValue(adminSession);
 
     mockContentItems = [
