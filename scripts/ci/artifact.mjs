@@ -2,8 +2,9 @@
 /**
  * CI/CD Phase 3 proof of concept: package, verify and dry-run an OpenNext build artifact.
  *
- * NOTHING HERE DEPLOYS. There is no code path that runs `wrangler deploy` without `--dry-run`, and the
- * dry run refuses to start if any Cloudflare credential is present in the environment.
+ * NOTHING HERE DEPLOYS. No command executes `wrangler deploy` without `--dry-run`, and the dry run and the local
+ * smoke refuse to start if any Cloudflare/Wrangler variable is present in the environment. `deployArgs` only BUILDS
+ * the future production argument list (pinned and tested); no CLI command calls it yet.
  *
  *   package          scan apps/<app>/.open-next (+ wrangler.jsonc, package.json, open-next.config.ts) and write
  *                    <app>.open-next.tar.gz, inventory.json and manifest.json to --out
@@ -12,6 +13,8 @@
  *   negative-tests   prove the verifier FAILS for a corrupted archive, a forged self-consistent archive, an injected
  *                    file and a missing symlink target (all in OS temp directories)
  *   dry-run          `wrangler deploy --dry-run` against the extracted artifact, credential-free
+ *   local-smoke      run the extracted artifact in local workerd (`wrangler dev --local`, no credentials, dummy
+ *                    variables) and smoke-test it over 127.0.0.1
  *
  * Symlinks are archived AS symlinks (never dereferenced). The archive is a self-contained ustar/pax writer and reader
  * (dependency-free, same behaviour on every OS) so extraction can refuse path traversal, hard links, device nodes and
@@ -25,8 +28,10 @@ import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { finished } from 'node:stream/promises';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import net from 'node:net';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runSmoke } from './smoke.mjs';
 import zlib from 'node:zlib';
 
 export const APPS = ['web', 'admin', 'student'];
@@ -45,6 +50,7 @@ export const REQUIRED_PATHS = [
 export const EXPECTED_WORKER = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' };
 const TOOL_PACKAGES = { wrangler: 'wrangler', opennextCloudflare: '@opennextjs/cloudflare', next: 'next' };
 const BLOCK = 512;
+const FULL_SHA = /^[0-9a-f]{40}$/;
 const FIXED_MTIME = 315532800; // 1980-01-01: constant so identical input gives an identical archive
 const CREDENTIAL_ENV = /^(CLOUDFLARE_|CF_|WRANGLER_)/i;
 
@@ -468,6 +474,11 @@ function collectTools(repoRoot, app) {
 
 function gitSha(repoRoot) {
   try {
+    // Only trust a repository whose top level IS repoRoot: a directory nested inside some other checkout must not
+    // inherit that checkout's HEAD.
+    const norm = (p) => path.resolve(fs.realpathSync(p)).replace(/\\/g, '/').toLowerCase();
+    const top = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+    if (norm(top) !== norm(repoRoot)) return 'unknown';
     return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
   } catch {
     return 'unknown';
@@ -521,6 +532,13 @@ const stable = (value) => `${JSON.stringify(value, null, 2)}\n`;
 /** Build side. Scans, archives, and writes manifest.json + inventory.json into outDir. */
 export async function packageArtifact({ app, repoRoot, outDir, appDir = path.join(repoRoot, 'apps', app), env = process.env }) {
   if (!APPS.includes(app)) throw new ArtifactError([problem('bad-app', `unknown app "${app}"`)]);
+  // SOURCE_SHA names the commit being built (needed when GITHUB_SHA is not that commit, e.g. workflow_run). Fail closed
+  // unless the checkout is exactly that commit.
+  if (env.SOURCE_SHA) {
+    const head = gitSha(repoRoot);
+    if (!FULL_SHA.test(env.SOURCE_SHA)) throw new ArtifactError([problem('source-sha-invalid', 'SOURCE_SHA must be a full 40-character lowercase commit SHA')]);
+    if (head !== env.SOURCE_SHA) throw new ArtifactError([problem('source-sha-mismatch', `SOURCE_SHA is ${env.SOURCE_SHA.slice(0, 12)} but the checkout is ${head === 'unknown' ? 'not a git checkout' : head.slice(0, 12)}`)]);
+  }
   const { entries, problems } = await scanTree(appDir);
   problems.push(...checkRequired(entries));
   const layout = checkWranglerLayout(appDir, app);
@@ -546,7 +564,7 @@ export async function packageArtifact({ app, repoRoot, outDir, appDir = path.joi
     worker: layout.name,
     source: {
       repository: env.GITHUB_REPOSITORY ?? null,
-      sha: env.GITHUB_SHA ?? gitSha(repoRoot),
+      sha: env.SOURCE_SHA ?? env.GITHUB_SHA ?? gitSha(repoRoot),
       ref: env.GITHUB_REF ?? null,
       workflow: env.GITHUB_WORKFLOW ?? null,
       runId: env.GITHUB_RUN_ID ?? null,
@@ -903,6 +921,102 @@ export function dryRunDeploy({ app, repoRoot, outDir, appDir = path.join(repoRoo
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Phase 4 building blocks (nothing here is wired to a command that deploys)
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * The exact argument list of the future production deploy of an EXTRACTED, VERIFIED artifact. It is a pure function:
+ * no CLI command and no workflow calls it yet. Pinned by tests so the command shape is reviewed before it is wired.
+ *
+ *  - `--config wrangler.jsonc` (with OPEN_NEXT_DEPLOY=true in the environment) stops wrangler delegating to
+ *    `opennextjs-cloudflare deploy`; neither it nor `pnpm deploy` is used because both can rebuild.
+ *  - `--keep-vars` so a dashboard-defined plaintext variable is never silently deleted.
+ *  - No --var, --secrets-file, --name, --routes, --domains or --env: everything else comes from the verified
+ *    wrangler.jsonc inside the artifact.
+ */
+export function deployArgs(wranglerBin, { sha, runUrl }) {
+  if (!FULL_SHA.test(sha ?? '')) throw new ArtifactError([problem('bad-sha', 'the deployed commit must be a full 40-character lowercase SHA')]);
+  if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/actions\/runs\/\d+(\/attempts\/\d+)?$/.test(runUrl ?? '')) {
+    throw new ArtifactError([problem('bad-run-url', 'runUrl must be a GitHub Actions run URL')]);
+  }
+  return [wranglerBin, 'deploy', '--config', 'wrangler.jsonc', '--keep-vars', '--tag', `sha-${sha.slice(0, 12)}`, '--message', `${runUrl} ${sha}`];
+}
+
+/** Placeholder values only: they let the Worker start in local workerd, nothing here is a credential. */
+export const LOCAL_DEV_VARS = {
+  web: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke' },
+  admin: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder', AUTH_GITHUB_ID: 'local-smoke', AUTH_GITHUB_SECRET: 'local-smoke' },
+  student: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder' }
+};
+
+export function localDevArgs(wranglerBin, app, port) {
+  if (!LOCAL_DEV_VARS[app]) throw new ArtifactError([problem('bad-app', `unknown app "${app}"`)]);
+  const vars = Object.entries(LOCAL_DEV_VARS[app]).flatMap(([k, v]) => ['--var', `${k}:${v}`]);
+  return [wranglerBin, 'dev', '--local', '--ip', '127.0.0.1', '--port', String(port), '--config', 'wrangler.jsonc', ...vars];
+}
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
+
+function killTree(child) {
+  if (!child.pid || child.exitCode !== null) return;
+  try {
+    if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    else process.kill(-child.pid, 'SIGKILL');
+  } catch {
+    /* already gone */
+  }
+}
+
+/**
+ * Credential-free runtime proof: run the extracted artifact in local workerd and smoke-test it over loopback.
+ * Proves the bundle starts and routes; it does not touch Cloudflare, a database or any production secret.
+ */
+export async function localSmoke({ app, repoRoot, appDir = path.join(repoRoot, 'apps', app), env = process.env, startupTimeoutMs = 180_000, runner = runSmoke }) {
+  const present = credentialEnvNames(env);
+  if (present.length) throw new ArtifactError([problem('credentials-present', `refusing to run: Cloudflare/Wrangler variables are set (${present.join(', ')}). The local smoke must be credential-free.`)]);
+  const req = createRequire(path.join(appDir, 'package.json'));
+  const wranglerBin = path.join(path.dirname(req.resolve('wrangler/package.json')), 'bin', 'wrangler.js');
+  const port = await freePort();
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'wrangler-dev-home-'));
+  const childEnv = { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: path.join(home, '.config'), APPDATA: path.join(home, 'AppData'), WRANGLER_SEND_METRICS: 'false', WRANGLER_HIDE_BANNER: 'true', CI: 'true' };
+  const child = spawn(process.execPath, localDevArgs(wranglerBin, app, port), { cwd: appDir, env: childEnv, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+  let log = '';
+  const keep = (chunk) => {
+    log = (log + chunk.toString()).slice(-20_000);
+  };
+  child.stdout.on('data', keep);
+  child.stderr.on('data', keep);
+  let exited = false;
+  child.on('exit', () => {
+    exited = true;
+  });
+  const baseUrl = `http://127.0.0.1:${port}`;
+  try {
+    const deadline = Date.now() + startupTimeoutMs;
+    let up = false;
+    while (Date.now() < deadline && !exited && !up) {
+      up = await fetch(`${baseUrl}/`, { redirect: 'manual', signal: AbortSignal.timeout(3000) }).then(() => true, () => false);
+      if (!up) await new Promise((r) => setTimeout(r, 1000));
+    }
+    if (!up) return { ok: false, problems: [problem('local-dev-not-ready', exited ? 'wrangler dev exited before serving' : 'wrangler dev did not start in time')], log: log.slice(-2000) };
+    const smoke = await runner({ app, baseUrl, attempts: 5, delayMs: 2000 });
+    return { ok: smoke.ok, problems: smoke.ok ? [] : smoke.results.filter((r) => !r.ok).map((r) => problem('smoke-failed', `${r.path}: ${r.problem}`)), smoke, wranglerVersion: readPackageVersion(appDir, 'wrangler'), log: smoke.ok ? '' : log.slice(-2000) };
+  } finally {
+    killTree(child);
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -970,7 +1084,14 @@ async function main() {
     if (!result.ok) annotate(result.problems);
     appendSummary(`### ${app}: wrangler --dry-run ${result.ok ? 'ok' : 'FAILED'}\n- wrangler ${result.wranglerVersion}; bundle files: ${result.bundle.join(', ')}\n- no credentials in the environment; nothing was deployed`);
     if (!result.ok) process.exitCode = 1;
-  } else throw new Error(`unknown command "${command}" (package | verify | negative-tests | dry-run)`);
+  } else if (command === 'local-smoke') {
+    const result = await localSmoke({ app, repoRoot });
+    print(result);
+    if (!result.ok) annotate(result.problems);
+    appendSummary(`### ${app}: local workerd smoke ${result.ok ? 'passed' : 'FAILED'}
+- ran the extracted artifact with wrangler dev --local on 127.0.0.1; no credentials, placeholder variables only`);
+    if (!result.ok) process.exitCode = 1;
+  } else throw new Error(`unknown command "${command}" (package | verify | negative-tests | dry-run | local-smoke)`);
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
