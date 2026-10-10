@@ -1,0 +1,123 @@
+# Phase 4: roll ONE production Worker back to a previously verified version. Manually triggered only.
+# Spec: docs/plans/phase-4-production-deployment-spec.md section 5 (and docs/plans/cicd-deployment-tracking-design.md).
+#
+# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions, and no Environment or Cloudflare credential
+# exists yet. `dry_run` defaults to true; the dry-run job is the credential-free rehearsal.
+#
+#   rehearse : (dry_run = true)  NO Environment, NO Cloudflare credential. Reads the GitHub Deployments record, validates
+#              the inputs and the exact wrangler command, writes nothing, contacts nothing on Cloudflare.
+#   rollback : (dry_run = false) Environment `production-<app>` (required reviewers + `main` only), the same per-app lock as
+#              the deploy workflow, the Cloudflare token present in ONE step only. No build, no artifact, no database.
+#
+# The target is identified by its Cloudflare version id, which must be recorded (payload.versionId) on a verified-successful
+# deployment record of this app; the Worker tag/message are only a cross-check. The Worker's live version is read from Cloudflare
+# and must be one the record accounts for (the last good version, or a newer failed attempt); otherwise the Worker was changed
+# outside the pipeline and the run refuses. Anything older (e.g. what was live before the bootstrap deploy) is rolled back
+# manually by the owner (docs/development/deployment.md). A rollback restores Worker code and config only: not Worker secrets,
+# not data. Recovery is recorded as rollback-in-progress / -failed / -unverified / -aborted / -recovered.
+#
+# The lock group below (deploy-<app>, never cancelled mid-flight) is shared with the future deploy workflow, which MUST use
+# exactly the same group. GitHub keeps only one PENDING run per group, so a rollback waiting for approval can be replaced by a
+# later run of the same group (and vice versa): check the run list after dispatching.
+name: Rollback production (per app)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which application to roll back.
+        type: choice
+        required: true
+        options: [web, admin, student]
+      version_id:
+        description: Worker version ID to roll back to (UUID from `wrangler versions list`). Required. In a rehearsal any well-formed UUID is accepted.
+        type: string
+        required: true
+      reason:
+        description: Why (single line, at most 100 characters). Recorded in the Worker version history.
+        type: string
+        required: true
+      dry_run:
+        description: Rehearsal only (default). Untick to roll back for real, behind the Environment approval.
+        type: boolean
+        required: true
+        default: true
+
+permissions: {}
+
+jobs:
+  rehearse:
+    name: rehearsal (${{ inputs.app }}, no credentials, nothing changes)
+    if: ${{ inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: read
+    env:
+      APP: ${{ inputs.app }}
+      VERSION_ID: ${{ inputs.version_id }}
+      REASON: ${{ inputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Rehearse the rollback (reads the deployment record; changes nothing)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/rollback.mjs --app "$APP" --version-id "$VERSION_ID" --reason "$REASON" --dry-run
+
+  # Without this a real run dispatched from another branch would skip both jobs and look green.
+  refuse-non-main:
+    name: refuse (real rollback must be dispatched from main)
+    if: ${{ !inputs.dry_run && github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - run: |
+          echo "::error::a real rollback may only be dispatched from main (this run is on $GITHUB_REF); nothing was changed"
+          exit 1
+
+  rollback:
+    name: rollback (${{ inputs.app }})
+    if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production-${{ inputs.app }}
+    # Same lock group as the deploy workflow so a deploy and a rollback of one app can never interleave.
+    concurrency:
+      group: deploy-${{ inputs.app }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      deployments: write
+    env:
+      APP: ${{ inputs.app }}
+      VERSION_ID: ${{ inputs.version_id }}
+      REASON: ${{ inputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      # No credential is in the environment while dependencies are installed.
+      - run: pnpm install --frozen-lockfile
+      # The Cloudflare token exists in this one step only. rollback.mjs hands it to wrangler and nothing else; it also
+      # reads the record, writes the rollback record before and after, and runs the production smoke test.
+      - name: Roll back
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/ci/rollback.mjs --app "$APP" --version-id "$VERSION_ID" --reason "$REASON"
