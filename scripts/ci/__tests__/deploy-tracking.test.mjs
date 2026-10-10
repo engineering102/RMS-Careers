@@ -24,7 +24,7 @@ const C = sha('c');
 
 /** A deployment record exactly as our (future) deploy job would create it. */
 let nextId = 100;
-function record({ app = 'web', at, kind = 'deploy', creator = 'github-actions[bot]', payloadSha, depSha, env, marker = RECORD_MARKER }) {
+function record({ app = 'web', at, kind = 'deploy', creator = 'github-actions[bot]', payloadSha, depSha, env, marker = RECORD_MARKER, versionId }) {
   const id = nextId++;
   return {
     id,
@@ -32,7 +32,7 @@ function record({ app = 'web', at, kind = 'deploy', creator = 'github-actions[bo
     environment: env ?? ENVIRONMENTS[app],
     created_at: `2026-10-10T00:00:${String(id % 60).padStart(2, '0')}Z`,
     creator: { login: creator },
-    payload: { marker, app, sha: payloadSha ?? at, runId: '1', runUrl: '', kind }
+    payload: { marker, app, sha: payloadSha ?? at, runId: '1', runUrl: '', kind, ...(versionId !== undefined ? { versionId } : {}) }
   };
 }
 const fakeApi = (deployments, statusesById, { failList = false, failStatus = false } = {}) => ({
@@ -76,7 +76,7 @@ describe('lastGood: reading the record', () => {
 
   test('a rollback record is the base even though its commit is older', async () => {
     const dep = record({ at: B });
-    const rb = record({ at: A, kind: 'rollback' });
+    const rb = record({ at: A, kind: 'rollback', versionId: '11111111-2222-3333-4444-555555555555' });
     const r = await lastGood({ api: fakeApi([dep, rb], { ...ok(dep.id), ...ok(rb.id) }), app: 'web' });
     assert.deepEqual([r.sha, r.kind], [A, 'rollback']);
   });
