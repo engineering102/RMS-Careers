@@ -25,6 +25,12 @@
 # A called workflow can never hold a permission its caller job did not grant, so each per-app caller grants the union of what
 # deploy-app.yml's jobs request (contents: read, actions: read, deployments: write); deploy-app.yml narrows it per job.
 #
+# Each per-app caller passes `secrets: inherit`. Observed on GitHub (runs 38057566875, 38058765155): without it, the deploy job
+# of the called workflow receives the production-<app> Environment's VARIABLES but its SECRETS resolve empty, so the executor
+# refused with missing-credentials. Inheriting makes repository-level secrets readable by deploy-app.yml too; it references
+# exactly one secret (CLOUDFLARE_API_TOKEN, in the final Deploy step) and forwards nothing to artifact-poc-app.yml, both pinned
+# by scripts/ci/__tests__/deploy-workflow.test.mjs. No Cloudflare credential exists at repository level.
+#
 # This file deploys nothing itself and contains no credential. ci.yml, ci-gate and the classifier are unchanged.
 name: Deploy production
 
@@ -114,6 +120,7 @@ jobs:
       contents: read
       deployments: write
       actions: read
+    secrets: inherit
 
   admin:
     name: admin
@@ -129,6 +136,7 @@ jobs:
       contents: read
       deployments: write
       actions: read
+    secrets: inherit
 
   student:
     name: student
@@ -144,3 +152,4 @@ jobs:
       contents: read
       deployments: write
       actions: read
+    secrets: inherit
