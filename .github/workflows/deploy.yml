@@ -1,18 +1,23 @@
 # Phase 4: production deployment, entry point. Spec: docs/plans/phase-4-production-deployment-spec.md section 3.
 #
-# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. No Environment, Cloudflare credential or deployment
-# record exists yet, so it cannot deploy anything today. The repository variable PRODUCTION_DEPLOY_ENABLED is the MASTER
-# SWITCH for every real deployment (automatic or dispatched): only the exact string "true" enables it; unset or anything else
-# is off. It is enforced in the gate AND again inside the deploy executor (scripts/ci/deploy.mjs), which also refuses to run
-# unless the production-<app> Environment exists with required reviewers and a main-only branch policy (see
-# docs/development/deployment.md). Set up and verify those BEFORE enabling it.
+# EVIDENCE STATUS: the REHEARSAL path (workflow_dispatch with dry_run) has been run on GitHub Actions (gate, plan, build, verify,
+# rehearse). The real-deploy path (dry_run = false: Environment approval, Cloudflare credential, deployment records,
+# `wrangler deploy`, production smoke test) has NOT yet been run on GitHub Actions; this pipeline has never deployed
+# anything. The repository variable PRODUCTION_DEPLOY_ENABLED is the MASTER SWITCH for every real deployment (automatic or
+# dispatched): only the exact string "true" enables it; unset or anything else is off. It is enforced in the gate AND again
+# inside the deploy executor (scripts/ci/deploy.mjs), which also refuses to continue unless the production-<app> Environment
+# exists with required reviewers and a main-only branch policy (see docs/development/deployment.md). That Environment check
+# runs in a REHEARSAL too: a rehearsal requests no approval and names no Environment in its job, but it READS the Environment
+# through the API and fails closed (environment-unreadable / -unprotected / -branches) if it is missing or unprotected.
 #
 # Triggers
 #   workflow_run      CI (ci.yml) completed on a push to main. The commit is workflow_run.head_sha (the commit CI ran on),
 #                     NEVER github.sha (which here is the default-branch tip). Real deploy, only while the switch is "true".
 #   workflow_dispatch explicit: app (all | web | admin | student), bootstrap (one app only), dry_run (default true).
 #                     Only from main: any other ref is refused by the refuse-non-main job before anything else runs. A rehearsal
-#                     (dry_run) does not need the switch; a real run needs the switch AND each app's Environment approval.
+#                     (dry_run) does not need the switch or any approval; a real run needs the switch AND each app's Environment
+#                     approval. Both need the protected Environment to exist (see above). A rehearsal whose plan is "skip"
+#                     (already-deployed, unchanged, superseded) builds and rehearses NOTHING: that is not rehearsal evidence.
 #
 # gate (no credential) -> one deploy-app.yml call per app. There is deliberately NO matrix: every app has its own plan, build,
 # verify and deploy jobs, its own job outputs, its own Environment approval and its own lock.
@@ -42,7 +47,7 @@ on:
         required: true
         default: false
       dry_run:
-        description: Rehearsal only (default). Runs every check and `wrangler deploy --dry-run`; no credential, no Environment, nothing is written.
+        description: Rehearsal only (default). Runs every check and `wrangler deploy --dry-run`; no credential, no approval, nothing is written. The protected production-app Environment must still exist (it is read, not used). An app that is skipped (already deployed, unchanged, superseded) was NOT rehearsed.
         type: boolean
         required: true
         default: true

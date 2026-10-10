@@ -706,3 +706,71 @@ describe('deploy: input validation and helpers', () => {
 });
 
 test('DeployError carries a code', () => assert.equal(new DeployError('x', 'y').code, 'x'));
+
+describe('deploy: a skip is never a rehearsal; baseline and bootstrap rules hold in a rehearsal too', () => {
+  const rehearsalOpts = (over = {}) => {
+    const calls = { dryRun: 0 };
+    const o = opts({ dryRun: true, env: ENV_DRY, dryRunFn: () => { calls.dryRun++; return { ok: true, problems: [], wranglerVersion: '4.147.0' }; }, ...over });
+    return { o, calls };
+  };
+
+  const skipCases = [
+    ['already-deployed', () => ({ sha: B, art: makeArtifact({ at: B }) })],
+    ['superseded', () => ({ isAncestor: (_r, a, b) => a === D && b === B })],
+    ['unchanged', () => ({ detectFn: () => ({ deployableApps: ['admin', 'student'], degraded: false }) })]
+  ];
+  for (const [code, over] of skipCases) {
+    test(`${code}: a rehearsal that plans a skip is reported as a skip, runs no dry-run bundle and writes nothing`, async () => {
+      const { o, calls } = rehearsalOpts(over());
+      const r = await run(o);
+      assert.deepEqual([r.ok, r.action, r.code, r.dryRun], [true, 'skip', code, true]);
+      assert.notEqual(r.action, 'rehearsed');
+      assert.equal(r.command, undefined, 'no deploy command was built');
+      assert.equal(r.environment, undefined, 'no rehearsal evidence block');
+      assert.equal(calls.dryRun, 0, 'wrangler --dry-run was never run');
+      assert.deepEqual([o.api.writes, o.runWrangler.calls], [[], []]);
+    });
+  }
+
+  test('a real rehearsal is reported as rehearsed with the command and the Environment evidence', async () => {
+    const { o, calls } = rehearsalOpts();
+    const r = await run(o);
+    assert.deepEqual([r.action, r.decision.action, calls.dryRun], ['rehearsed', 'deploy', 1]);
+    assert.equal(r.environment.name, 'production-web');
+    assert.equal(r.environment.reviewerRules, 1);
+  });
+
+  test('no baseline and no bootstrap: the rehearsal refuses (no-baseline) before the dry-run bundle', async () => {
+    const { o, calls } = rehearsalOpts({ api: memApi() });
+    await assert.rejects(() => run(o), /no-baseline/);
+    assert.equal(calls.dryRun, 0);
+    assert.deepEqual(o.api.writes, []);
+  });
+
+  test('explicit bootstrap with no baseline: the rehearsal decides bootstrap, rehearses, and invents no record', async () => {
+    const { o, calls } = rehearsalOpts({ api: memApi(), mode: 'bootstrap' });
+    const r = await run(o);
+    assert.deepEqual([r.action, r.decision.code, r.decision.base, calls.dryRun], ['rehearsed', 'bootstrap', null, 1]);
+    assert.deepEqual([o.api.writes, o.api.deployments], [[], []], 'no intent, evidence or baseline record is created');
+    assert.equal((await lastGood({ api: o.api, app: 'web' })).status, 'none', 'history is still empty afterwards');
+  });
+
+  test('bootstrap when a verified baseline exists is refused (bootstrap-not-needed), in a rehearsal as in a real run', async () => {
+    const { o, calls } = rehearsalOpts({ mode: 'bootstrap' });
+    await assert.rejects(() => run(o), /bootstrap-not-needed/);
+    assert.equal(calls.dryRun, 0);
+    assert.deepEqual([o.api.writes, o.runWrangler.calls], [[], []]);
+  });
+
+  test('a bootstrap needs a rehearsal-visible Environment: a missing one refuses the bootstrap rehearsal (environment-unreadable)', async () => {
+    const { o, calls } = rehearsalOpts({ api: memApi({ getEnvironment: async () => { throw new Error('GitHub API GET /environments/production-web -> HTTP 404'); } }), mode: 'bootstrap' });
+    await assert.rejects(() => run(o), /environment-unreadable/);
+    assert.equal(calls.dryRun, 0);
+  });
+
+  test('the summaries say plainly that a skip is not rehearsal evidence', () => {
+    const src = fs.readFileSync(new URL('../deploy.mjs', import.meta.url), 'utf8');
+    assert.match(src, /a skip is not rehearsal evidence/);
+    assert.match(src, /NOT rehearsal evidence/);
+  });
+});
