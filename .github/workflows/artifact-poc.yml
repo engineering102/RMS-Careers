@@ -1,0 +1,37 @@
+# CI/CD Phase 3 PROOF OF CONCEPT: build artifact packaging and verification. THIS WORKFLOW DOES NOT DEPLOY.
+#
+# Manually triggered only (workflow_dispatch). Calls the reusable artifact-poc-app.yml once per application. Each call
+# is its own build -> verify pair with its own job output, so the digest hand-off for web, admin and student can never
+# be mixed up through a shared matrix output map.
+#
+# The existing ci.yml and ci-gate are untouched and do not depend on this workflow.
+#
+# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. See artifact-poc-app.yml for what has and has
+# not been exercised, and the trust model.
+name: Artifact PoC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: artifact-poc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    uses: ./.github/workflows/artifact-poc-app.yml
+    with:
+      app: web
+
+  admin:
+    uses: ./.github/workflows/artifact-poc-app.yml
+    with:
+      app: admin
+
+  student:
+    uses: ./.github/workflows/artifact-poc-app.yml
+    with:
+      app: student
