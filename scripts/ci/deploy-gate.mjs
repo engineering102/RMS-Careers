@@ -15,6 +15,7 @@
  *      `ci-gate` exists, belongs to that run and SHA, and is completed/success. For workflow_run the run must be the
  *      triggering run and still be on the attempt that triggered this deploy (a later re-run makes the trigger stale).
  *   3. the commit is an ancestor of (or equal to) the current origin/main tip
+ * Every outcome (allow, skip, deny) prints one `deploy-gate: {json}` line (see decisionLine) so the step log explains the decision.
  * Anything missing, ambiguous, unreadable, truncated or for another SHA fails the job. The one benign non-proceed is a CI run
  * that did not succeed, and automatic runs while the switch is off (reported, not an error).
  *
@@ -194,27 +195,72 @@ export function assertOnMain(root, sha, isAncestor = gitIsAncestor) {
   return tip;
 }
 
+/**
+ * One concise, structured, non-sensitive log line that explains a gate decision (the job summary is not part of the step log).
+ * It carries only the commit SHA, the app scope, the mode flags, CI run/attempt/job ids and a reason; never an environment
+ * value, token or secret. `decision` is allow (proceed), skip (benign non-proceed) or deny (the run fails).
+ */
+export function decisionLine({ decision, source, sha, apps, bootstrap, dryRun, ciRun, reason, code }) {
+  const clean = (v) => String(v).replace(/\s+/g, ' ').slice(0, 300);
+  const entry = {
+    decision,
+    ...(source ? { source } : {}),
+    ...(sha ? { sha } : {}),
+    ...(apps ? { apps } : {}),
+    ...(bootstrap !== undefined ? { bootstrap } : {}),
+    ...(dryRun !== undefined ? { dryRun } : {}),
+    ...(ciRun ? { ciRun: ciRun.runId, attempt: ciRun.attempt, ciGateJob: ciRun.jobId } : {}),
+    ...(code ? { code } : {}),
+    ...(reason ? { reason: clean(reason) } : {})
+  };
+  return `deploy-gate: ${JSON.stringify(entry)}`;
+}
+
 async function main() {
   const env = process.env;
   const repo = env.GITHUB_REPOSITORY;
   const event = env.GITHUB_EVENT_PATH ? JSON.parse(fs.readFileSync(env.GITHUB_EVENT_PATH, 'utf8')) : {};
-  const out = (kv) => env.GITHUB_OUTPUT && fs.appendFileSync(env.GITHUB_OUTPUT, Object.entries(kv).map(([k, v]) => `${k}=${v}\n`).join(''));
-  const summary = (md) => env.GITHUB_STEP_SUMMARY && fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `${md}\n`);
-  const trigger = evaluateTrigger({
-    eventName: env.GITHUB_EVENT_NAME, event, ref: env.GITHUB_REF, githubSha: env.GITHUB_SHA, repo,
-    inputs: { app: env.INPUT_APP, bootstrap: env.INPUT_BOOTSTRAP, dry_run: env.INPUT_DRY_RUN }, enabled: env.PRODUCTION_DEPLOY_ENABLED
-  });
+  const out = (kv) => env.GITHUB_OUTPUT && fs.appendFileSync(env.GITHUB_OUTPUT, Object.entries(kv).map(([k, v]) => `${k}=${v}
+`).join(''));
+  const summary = (md) => env.GITHUB_STEP_SUMMARY && fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `${md}
+`);
+  const log = (entry) => process.stdout.write(`${decisionLine(entry)}
+`);
+  const source = env.GITHUB_EVENT_NAME;
+  let trigger;
+  try {
+    trigger = evaluateTrigger({
+      eventName: env.GITHUB_EVENT_NAME, event, ref: env.GITHUB_REF, githubSha: env.GITHUB_SHA, repo,
+      inputs: { app: env.INPUT_APP, bootstrap: env.INPUT_BOOTSTRAP, dry_run: env.INPUT_DRY_RUN }, enabled: env.PRODUCTION_DEPLOY_ENABLED
+    });
+  } catch (err) {
+    log({ decision: 'deny', source, code: err.code, reason: err.message });
+    throw err;
+  }
   if (!trigger.proceed) {
     out({ proceed: 'false', sha: trigger.sha ?? '', apps: '[]', bootstrap: 'false', dry_run: 'true' });
-    summary(`### Deploy gate: not proceeding\n- ${trigger.reason}`);
-    process.stdout.write(`::notice title=deploy-gate::${trigger.reason}\n`);
+    summary(`### Deploy gate: not proceeding
+- ${trigger.reason}`);
+    log({ decision: 'skip', source, sha: trigger.sha, reason: trigger.reason });
+    process.stdout.write(`::notice title=deploy-gate::${trigger.reason}
+`);
     return;
   }
+  const scope = { source: trigger.source, sha: trigger.sha, apps: trigger.apps, bootstrap: trigger.bootstrap, dryRun: trigger.dryRun };
   const root = path.resolve(env.GITHUB_WORKSPACE ?? '.');
-  assertOnMain(root, trigger.sha);
-  const green = await evaluateCiGate({ api: githubReader({ repo, token: env.GITHUB_TOKEN }), sha: trigger.sha, repo, triggeringRun: trigger.triggeringRun });
+  let green;
+  try {
+    assertOnMain(root, trigger.sha);
+    green = await evaluateCiGate({ api: githubReader({ repo, token: env.GITHUB_TOKEN }), sha: trigger.sha, repo, triggeringRun: trigger.triggeringRun });
+  } catch (err) {
+    log({ decision: 'deny', ...scope, code: err.code, reason: err.message });
+    throw err;
+  }
   out({ proceed: 'true', sha: trigger.sha, apps: JSON.stringify(trigger.apps), bootstrap: String(trigger.bootstrap), dry_run: String(trigger.dryRun) });
-  summary(`### Deploy gate: passed\n- commit \`${trigger.sha}\` (${trigger.source}), CI run ${green.runId} attempt ${green.attempt}, job ${CI_WORKFLOW.job} (${green.jobId}) succeeded\n- apps: ${trigger.apps.join(', ')}; bootstrap: ${trigger.bootstrap}; dry run: ${trigger.dryRun}`);
+  summary(`### Deploy gate: passed
+- commit \`${trigger.sha}\` (${trigger.source}), CI run ${green.runId} attempt ${green.attempt}, job ${CI_WORKFLOW.job} (${green.jobId}) succeeded
+- apps: ${trigger.apps.join(', ')}; bootstrap: ${trigger.bootstrap}; dry run: ${trigger.dryRun}`);
+  log({ decision: 'allow', ...scope, ciRun: green });
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {

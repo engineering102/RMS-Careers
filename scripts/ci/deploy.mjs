@@ -388,7 +388,7 @@ async function main() {
     const { decision, last, degraded, warnings } = await planApp({ api, app: opts.app, sha: opts.sha, bootstrap: opts.bootstrap === 'true', root });
     process.stdout.write(`${JSON.stringify({ app: opts.app, sha: opts.sha, decision, last, degraded, warnings }, null, 2)}\n`);
     for (const w of warnings) process.stdout.write(`::warning title=deploy-plan::${w}\n`);
-    summary(`### ${opts.app}: plan = ${decision.action} (${decision.code})\n- ${decision.reason}${degraded ? '\n- the change classifier degraded; the app was treated as affected (fail closed)' : ''}`);
+    summary(`### ${opts.app}: plan = ${decision.action} (${decision.code})\n- ${decision.reason}${decision.action === 'skip' ? '\n- SKIP: no build, rehearsal or deploy will run for this app, so this run is NOT rehearsal evidence' : ''}${degraded ? '\n- the change classifier degraded; the app was treated as affected (fail closed)' : ''}`);
     if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `action=${decision.action}\ncode=${decision.code}\n`);
     if (decision.action === 'fail') throw new DeployError(decision.code, decision.reason);
     return;
@@ -405,7 +405,7 @@ async function main() {
     });
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     for (const w of result.warnings ?? []) process.stdout.write(`::warning title=deploy::${w}\n`);
-    summary(result.action === 'skip' ? `### ${opts.app}: skipped (${result.code})\n- ${result.reason}`
+    summary(result.action === 'skip' ? `### ${opts.app}: skipped (${result.code})\n- ${result.reason}\n- nothing was rehearsed or deployed: a skip is not rehearsal evidence`
       : result.action === 'rehearsed' ? `### ${opts.app}: deploy rehearsal ok\n- decision: ${result.decision.code}; nothing was changed, no credentials were used`
         : `### ${opts.app}: ${result.ok ? 'deployed and verified' : 'deployed but SMOKE FAILED'}\n- version \`${result.versionId}\`, intent record ${result.intentId}, evidence record ${result.evidenceId}`);
     if (!result.ok) process.exitCode = 1;

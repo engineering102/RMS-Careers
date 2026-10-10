@@ -3,7 +3,7 @@
  * Phase 4: per-app "last verified-deployed SHA" records, kept as GitHub Deployments (see
  * docs/plans/cicd-deployment-tracking-design.md). This module only READS and DECIDES; it contains no Cloudflare code
  * and nothing in it can deploy. The writers (`createRecord`, `setStatus`) talk to the GitHub Deployments API only and
- * are used by a future deploy job.
+ * are called by scripts/ci/deploy.mjs (intent and evidence records) and scripts/ci/rollback.mjs (rollback records).
  *
  * FAIL CLOSED. Anything that makes the last good SHA uncertain (API error, rate limit, truncated pagination, malformed
  * or foreign record, a SHA that is not in the checkout) is an error, never "no baseline" and never "deploy everything".
@@ -223,7 +223,7 @@ async function listOrdered({ api, app }) {
  * WRANGLER_OUTPUT_FILE_PATH is set (entry `{type: "deploy", worker_name, version_id}`; read from wrangler 4.147.0 source:
  * `version_id` is null when wrangler aborted or ran with --dry-run). Exactly one `deploy` entry with a UUID is required;
  * zero, several, null, malformed, or another Worker's entry is an error: the id is the identity of the record.
- * Nothing calls this yet (the deploy workflow does not exist); it pins the capture contract. [assumption] unproven live.
+ * Called by scripts/ci/deploy.mjs after `wrangler deploy`. [assumption] the output-file shape is unproven live.
  */
 export function versionIdFromWranglerOutput(text, workerName) {
   const deploys = [];
@@ -324,7 +324,7 @@ export function githubApi({ repo, token, fetchImpl = fetch, apiUrl = 'https://ap
   };
 }
 
-/** Writers for a future deploy job. A record is `success` only after the smoke test passed. */
+/** Writers used by deploy.mjs and rollback.mjs. A record is `success` only after the smoke test passed. */
 export async function createRecord(api, { app, sha, runId, runUrl, kind, versionId, phase, repo, runAttempt }) {
   const payload = recordPayload({ app, sha, runId, runUrl, kind, versionId, phase, repo, runAttempt });
   const deployment = await api.createDeployment({ sha, environment: ENVIRONMENTS[app], payload, description: `${kind} ${app} @ ${sha.slice(0, 12)}` });

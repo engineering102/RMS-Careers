@@ -1,15 +1,19 @@
 # Phase 4: deploy ONE app. Reusable (workflow_call only); deploy.yml calls it once per app.
 # Spec: docs/plans/phase-4-production-deployment-spec.md sections 2-5.
 #
-# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. See deploy.yml.
+# EVIDENCE STATUS: the plan, artifact and rehearse jobs have run on GitHub Actions (dry_run = true).
+# The deploy job has NOT yet been run on GitHub Actions. See deploy.yml.
 #
 #   plan      (no credential)  advisory: reads the deployment record and the changed files; skips the whole app when there is
 #                              nothing to deploy. Fails closed on an unreadable or missing history (bootstrap is explicit).
+#                              A plan of skip (already-deployed, unchanged, superseded) ends the run GREEN without a build or a
+#                              rehearsal: a skip is never rehearsal evidence.
 #   artifact  (no credential)  artifact-poc-app.yml at the EXACT sha: ONE build job -> separate verify job (no rebuild),
 #                              publishing the manifest digest as a job output. The only build in the whole run.
-#   rehearse  (no credential, no Environment)  dry_run = true: re-verifies the artifact, repeats the decision, checks that
-#                              the production-<app> Environment is protected (reviewers + main-only), builds the exact deploy
-#                              command and runs `wrangler deploy --dry-run`. Writes nothing.
+#   rehearse  (no credential, no approval, no `environment:` key)  dry_run = true: READS the production-<app> Environment through
+#                              the API and fails closed unless it exists and is protected (reviewers + main-only), re-verifies the
+#                              artifact, repeats the decision, builds the exact deploy command and runs `wrangler deploy --dry-run`.
+#                              Writes nothing.
 #   deploy    (Environment production-<app>, per-app lock)  dry_run = false: downloads the artifact, verifies it AGAIN here
 #                              against the digest handed over by the build job, then scripts/ci/deploy.mjs repeats the decision
 #                              under the lock, refuses unless PRODUCTION_DEPLOY_ENABLED is "true" and the Environment is

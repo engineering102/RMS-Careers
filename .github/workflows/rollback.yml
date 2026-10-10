@@ -1,11 +1,17 @@
 # Phase 4: roll ONE production Worker back to a previously verified version. Manually triggered only.
 # Spec: docs/plans/phase-4-production-deployment-spec.md section 5 (and docs/plans/cicd-deployment-tracking-design.md).
 #
-# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions, and no Environment or Cloudflare credential
-# exists yet. `dry_run` defaults to true; the dry-run job is the credential-free rehearsal.
+# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. `dry_run` defaults to true; the dry-run job is the
+# credential-free rehearsal.
+#
+# BRANCH POLICY: every dispatch must come from main (same rule as deploy.yml). Any other ref fails loudly in refuse-non-main
+# before anything else runs, so a rehearsal always judges the code on main and never silently skips to green.
 #
 #   rehearse : (dry_run = true)  NO Environment, NO Cloudflare credential. Reads the GitHub Deployments record, validates
-#              the inputs and the exact wrangler command, writes nothing, contacts nothing on Cloudflare.
+#              the inputs and the exact wrangler command, writes nothing, contacts nothing on Cloudflare. It does not read the
+#              GitHub Environment (unlike the deploy rehearsal). With NO verified deployment record it fails closed with
+#              `no-baseline`: that is the EXPECTED result before the first pipeline deployment and proves only that the
+#              Deployments read works. A green rehearsal needs a verified deployment record, i.e. a prior real deploy.
 #   rollback : (dry_run = false) Environment `production-<app>` (required reviewers + `main` only), the same per-app lock as
 #              the deploy workflow, the Cloudflare token present in ONE step only. No build, no artifact, no database.
 #
@@ -16,8 +22,8 @@
 # manually by the owner (docs/development/deployment.md). A rollback restores Worker code and config only: not Worker secrets,
 # not data. Recovery is recorded as rollback-in-progress / -failed / -unverified / -aborted / -recovered.
 #
-# The lock group below (deploy-<app>, never cancelled mid-flight) is shared with the future deploy workflow, which MUST use
-# exactly the same group. GitHub keeps only one PENDING run per group, so a rollback waiting for approval can be replaced by a
+# The lock group below (deploy-<app>, never cancelled mid-flight) is shared with deploy-app.yml, which uses exactly the same
+# group (pinned by scripts/ci/__tests__/deploy-workflow.test.mjs). GitHub keeps only one PENDING run per group, so a rollback waiting for approval can be replaced by a
 # later run of the same group (and vice versa): check the run list after dispatching.
 name: Rollback production (per app)
 
@@ -48,7 +54,7 @@ permissions: {}
 jobs:
   rehearse:
     name: rehearsal (${{ inputs.app }}, no credentials, nothing changes)
-    if: ${{ inputs.dry_run }}
+    if: ${{ inputs.dry_run && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -73,16 +79,16 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci/rollback.mjs --app "$APP" --version-id "$VERSION_ID" --reason "$REASON" --dry-run
 
-  # Without this a real run dispatched from another branch would skip both jobs and look green.
+  # Without this a run dispatched from another branch would skip every job and look green.
   refuse-non-main:
-    name: refuse (real rollback must be dispatched from main)
-    if: ${{ !inputs.dry_run && github.ref != 'refs/heads/main' }}
+    name: refuse (a rollback or its rehearsal must be dispatched from main)
+    if: ${{ github.ref != 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions: {}
     steps:
       - run: |
-          echo "::error::a real rollback may only be dispatched from main (this run is on $GITHUB_REF); nothing was changed"
+          echo "::error::a rollback (or its rehearsal) may only be dispatched from main (this run is on $GITHUB_REF); nothing was changed"
           exit 1
 
   rollback:

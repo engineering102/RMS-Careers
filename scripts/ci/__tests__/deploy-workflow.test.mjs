@@ -338,9 +338,24 @@ describe('deploy workflows: no migrations, seeds or database writes; pinned acti
     }
     for (const l of split(deployRaw).filter((x) => /^\s*uses:/.test(x))) assert.match(l, /uses: \.\/\.github\/workflows\/deploy-app\.yml$/);
   });
-  test('the headers do not claim the workflows have run on GitHub', () => {
+  test('the headers claim only what has run on GitHub (the rehearsal path) and say the real-deploy path has not', () => {
+    assert.match(deployRaw, /REHEARSAL path \(workflow_dispatch with dry_run\) has been run on GitHub Actions/);
     assert.match(deployRaw, /has NOT yet been run on GitHub Actions/);
-    assert.match(appRaw, /has NOT yet been run on GitHub Actions/);
+    assert.match(appRaw, /plan, artifact and rehearse jobs have run on GitHub Actions/);
+    assert.match(appRaw, /The deploy job has NOT yet been run on GitHub Actions/);
+  });
+  test('the comments do not say a rehearsal needs no Environment: it READS the protected Environment and fails closed', () => {
+    for (const raw of [deployRaw, appRaw]) assert.doesNotMatch(raw, /no credential, no Environment[,)]/i);
+    assert.match(deployRaw, /READS the Environment\n# through the API and fails closed/);
+    assert.match(appRaw, /READS the production-<app> Environment through/);
+    assert.match(deployRaw, /An app that is skipped \(already deployed, unchanged, superseded\) was NOT rehearsed/);
+    assert.match(appRaw, /a skip is never rehearsal evidence/);
+  });
+  test('the rehearse job still names no Environment and holds no secret, even though deploy.mjs reads the Environment through the API', () => {
+    const rehearse = job(app, 'rehearse');
+    assert.doesNotMatch(rehearse, /^\s+environment:/m);
+    assert.doesNotMatch(rehearse, /secrets\.|CLOUDFLARE/);
+    assert.match(rehearse, /actions: read/, 'the Environment read needs actions: read');
   });
 });
 

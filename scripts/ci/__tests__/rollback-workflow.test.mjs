@@ -44,7 +44,7 @@ describe('rollback.yml: the rehearsal can touch nothing', () => {
     assert.doesNotMatch(rehearse, /^\s+environment:/m);
     assert.doesNotMatch(rehearse, /secrets\.|vars\./);
     assert.doesNotMatch(rehearse, /CLOUDFLARE|CF_|WRANGLER/);
-    assert.match(rehearse, /if: \$\{\{ inputs\.dry_run \}\}/);
+    assert.match(rehearse, /if: \$\{\{ inputs\.dry_run && github\.ref == 'refs\/heads\/main' \}\}/);
     assert.match(rehearse, /rollback\.mjs [^\n]*--dry-run/);
   });
   test('it does not take the production lock', () => assert.doesNotMatch(rehearse, /concurrency:/));
@@ -54,8 +54,9 @@ describe('rollback.yml: the real job is gated', () => {
   test('runs only when dry_run is false and the workflow is dispatched from main', () => {
     assert.match(rollback, /if: \$\{\{ !inputs\.dry_run && github\.ref == 'refs\/heads\/main' \}\}/);
   });
-  test('a real run from another branch fails loudly instead of silently skipping, with no token and no Environment', () => {
-    assert.match(refuse, /if: \$\{\{ !inputs\.dry_run && github\.ref != 'refs\/heads\/main' \}\}/);
+  test('a run from another branch, rehearsal or real, fails loudly instead of silently skipping, with no token and no Environment', () => {
+    assert.match(refuse, /if: \$\{\{ github\.ref != 'refs\/heads\/main' \}\}/);
+    assert.doesNotMatch(refuse, /inputs\./, 'the refusal does not depend on dry_run');
     assert.match(refuse, /permissions: \{\}/);
     assert.match(refuse, /exit 1/);
     assert.doesNotMatch(refuse, /environment:|secrets\.|vars\.|checkout|pnpm|node /);
@@ -107,5 +108,30 @@ describe('rollback.yml: isolation', () => {
   test('ci.yml does not reference rollback', () => assert.doesNotMatch(fs.readFileSync(path.join(root, '.github', 'workflows', 'ci.yml'), 'utf8'), /rollback/));
   test('the Phase 3 PoC workflows still have no deployments scope or rollback', () => {
     for (const f of ['artifact-poc.yml', 'artifact-poc-app.yml']) assert.doesNotMatch(fs.readFileSync(path.join(root, '.github', 'workflows', f), 'utf8'), /rollback\.mjs|deployments:/);
+  });
+});
+
+describe('rollback.yml: every dispatch must come from main (the rehearsal is judged on main code, like deploy.yml)', () => {
+  const jobsSection = code.slice(code.indexOf('\njobs:\n'));
+  const everyJob = ['rehearse', 'refuse-non-main', 'rollback'].map((n) => ({ n, text: jobBlock(n) }));
+
+  test('for every possible ref and dry_run value exactly one path runs: refuse, rehearse or rollback', () => {
+    const cond = (text) => /^ {4}if: \$\{\{ (.*) \}\}$/m.exec(text)?.[1];
+    const evalIf = (expr, { ref, dry }) => Function('github', 'inputs', `return (${expr});`)({ ref }, { dry_run: dry });
+    for (const ref of ['refs/heads/main', 'refs/heads/feature', 'refs/tags/v1', 'refs/pull/1/merge']) {
+      for (const dry of [true, false]) {
+        const ran = everyJob.filter((j) => evalIf(cond(j.text), { ref, dry })).map((j) => j.n);
+        const expected = ref !== 'refs/heads/main' ? ['refuse-non-main'] : dry ? ['rehearse'] : ['rollback'];
+        assert.deepEqual(ran, expected, `${ref} dry_run=${dry}`);
+      }
+    }
+  });
+  test('the refusal is an error annotation naming the ref, and nothing is changed', () => {
+    assert.match(jobBlock('refuse-non-main'), /::error::a rollback \(or its rehearsal\) may only be dispatched from main \(this run is on \$GITHUB_REF\); nothing was changed/);
+    assert.equal([...jobsSection.matchAll(/^ {2}[a-z-]+:$/gm)].length, 3);
+  });
+  test('the header documents the branch policy and the expected no-baseline result of a rehearsal before the first deploy', () => {
+    assert.match(raw, /every dispatch must come from main/);
+    assert.match(raw, /`no-baseline`: that is the EXPECTED result before the first pipeline deployment/);
   });
 });

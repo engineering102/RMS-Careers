@@ -1,10 +1,11 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { CI_WORKFLOW, GateError, assertOnMain, deploySwitch, evaluateCiGate, evaluateTrigger, githubReader, trustedCiRun } from '../deploy-gate.mjs';
+import { fileURLToPath } from 'node:url';
+import { CI_WORKFLOW, GateError, assertOnMain, decisionLine, deploySwitch, evaluateCiGate, evaluateTrigger, githubReader, trustedCiRun } from '../deploy-gate.mjs';
 
 const REPO = 'engineering102/RMS-Careers';
 const S = 'a'.repeat(40); // the commit CI ran on
@@ -343,4 +344,88 @@ test('the trusted workflow constants are the ones ci.yml really has', () => {
   assert.equal(CI_WORKFLOW.path, '.github/workflows/ci.yml');
   assert.equal(CI_WORKFLOW.job, 'ci-gate');
   assert.ok(GateError);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Decision logging: the step log explains every decision and never carries a secret
+// ---------------------------------------------------------------------------------------------------------------
+const parseLine = (line) => {
+  assert.match(line, /^deploy-gate: \{.*\}$/, 'one structured line');
+  return JSON.parse(line.slice('deploy-gate: '.length));
+};
+
+describe('decisionLine', () => {
+  test('allow: SHA, scope, mode and the CI evidence', () => {
+    const e = parseLine(decisionLine({ decision: 'allow', source: 'workflow_dispatch', sha: S, apps: ['web'], bootstrap: true, dryRun: true, ciRun: { runId: 500, attempt: 2, jobId: 9001 } }));
+    assert.deepEqual(e, { decision: 'allow', source: 'workflow_dispatch', sha: S, apps: ['web'], bootstrap: true, dryRun: true, ciRun: 500, attempt: 2, ciGateJob: 9001 });
+  });
+  test('deny and skip carry a code or reason, collapsed to one short line', () => {
+    const deny = parseLine(decisionLine({ decision: 'deny', source: 'workflow_dispatch', code: 'not-main', reason: `not-main: line one\nline two ${'x'.repeat(500)}` }));
+    assert.equal(deny.decision, 'deny');
+    assert.equal(deny.code, 'not-main');
+    assert.ok(!deny.reason.includes('\n') && deny.reason.length <= 300);
+    const skip = parseLine(decisionLine({ decision: 'skip', source: 'workflow_run', sha: S, reason: 'automatic production deploys are disabled' }));
+    assert.deepEqual([skip.decision, skip.sha], ['skip', S]);
+  });
+  test('a boolean false is kept (dryRun false is information, not absence)', () => assert.equal(parseLine(decisionLine({ decision: 'allow', dryRun: false, bootstrap: false })).dryRun, false));
+});
+
+describe('deploy-gate CLI: every outcome is logged, and no secret is ever printed', () => {
+  const script = fileURLToPath(new URL('../deploy-gate.mjs', import.meta.url));
+  const CANARY = 'ghs_CANARY_must_never_appear_in_output';
+  let tmp;
+  before(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-gate-cli-'));
+  });
+  after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  const runGate = (env, event) => {
+    const eventPath = path.join(tmp, `event-${Math.random().toString(36).slice(2)}.json`);
+    const outPath = path.join(tmp, `out-${Math.random().toString(36).slice(2)}.txt`);
+    fs.writeFileSync(eventPath, JSON.stringify(event ?? {}));
+    fs.writeFileSync(outPath, '');
+    const res = spawnSync(process.execPath, [script], {
+      env: { PATH: process.env.PATH, GITHUB_REPOSITORY: REPO, GITHUB_TOKEN: CANARY, GITHUB_EVENT_PATH: eventPath, GITHUB_OUTPUT: outPath, GITHUB_SHA: TIP, ...env },
+      encoding: 'utf8', timeout: 30000
+    });
+    const lines = `${res.stdout}\n${res.stderr}`.split(/\r?\n/);
+    assert.ok(!`${res.stdout}${res.stderr}`.includes(CANARY), 'the token never appears in the log');
+    return { status: res.status, lines, entry: lines.filter((l) => l.startsWith('deploy-gate: ')).map(parseLine), outputs: fs.readFileSync(outPath, 'utf8') };
+  };
+
+  test('a dispatch from another ref is denied and logged with its code, before any API call', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/feature', INPUT_APP: 'web', INPUT_BOOTSTRAP: 'true', INPUT_DRY_RUN: 'true' });
+    assert.equal(r.status, 1);
+    assert.equal(r.entry.length, 1);
+    assert.deepEqual([r.entry[0].decision, r.entry[0].code, r.entry[0].source], ['deny', 'not-main', 'workflow_dispatch']);
+  });
+  test('a real dispatch with the switch off is denied: deploy-disabled', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/main', INPUT_APP: 'web', INPUT_BOOTSTRAP: 'false', INPUT_DRY_RUN: 'false' });
+    assert.equal(r.status, 1);
+    assert.deepEqual([r.entry[0].decision, r.entry[0].code], ['deny', 'deploy-disabled']);
+  });
+  test('bootstrap with app=all is denied: bootstrap-needs-one-app', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/main', INPUT_APP: 'all', INPUT_BOOTSTRAP: 'true', INPUT_DRY_RUN: 'true' });
+    assert.equal(r.status, 1);
+    assert.equal(r.entry[0].code, 'bootstrap-needs-one-app');
+  });
+  test('an automatic run while the switch is off is a logged skip with the CI SHA, exit 0, proceed=false', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_run', GITHUB_REF: 'refs/heads/main' }, wrEvent());
+    assert.equal(r.status, 0);
+    assert.deepEqual([r.entry[0].decision, r.entry[0].sha, r.entry[0].source], ['skip', S, 'workflow_run']);
+    assert.match(r.entry[0].reason, /disabled/);
+    assert.match(r.outputs, /^proceed=false$/m);
+    assert.match(r.outputs, /^apps=\[\]$/m);
+  });
+  test('a CI run that did not succeed is a logged skip, never an allow', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_run', GITHUB_REF: 'refs/heads/main', PRODUCTION_DEPLOY_ENABLED: 'true' }, wrEvent({ conclusion: 'failure' }));
+    assert.equal(r.status, 0);
+    assert.equal(r.entry[0].decision, 'skip');
+    assert.match(r.outputs, /^proceed=false$/m);
+  });
+  test('an untrusted trigger is denied and logged', () => {
+    const r = runGate({ GITHUB_EVENT_NAME: 'workflow_run', GITHUB_REF: 'refs/heads/main', PRODUCTION_DEPLOY_ENABLED: 'true' }, wrEvent({ event: 'pull_request' }));
+    assert.equal(r.status, 1);
+    assert.deepEqual([r.entry[0].decision, r.entry[0].code], ['deny', 'untrusted-event']);
+  });
 });
