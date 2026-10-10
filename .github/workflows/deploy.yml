@@ -1,0 +1,141 @@
+# Phase 4: production deployment, entry point. Spec: docs/plans/phase-4-production-deployment-spec.md section 3.
+#
+# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. No Environment, Cloudflare credential or deployment
+# record exists yet, so it cannot deploy anything today. The repository variable PRODUCTION_DEPLOY_ENABLED is the MASTER
+# SWITCH for every real deployment (automatic or dispatched): only the exact string "true" enables it; unset or anything else
+# is off. It is enforced in the gate AND again inside the deploy executor (scripts/ci/deploy.mjs), which also refuses to run
+# unless the production-<app> Environment exists with required reviewers and a main-only branch policy (see
+# docs/development/deployment.md). Set up and verify those BEFORE enabling it.
+#
+# Triggers
+#   workflow_run      CI (ci.yml) completed on a push to main. The commit is workflow_run.head_sha (the commit CI ran on),
+#                     NEVER github.sha (which here is the default-branch tip). Real deploy, only while the switch is "true".
+#   workflow_dispatch explicit: app (all | web | admin | student), bootstrap (one app only), dry_run (default true).
+#                     Only from main: any other ref is refused by the refuse-non-main job before anything else runs. A rehearsal
+#                     (dry_run) does not need the switch; a real run needs the switch AND each app's Environment approval.
+#
+# gate (no credential) -> one deploy-app.yml call per app. There is deliberately NO matrix: every app has its own plan, build,
+# verify and deploy jobs, its own job outputs, its own Environment approval and its own lock.
+#
+# A called workflow can never hold a permission its caller job did not grant, so each per-app caller grants the union of what
+# deploy-app.yml's jobs request (contents: read, actions: read, deployments: write); deploy-app.yml narrows it per job.
+#
+# This file deploys nothing itself and contains no credential. ci.yml, ci-gate and the classifier are unchanged.
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which application(s) to deploy.
+        type: choice
+        required: true
+        options: [all, web, admin, student]
+        default: all
+      bootstrap:
+        description: FIRST deployment of one app that has no verified deployment record. Requires a single app. Still needs the Environment approval.
+        type: boolean
+        required: true
+        default: false
+      dry_run:
+        description: Rehearsal only (default). Runs every check and `wrangler deploy --dry-run`; no credential, no Environment, nothing is written.
+        type: boolean
+        required: true
+        default: true
+
+permissions: {}
+
+jobs:
+  # Without this a dispatch from another ref would skip the gate and every app job and look green.
+  refuse-non-main:
+    name: refuse (a deployment may only run from main)
+    if: ${{ github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - run: |
+          echo "::error::a production deployment may only run from main (this run is on $GITHUB_REF); nothing was changed"
+          exit 1
+
+  gate:
+    name: gate (exact commit, green ci-gate, on main)
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+      sha: ${{ steps.gate.outputs.sha }}
+      apps: ${{ steps.gate.outputs.apps }}
+      bootstrap: ${{ steps.gate.outputs.bootstrap }}
+      dry_run: ${{ steps.gate.outputs.dry_run }}
+    steps:
+      # The default-branch checkout (workflow_run) or the dispatched main: this is the code that judges the commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Gate
+        id: gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_APP: ${{ inputs.app }}
+          INPUT_BOOTSTRAP: ${{ inputs.bootstrap }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
+        run: node scripts/ci/deploy-gate.mjs
+
+  web:
+    name: web
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' && contains(fromJSON(needs.gate.outputs.apps), 'web') }}
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      app: web
+      sha: ${{ needs.gate.outputs.sha }}
+      bootstrap: ${{ needs.gate.outputs.bootstrap == 'true' }}
+      dry_run: ${{ needs.gate.outputs.dry_run == 'true' }}
+    permissions:
+      contents: read
+      deployments: write
+      actions: read
+
+  admin:
+    name: admin
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' && contains(fromJSON(needs.gate.outputs.apps), 'admin') }}
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      app: admin
+      sha: ${{ needs.gate.outputs.sha }}
+      bootstrap: ${{ needs.gate.outputs.bootstrap == 'true' }}
+      dry_run: ${{ needs.gate.outputs.dry_run == 'true' }}
+    permissions:
+      contents: read
+      deployments: write
+      actions: read
+
+  student:
+    name: student
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' && contains(fromJSON(needs.gate.outputs.apps), 'student') }}
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      app: student
+      sha: ${{ needs.gate.outputs.sha }}
+      bootstrap: ${{ needs.gate.outputs.bootstrap == 'true' }}
+      dry_run: ${{ needs.gate.outputs.dry_run == 'true' }}
+    permissions:
+      contents: read
+      deployments: write
+      actions: read

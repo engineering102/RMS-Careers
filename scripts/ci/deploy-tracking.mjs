@@ -24,6 +24,15 @@ const PAGE_SIZE = 100;
 const MAX_PAGES = 10;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 export const VERSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const WORKER_NAMES = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' };
+/**
+ * A deploy writes TWO records (spec section 5): an `intent` record before the deploy (it can never carry a version id and
+ * can never be a diff base or rollback target) and an `evidence` record after the version was observed and verified
+ * (it must carry the version id). Rollback records are evidence by nature. Records without a phase are legacy/rollback.
+ */
+export const PHASES = ['intent', 'evidence'];
+const REPO = /^[\w.-]+\/[\w.-]+$/;
+const ATTEMPT = /^[1-9]\d{0,3}$/;
 
 export class TrackingError extends Error {
   constructor(code, message) {
@@ -33,15 +42,28 @@ export class TrackingError extends Error {
 }
 
 /** Payload stored with every record. The reader trusts a record only if it matches its own deployment. */
-export function recordPayload({ app, sha, runId, runUrl, kind, versionId }) {
+export function recordPayload({ app, sha, runId, runUrl, kind, versionId, phase, repo, runAttempt }) {
   if (!APPS.includes(app)) throw new TrackingError('bad-app', `unknown app "${app}"`);
   if (!FULL_SHA.test(sha ?? '')) throw new TrackingError('bad-sha', 'sha must be a full 40-character lowercase commit SHA');
   if (!RECORD_KINDS.includes(kind)) throw new TrackingError('bad-kind', `kind must be one of ${RECORD_KINDS.join(', ')}`);
   if (versionId !== undefined && !VERSION_ID.test(versionId)) throw new TrackingError('bad-version-id', 'versionId must be a lowercase Cloudflare Worker version UUID');
   if (kind === 'rollback' && versionId === undefined) throw new TrackingError('bad-version-id', 'a rollback record must carry the Worker version it restores');
+  if (phase !== undefined) {
+    if (!PHASES.includes(phase)) throw new TrackingError('bad-phase', `phase must be one of ${PHASES.join(', ')}`);
+    if (phase === 'intent' && (versionId !== undefined || kind === 'rollback')) throw new TrackingError('bad-phase', 'an intent record cannot claim a version id and cannot be a rollback');
+    if (phase === 'evidence' && versionId === undefined) throw new TrackingError('bad-phase', 'an evidence record must carry the observed Worker version id');
+  }
+  if (repo !== undefined && !REPO.test(repo)) throw new TrackingError('bad-repo', 'repo must be owner/name');
+  if (runAttempt !== undefined && !ATTEMPT.test(String(runAttempt))) throw new TrackingError('bad-attempt', 'runAttempt must be a positive integer');
   // `versionId` is the exact Cloudflare Worker version this record's SHA is live as. A record without it still moves the
   // diff base (lastGood) but can never be a rollback target and cannot be reconciled with live state.
-  return { marker: RECORD_MARKER, app, sha, runId: String(runId ?? ''), runUrl: runUrl ?? '', kind, ...(versionId !== undefined ? { versionId } : {}) };
+  return {
+    marker: RECORD_MARKER, app, sha, runId: String(runId ?? ''), runUrl: runUrl ?? '', kind,
+    ...(versionId !== undefined ? { versionId } : {}),
+    ...(phase !== undefined ? { phase, worker: WORKER_NAMES[app] } : {}),
+    ...(repo !== undefined ? { repo } : {}),
+    ...(runAttempt !== undefined ? { runAttempt: String(runAttempt) } : {})
+  };
 }
 
 function validRecord(deployment, app) {
@@ -53,6 +75,14 @@ function validRecord(deployment, app) {
   if (!RECORD_KINDS.includes(p.kind)) return 'bad-kind';
   if ('versionId' in p && !(typeof p.versionId === 'string' && VERSION_ID.test(p.versionId))) return 'bad-version-id';
   if (p.kind === 'rollback' && !('versionId' in p)) return 'bad-version-id';
+  if ('phase' in p) {
+    if (!PHASES.includes(p.phase)) return 'bad-phase';
+    if (p.phase === 'intent' && ('versionId' in p || p.kind === 'rollback')) return 'bad-phase';
+    if (p.phase === 'evidence' && !('versionId' in p)) return 'bad-phase';
+    if (p.worker !== WORKER_NAMES[app]) return 'wrong-worker';
+  }
+  if ('repo' in p && !(typeof p.repo === 'string' && REPO.test(p.repo))) return 'bad-repo';
+  if ('runAttempt' in p && !(typeof p.runAttempt === 'string' && ATTEMPT.test(p.runAttempt))) return 'bad-attempt';
   return null;
 }
 
@@ -69,6 +99,11 @@ export async function lastGood({ api, app }) {
     const why = validRecord(deployment, app);
     if (why) {
       ignored[why] = (ignored[why] ?? 0) + 1;
+      continue;
+    }
+    if (deployment.payload.phase === 'intent') {
+      // An intent record only says "a deploy was attempted". Even a (buggy or forged) success status on it is never a base.
+      ignored['intent-record'] = (ignored['intent-record'] ?? 0) + 1;
       continue;
     }
     if (await hasSuccess(api, deployment)) {
@@ -107,7 +142,9 @@ export async function rollbackHistory({ api, app }) {
       sha: deployment.payload.sha,
       kind: deployment.payload.kind,
       versionId: deployment.payload.versionId,
-      success: statuses.some((s) => s.state === 'success'),
+      phase: deployment.payload.phase,
+      descriptions: statuses.map((x) => String(x.description ?? '')),
+      success: deployment.payload.phase !== 'intent' && statuses.some((s) => s.state === 'success'),
       settled: statuses.some((s) => TERMINAL_STATES.includes(s.state))
     });
   }
@@ -124,6 +161,23 @@ export async function rollbackHistory({ api, app }) {
   const verified = new Map(records.filter((r) => r.success && r.versionId !== undefined).map((r) => [r.versionId, r.sha]));
   const newerVersions = new Set(records.slice(0, lastIndex === -1 ? 0 : lastIndex).filter((r) => r.versionId !== undefined).map((r) => r.versionId));
   return { records, last, newest: records[0] ?? null, verified, newerVersions };
+}
+
+/**
+ * Valid records of ours that never reached a final state (an interrupted run). Read completely or not at all. A deploy
+ * that holds the per-app lock may close these as `error`, so a killed run cannot block rollback or hide behind a later one.
+ */
+export async function unsettledRecords({ api, app }) {
+  if (!APPS.includes(app)) throw new TrackingError('bad-app', `unknown app "${app}"`);
+  const { ordered, exhausted } = await listOrdered({ api, app });
+  if (!exhausted) throw new TrackingError('unreadable', `more than ${MAX_PAGES * PAGE_SIZE} deployments: refusing to guess`);
+  const out = [];
+  for (const deployment of ordered) {
+    if (validRecord(deployment, app)) continue;
+    const statuses = await readStatuses(api, deployment);
+    if (!statuses.some((s) => TERMINAL_STATES.includes(s.state))) out.push({ deploymentId: deployment.id, sha: deployment.payload.sha, kind: deployment.payload.kind, phase: deployment.payload.phase });
+  }
+  return out;
 }
 
 async function hasSuccess(api, deployment) {
@@ -262,6 +316,8 @@ export function githubApi({ repo, token, fetchImpl = fetch, apiUrl = 'https://ap
   return {
     listDeployments: (environment, page) => call('GET', `/deployments?environment=${encodeURIComponent(environment)}&per_page=${PAGE_SIZE}&page=${page}`),
     listStatuses: (id) => call('GET', `/deployments/${id}/statuses?per_page=100`),
+    getEnvironment: (name) => call('GET', `/environments/${encodeURIComponent(name)}`),
+    listBranchPolicies: (name) => call('GET', `/environments/${encodeURIComponent(name)}/deployment-branch-policies?per_page=100`),
     createDeployment: ({ sha, environment, payload, description }) =>
       call('POST', '/deployments', { ref: sha, environment, auto_merge: false, required_contexts: [], payload, description, transient_environment: false, production_environment: true }),
     createStatus: (id, { state, description, logUrl }) => call('POST', `/deployments/${id}/statuses`, { state, description, log_url: logUrl, auto_inactive: true })
@@ -269,15 +325,15 @@ export function githubApi({ repo, token, fetchImpl = fetch, apiUrl = 'https://ap
 }
 
 /** Writers for a future deploy job. A record is `success` only after the smoke test passed. */
-export async function createRecord(api, { app, sha, runId, runUrl, kind, versionId }) {
-  const payload = recordPayload({ app, sha, runId, runUrl, kind, versionId });
+export async function createRecord(api, { app, sha, runId, runUrl, kind, versionId, phase, repo, runAttempt }) {
+  const payload = recordPayload({ app, sha, runId, runUrl, kind, versionId, phase, repo, runAttempt });
   const deployment = await api.createDeployment({ sha, environment: ENVIRONMENTS[app], payload, description: `${kind} ${app} @ ${sha.slice(0, 12)}` });
   if (!deployment?.id) throw new TrackingError('write-failed', 'GitHub did not return a deployment id');
   return deployment.id;
 }
 
 export async function setStatus(api, deploymentId, { state, description, logUrl }) {
-  if (!['in_progress', 'success', 'failure', 'error'].includes(state)) throw new TrackingError('bad-state', `unsupported state ${state}`);
+  if (!['in_progress', 'success', 'failure', 'error', 'inactive'].includes(state)) throw new TrackingError('bad-state', `unsupported state ${state}`);
   await api.createStatus(deploymentId, { state, description: String(description ?? '').slice(0, 140), logUrl });
 }
 

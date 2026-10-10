@@ -1,6 +1,6 @@
 # CI/CD Phase 3 — Deployment Tracking Design (proposal only)
 
-Status: **proposal, not implemented.** No deployment job, Cloudflare credential, or GitHub Deployment record exists. Companion to `docs/audits/cicd-path-aware-deployment-audit.md` §16.2/§16.3/§17.
+Status: **implemented in code and unit-tested against fakes; never run against the live GitHub Deployments API or Cloudflare, and no deployment record exists yet.** The record model (sections 3, 5, 6) is implemented in `scripts/ci/deploy-tracking.mjs`, the deploy decision (section 4) in `scripts/ci/deploy.mjs`, and rollback in `scripts/ci/rollback.mjs`; the exact-SHA gate is `scripts/ci/deploy-gate.mjs`. Deviations from this proposal are listed under "As implemented" in `phase-4-production-deployment-spec.md` section 3. Companion to `docs/audits/cicd-path-aware-deployment-audit.md` §16.2/§16.3/§17.
 
 ## 1. Requirement
 
