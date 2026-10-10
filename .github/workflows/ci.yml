@@ -106,10 +106,14 @@ jobs:
   integration:
     name: integration tests (NonProd test DB)
     needs: [detect, check]
-    # Secrets are not available to fork PRs; ci-gate tolerates exactly that skip.
+    # Secrets are not available to fork PRs or to Dependabot PRs (Dependabot has its own secret store, which
+    # deliberately holds NO test-database credentials). ci-gate tolerates exactly those skips and nothing else.
+    # Deliberate trade-off: Dependabot PRs get typecheck/unit/build but not integration; integration runs on the
+    # push to main after the merge, and on every trusted same-repository PR.
     if: >-
       needs.detect.outputs.run_integration == 'true' &&
-      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'push' ||
+       (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # One shared Neon test branch: serialize access across PRs and main. Never cancel a running job.
@@ -189,5 +193,5 @@ jobs:
       - name: Evaluate gate
         env:
           NEEDS: ${{ toJSON(needs) }}
-          INTEGRATION_ALLOWED: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+          INTEGRATION_ALLOWED: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
         run: node scripts/ci/gate.mjs
