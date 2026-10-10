@@ -124,11 +124,15 @@ describe('deploy.yml: per-app isolation (no matrix)', () => {
       assert.match(j, /uses: \.\/\.github\/workflows\/deploy-app\.yml\n/);
       assert.match(j, new RegExp(`with:\\n {6}app: ${a}\\n {6}sha: \\$\\{\\{ needs\\.gate\\.outputs\\.sha \\}\\}\\n {6}bootstrap: \\$\\{\\{ needs\\.gate\\.outputs\\.bootstrap == 'true' \\}\\}\\n {6}dry_run: \\$\\{\\{ needs\\.gate\\.outputs\\.dry_run == 'true' \\}\\}`));
       assert.match(j, /permissions:\n {6}contents: read\n {6}deployments: write\n {6}actions: read\n/, 'a called workflow cannot hold a permission its caller did not grant');
-      assert.doesNotMatch(j, /secrets|environment:/, 'the caller passes no secret; the Environment lives in the deploy job only');
+      assert.doesNotMatch(j, /environment:/, 'the Environment lives in the deploy job only');
+      // Without inheritance the called deploy job sees the Environment's variables but its secrets resolve empty (observed).
+      assert.match(j, /\n {4}secrets: inherit(\n|$)/);
+      assert.equal([...j.matchAll(/secrets/g)].length, 1, 'inherit only; no secret is named or passed explicitly');
     });
   }
-  test('no secrets are inherited or passed to any called workflow', () => {
-    assert.doesNotMatch(both, /secrets:\s*inherit|^\s+secrets:\s*$/m);
+  test('secrets are inherited only by the per-app callers in deploy.yml; deploy-app.yml forwards none', () => {
+    assert.equal([...deploy.matchAll(/secrets/g)].length, 3);
+    assert.doesNotMatch(app, /^\s+secrets:/m, 'deploy-app.yml passes no secret to artifact-poc-app.yml');
   });
 });
 
