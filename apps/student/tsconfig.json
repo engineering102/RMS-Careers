@@ -17,7 +17,8 @@
     "paths": {
       "@/*": ["./*"],
       "@rms/db/schema": ["../../packages/db/src/schema"],
-      "@rms/db/tx": ["../../packages/db/src/tx"]
+      "@rms/db/tx": ["../../packages/db/src/tx"],
+      "@rms/db/guard-env": ["../../packages/db/src/guard-env"]
     },
     "plugins": [{ "name": "next" }]
   },

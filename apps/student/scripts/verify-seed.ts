@@ -1,6 +1,4 @@
-import { loadEnvFile } from 'node:process';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
+import { prepareSeedTarget } from '@rms/db/guard-env';
 import module from 'node:module';
 
 // Intercept 'server-only' package for standalone CLI script runner
@@ -14,28 +12,10 @@ const originalRequire = (module.prototype as any).require;
   return originalRequire.apply(this, [id, ...args]);
 };
 
-// Load .env candidates in order of priority
-const envCandidates = [
-  path.resolve(process.cwd(), '.env.local'),
-  path.resolve(process.cwd(), '.env'),
-  path.resolve(process.cwd(), '../../.env.local'),
-  path.resolve(process.cwd(), '../../.env'),
-  path.resolve(process.cwd(), '../admin/.env.local'),
-  path.resolve(process.cwd(), '../admin/.env')
-];
-
-for (const envPath of envCandidates) {
-  if (existsSync(envPath)) {
-    try {
-      loadEnvFile(envPath);
-      break;
-    } catch {
-      // Continue
-    }
-  }
-}
-
 async function verifySeededData() {
+  // Slice 0 guard: must run before any query module is imported.
+  prepareSeedTarget();
+
   console.log('--- START SEED VERIFICATION ---');
 
   // Dynamically import queries after server-only hook is registered

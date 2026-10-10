@@ -18,7 +18,8 @@
     "paths": {
       "@/components/*": ["components/*"],
       "@/lib/*": ["lib/*"],
-      "@rms/db/tx": ["../../packages/db/src/tx"]
+      "@rms/db/tx": ["../../packages/db/src/tx"],
+      "@rms/db/guard-env": ["../../packages/db/src/guard-env"]
     },
     "plugins": [
       {

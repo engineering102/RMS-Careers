@@ -1,0 +1,197 @@
+# CI (Slice 0 safety + CI/CD Phase 2: path-aware validation). THIS WORKFLOW DOES NOT DEPLOY.
+#
+# Flow:  detect -> check (typecheck + unit) | integration | build (cf:build, one job per app) | workflow-lint
+#                                   \________________________ ci-gate (the only required check) ________/
+#
+# What runs is decided by scripts/ci/affected.mjs from the pnpm workspace graph (see that file for the
+# full path rules). Docs-only changes run nothing but `detect` and `ci-gate`. Changes that touch the
+# workflow, CI scripts, the lockfile, build infrastructure, or any unknown file exercise everything.
+#
+# Database safety rules (unchanged from Slice 0):
+#   * NO production credentials are configured here, ever. The only database secrets are
+#     TEST_DATABASE_URL and TEST_DATABASE_ENDPOINT (the NonProd `test` branch), used by `integration` only.
+#   * POSTGRES_URL / DATABASE_URL are blanked for every job; the test setup also fails closed if the
+#     test target is missing, unpinned, or equals an application URL.
+#   * No Cloudflare credentials exist in this workflow and nothing is deployed (production deploy is a
+#     later phase). `build` runs the OpenNext build WITH the build-secret guard but never `deploy`.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Newer pushes supersede older runs on branches/PRs, but a run on main is never cancelled.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  POSTGRES_URL: ''
+  DATABASE_URL: ''
+
+jobs:
+  detect:
+    name: detect affected apps
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      result: ${{ steps.plan.outputs.result }}
+      any_ci: ${{ steps.plan.outputs.any_ci }}
+      check_workspaces: ${{ steps.plan.outputs.check_workspaces }}
+      build_apps: ${{ steps.plan.outputs.build_apps }}
+      run_integration: ${{ steps.plan.outputs.run_integration }}
+      deploy_apps: ${{ steps.plan.outputs.deploy_apps }}
+      degraded: ${{ steps.plan.outputs.degraded }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      # The pnpm workspace graph is read from node_modules links; affected.mjs fails closed (all apps)
+      # if the graph looks incomplete, but installing keeps it exact. No lifecycle scripts are needed.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Determine affected apps
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          # PR: diff the PR base against the merge result checked out here (= exactly the PR's changes).
+          # Push to main: previous tip. An unreachable/all-zero base makes affected.mjs fail closed (all apps).
+          # NOTE: this is the CI scope only. The deploy base (last successfully deployed SHA per app) is a later phase.
+          if [ "$EVENT_NAME" = "pull_request" ]; then BASE="$PR_BASE_SHA"; else BASE="$PUSH_BEFORE"; fi
+          node scripts/ci/affected.mjs --base "$BASE" --head HEAD --pretty --github-output "$GITHUB_OUTPUT"
+
+  check:
+    name: typecheck + unit tests
+    needs: detect
+    if: needs.detect.outputs.any_ci == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WORKSPACES: ${{ needs.detect.outputs.check_workspaces }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck affected workspaces
+        run: |
+          set -euo pipefail
+          mapfile -t FILTERS < <(node -e 'for (const w of JSON.parse(process.env.WORKSPACES)) console.log("--filter\n" + w)')
+          pnpm "${FILTERS[@]}" run --if-present typecheck
+      # Unit tier: setup-unit strips database URLs and the db clients refuse non-local hosts.
+      - name: Unit tests for affected workspaces
+        run: |
+          set -euo pipefail
+          mapfile -t FILTERS < <(node -e 'for (const w of JSON.parse(process.env.WORKSPACES)) console.log("--filter\n" + w)')
+          pnpm "${FILTERS[@]}" run --if-present test
+      - name: CI script tests
+        if: contains(needs.detect.outputs.result, '"ciInfra":true')
+        run: pnpm test:ci-scripts
+
+  integration:
+    name: integration tests (NonProd test DB)
+    needs: [detect, check]
+    # Secrets are not available to fork PRs or to Dependabot PRs (Dependabot has its own secret store, which
+    # deliberately holds NO test-database credentials). ci-gate tolerates exactly those skips and nothing else.
+    # Deliberate trade-off: Dependabot PRs get typecheck/unit/build but not integration; integration runs on the
+    # push to main after the merge, and on every trusted same-repository PR.
+    if: >-
+      needs.detect.outputs.run_integration == 'true' &&
+      (github.event_name == 'push' ||
+       (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One shared Neon test branch: serialize access across PRs and main. Never cancel a running job.
+    # (GitHub keeps one pending run per group; a newer pending run cancels an older pending one, which
+    # the gate reports as a cancelled job: re-run it.)
+    concurrency:
+      group: integration-test-db
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Bootstrap test database (idempotent; refuses non-test databases)
+        run: pnpm test:db:bootstrap
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_DATABASE_ENDPOINT: ${{ secrets.TEST_DATABASE_ENDPOINT }}
+      - name: Integration tests
+        run: pnpm test:int
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_DATABASE_ENDPOINT: ${{ secrets.TEST_DATABASE_ENDPOINT }}
+
+  build:
+    name: cf:build (${{ matrix.app }})
+    needs: detect
+    if: needs.detect.outputs.build_apps != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.detect.outputs.build_apps) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # cf:build = build-secret guard (pre) -> opennextjs-cloudflare build -> guard (post).
+      # Built with no database credentials and no env files, as production builds are. Not deployed.
+      - name: OpenNext build
+        env:
+          APP: ${{ matrix.app }}
+        run: pnpm --filter "@rms/$APP" run cf:build
+
+  workflow-lint:
+    name: lint workflows
+    needs: detect
+    if: contains(needs.detect.outputs.result, '"ciInfra":true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
+
+  ci-gate:
+    name: ci-gate
+    # The single required status check. `always()` so that skipped/failed upstream jobs are judged by
+    # scripts/ci/gate.mjs instead of leaving the check pending or silently green.
+    if: always()
+    needs: [detect, check, integration, build, workflow-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Evaluate gate
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          INTEGRATION_ALLOWED: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+        run: node scripts/ci/gate.mjs

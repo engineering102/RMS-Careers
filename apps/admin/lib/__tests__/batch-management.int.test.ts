@@ -1,26 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
-import { loadEnvFile } from 'node:process';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-
-// Load environment variables for live database integration
-const envCandidates = [
-  path.resolve(process.cwd(), '.env.local'),
-  path.resolve(process.cwd(), '.env'),
-  path.resolve(process.cwd(), '../../.env.local'),
-  path.resolve(process.cwd(), '../../.env'),
-  path.resolve(process.cwd(), '../student/.env.local')
-];
-
-for (const envPath of envCandidates) {
-  if (existsSync(envPath)) {
-    try {
-      loadEnvFile(envPath);
-      break;
-    } catch {}
-  }
-}
-
+// INTEGRATION tier: runs only via `test:int` against the guarded TEST_DATABASE_URL (see setup-int.ts).
 // Mock next/cache and server-only
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn()

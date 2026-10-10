@@ -6,7 +6,8 @@ export default defineConfig({
     environment: 'node',
     globals: false,
     include: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
-    exclude: ['node_modules', '.next', 'app', 'components']
+    exclude: ['node_modules', '.next', 'app', 'components', '**/*.int.test.ts'],
+    setupFiles: ['../../packages/db/src/testing/setup-unit.ts']
   },
   resolve: {
     alias: {

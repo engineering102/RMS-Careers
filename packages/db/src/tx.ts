@@ -4,6 +4,7 @@ import { Client } from '@neondatabase/serverless';
 import { drizzle, type NeonDatabase } from 'drizzle-orm/neon-serverless';
 import * as schema from './schema';
 import type { DbClient } from './index';
+import { assertVitestConnectionSafe } from './guard';
 
 /**
  * Transactional entry point (`@rms/db/tx`).
@@ -40,6 +41,8 @@ async function runTransaction<T>(
   if (!connectionString) {
     throw new Error('POSTGRES_URL is not set; transactional client unavailable.');
   }
+
+  assertVitestConnectionSafe(connectionString, process.env);
 
   const client = new Client({ connectionString, connectionTimeoutMillis: CONNECTION_TIMEOUT_MS });
   // An 'error' event with no listener becomes an uncaught exception.
