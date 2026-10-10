@@ -1,0 +1,216 @@
+# Phase 4: deploy ONE app. Reusable (workflow_call only); deploy.yml calls it once per app.
+# Spec: docs/plans/phase-4-production-deployment-spec.md sections 2-5.
+#
+# EVIDENCE STATUS: this workflow has NOT yet been run on GitHub Actions. See deploy.yml.
+#
+#   plan      (no credential)  advisory: reads the deployment record and the changed files; skips the whole app when there is
+#                              nothing to deploy. Fails closed on an unreadable or missing history (bootstrap is explicit).
+#   artifact  (no credential)  artifact-poc-app.yml at the EXACT sha: ONE build job -> separate verify job (no rebuild),
+#                              publishing the manifest digest as a job output. The only build in the whole run.
+#   rehearse  (no credential, no Environment)  dry_run = true: re-verifies the artifact, repeats the decision, checks that
+#                              the production-<app> Environment is protected (reviewers + main-only), builds the exact deploy
+#                              command and runs `wrangler deploy --dry-run`. Writes nothing.
+#   deploy    (Environment production-<app>, per-app lock)  dry_run = false: downloads the artifact, verifies it AGAIN here
+#                              against the digest handed over by the build job, then scripts/ci/deploy.mjs repeats the decision
+#                              under the lock, refuses unless PRODUCTION_DEPLOY_ENABLED is "true" and the Environment is
+#                              protected, writes the intent record, runs `wrangler deploy` on the extracted tree (never a
+#                              rebuild), confirms the version against Cloudflare, writes the evidence record, smoke-tests.
+#
+# The Cloudflare credential exists in ONE step of the deploy job. No database URL, migration or seed appears anywhere.
+name: Deploy one app (production)
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: Which application to deploy (web, admin or student).
+        type: string
+        required: true
+      sha:
+        description: Full SHA of the commit CI verified (the exact commit to build, verify and deploy).
+        type: string
+        required: true
+      bootstrap:
+        description: First deployment of this app (no verified record exists yet).
+        type: boolean
+        required: false
+        default: false
+      dry_run:
+        description: Rehearsal only. Real deployment requires an explicit false.
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  POSTGRES_URL: ''
+  DATABASE_URL: ''
+
+jobs:
+  plan:
+    name: plan (${{ inputs.app }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      action: ${{ steps.plan.outputs.action }}
+    env:
+      APP: ${{ inputs.app }}
+      SHA: ${{ inputs.sha }}
+      BOOTSTRAP: ${{ inputs.bootstrap }}
+    steps:
+      - name: Validate inputs
+        run: |
+          case "$APP" in web|admin|student) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
+          case "$SHA" in *[!0-9a-f]*|"") echo "::error::sha must be a full lowercase commit SHA"; exit 1 ;; esac
+          [ "${#SHA}" -eq 40 ] || { echo "::error::sha must be 40 characters"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      # The classifier reads the pnpm workspace graph; no lifecycle script is needed.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Plan
+        id: plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ARGS=(--app "$APP" --sha "$SHA")
+          if [ "$BOOTSTRAP" = "true" ]; then ARGS+=(--bootstrap); fi
+          node scripts/ci/deploy.mjs plan "${ARGS[@]}"
+
+  artifact:
+    name: build + verify (${{ inputs.app }})
+    needs: plan
+    if: ${{ needs.plan.outputs.action == 'deploy' }}
+    uses: ./.github/workflows/artifact-poc-app.yml
+    with:
+      app: ${{ inputs.app }}
+      sha: ${{ inputs.sha }}
+
+  rehearse:
+    name: rehearsal (${{ inputs.app }}, no credentials, nothing changes)
+    needs: [plan, artifact]
+    if: ${{ inputs.dry_run && needs.plan.outputs.action == 'deploy' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      deployments: read
+      actions: read
+    env:
+      APP: ${{ inputs.app }}
+      SHA: ${{ inputs.sha }}
+      MODE: ${{ inputs.bootstrap && 'bootstrap' || 'deploy' }}
+      EXPECT_MANIFEST_SHA256: ${{ needs.artifact.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Assert no build output exists
+        run: |
+          set -euo pipefail
+          for p in "apps/$APP/.open-next" "apps/$APP/.next"; do
+            if [ -e "$p" ]; then echo "::error::$p exists before the artifact was extracted"; exit 1; fi
+          done
+      - name: Download artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: open-next-${{ inputs.app }}
+          path: ${{ runner.temp }}/artifact/${{ inputs.app }}
+          digest-mismatch: error
+      - name: Verify integrity, provenance and symlinks, then extract
+        run: >-
+          node scripts/ci/artifact.mjs verify --app "$APP" --dir "$RUNNER_TEMP/artifact/$APP"
+          --expect-sha "$SHA" --expect-run-id "$GITHUB_RUN_ID"
+          --expect-manifest-sha256 "$EXPECT_MANIFEST_SHA256"
+      - name: Rehearse the deployment (reads the deployment record; changes nothing)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          node scripts/ci/deploy.mjs run --app "$APP" --sha "$SHA" --mode "$MODE"
+          --artifact-dir "$RUNNER_TEMP/artifact/$APP" --expect-manifest-sha256 "$EXPECT_MANIFEST_SHA256" --dry-run
+
+  deploy:
+    name: deploy (${{ inputs.app }})
+    needs: [plan, artifact]
+    if: ${{ !inputs.dry_run && needs.plan.outputs.action == 'deploy' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production-${{ inputs.app }}
+    # One lock per app, shared with rollback.yml. A newer run waits; a running deploy is never cancelled.
+    concurrency:
+      group: deploy-${{ inputs.app }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      deployments: write
+      actions: read
+    env:
+      APP: ${{ inputs.app }}
+      SHA: ${{ inputs.sha }}
+      MODE: ${{ inputs.bootstrap && 'bootstrap' || 'deploy' }}
+      EXPECT_MANIFEST_SHA256: ${{ needs.artifact.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: pnpm
+      # No credential is in the environment while dependencies are installed or the artifact is verified.
+      - run: pnpm install --frozen-lockfile
+      - name: Assert no build output exists
+        run: |
+          set -euo pipefail
+          for p in "apps/$APP/.open-next" "apps/$APP/.next"; do
+            if [ -e "$p" ]; then echo "::error::$p exists before the artifact was extracted"; exit 1; fi
+          done
+      - name: Download artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: open-next-${{ inputs.app }}
+          path: ${{ runner.temp }}/artifact/${{ inputs.app }}
+          digest-mismatch: error
+      # This job trusts nothing from the earlier verify job: it checks the exact bytes it is about to deploy.
+      - name: Verify integrity, provenance and symlinks, then extract
+        run: >-
+          node scripts/ci/artifact.mjs verify --app "$APP" --dir "$RUNNER_TEMP/artifact/$APP"
+          --expect-sha "$SHA" --expect-run-id "$GITHUB_RUN_ID"
+          --expect-manifest-sha256 "$EXPECT_MANIFEST_SHA256"
+      - name: Embedded-environment guard on the extracted artifact
+        working-directory: apps/${{ inputs.app }}
+        run: node ../../scripts/check-cloudflare-build-env.mjs post
+      # The Cloudflare credential exists in this one step only. deploy.mjs hands it to wrangler and nothing else; it repeats the
+      # decision under the lock, writes the intent and evidence records, confirms the version and runs the smoke test.
+      - name: Deploy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_DEPLOY_ENABLED: ${{ vars.PRODUCTION_DEPLOY_ENABLED }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: >-
+          node scripts/ci/deploy.mjs run --app "$APP" --sha "$SHA" --mode "$MODE"
+          --artifact-dir "$RUNNER_TEMP/artifact/$APP" --expect-manifest-sha256 "$EXPECT_MANIFEST_SHA256"
