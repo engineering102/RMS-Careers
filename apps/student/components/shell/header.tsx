@@ -2,7 +2,7 @@
 
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
-import { signOutAction } from '@/lib/actions/auth';
+import { SIGN_OUT_PATH } from '@/lib/constants/session';
 import { CohortSwitcher } from './cohort-switcher';
 
 import { NotificationBell } from './notification-bell';
@@ -85,7 +85,7 @@ export function Header({
         </div>
 
         {/* Sign Out Button */}
-        <form action={signOutAction} className="hidden sm:block">
+        <form action={SIGN_OUT_PATH} method="post" className="hidden sm:block">
           <button
             type="submit"
             className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition"

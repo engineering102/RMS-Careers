@@ -1,0 +1,21 @@
+# Code owners for the paths that decide what CI runs, what is built, and what a future production deploy may do.
+#
+# Owner: @engineering102 is the account that owns this repository (github.com/engineering102/RMS-Careers; a personal
+# User account, checked against the public GitHub API). It is the only GitHub username verified for this repository.
+# Add further owners (people or a team with write access) on these lines as soon as they exist.
+#
+# THIS FILE ENFORCES NOTHING BY ITSELF. It only takes effect when a ruleset or branch protection on `main` enables
+# "Require review from Code Owners". That setting is an owner action and is NOT configured yet:
+# see docs/development/repository-security.md (including the single-maintainer caveat).
+
+# Workflows, this file, Dependabot configuration, and anything else under .github/
+/.github/               @engineering102
+
+# CI classifier, gate, artifact packaging/verification and their tests
+/scripts/ci/            @engineering102
+
+# Cloudflare Worker configuration of every app
+**/wrangler.jsonc       @engineering102
+
+# Database migrations
+/packages/db/drizzle/   @engineering102

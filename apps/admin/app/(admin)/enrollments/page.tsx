@@ -6,6 +6,7 @@ import { EnrollmentsFilter } from './enrollments-filter';
 import { SummaryCards } from './summary-cards';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { requireAdminSession } from '@/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ export default async function EnrollmentsPage(props: {
     page?: string;
   }>;
 }) {
+  await requireAdminSession();
   const searchParams = await props.searchParams;
 
   const yearNum = searchParams.year ? parseInt(searchParams.year, 10) : undefined;

@@ -1,6 +1,8 @@
 'use server';
 
 import { z } from 'zod';
+import { headers } from 'next/headers';
+import { enforceAuthLimits, ipKey, trustedClientIp } from '@/lib/security/request-limits';
 import { resetStudentPassword } from '@/lib/db/password-recovery';
 
 const schema = z
@@ -27,6 +29,10 @@ export async function resetPasswordAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || 'Invalid password details.' };
   }
+
+  // Each attempt costs a bcrypt hash; bound it per client.
+  const limit = await enforceAuthLimits({ client: ipKey('reset', trustedClientIp(await headers())) });
+  if (!limit.allowed) return { error: 'Too many requests. Please wait a minute and try again.' };
 
   return resetStudentPassword(parsed.data.token, parsed.data.password);
 }

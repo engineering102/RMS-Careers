@@ -18,6 +18,7 @@ import type {
   ResourceMetadata,
   RelatedBatchContext
 } from '@/lib/types/content';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 export type {
   ContentPlayerItem,
@@ -136,7 +137,7 @@ export async function getContentItem(
       .where(
         and(
           eq(enrollments.studentId, studentId),
-          sql`${enrollments.status} IN ('active', 'confirmed', 'completed')`
+          enrollmentGrantsAccess({ includeCompleted: true })
         )
       );
 

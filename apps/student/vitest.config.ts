@@ -5,6 +5,9 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'node',
+    // Several suites hash with pure-JS bcrypt and import heavy modules dynamically; the 5 s default flaked under
+    // parallel load (final review). Assertions are unchanged.
+    testTimeout: 15_000,
     include: ['**/__tests__/**/*.test.{ts,tsx}'],
     exclude: ['node_modules', '.next', '**/*.int.test.*'],
     setupFiles: ['../../packages/db/src/testing/setup-unit.ts']

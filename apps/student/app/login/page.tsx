@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { LoginForm } from './login-form';
+import { toSafeCallbackPath } from '@/lib/auth/callback-url';
+import { loginErrorMessage } from '@/lib/auth/login-errors';
 
 export const metadata = {
   title: 'Sign In — RMS Student Portal',
@@ -12,11 +14,8 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
 }) {
   const { callbackUrl, error } = await searchParams;
-  const safeCallbackUrl = callbackUrl?.startsWith('/')
-    ? callbackUrl
-    : callbackUrl
-      ? new URL(callbackUrl).pathname
-      : undefined;
+  const safeCallbackUrl = toSafeCallbackPath(callbackUrl);
+  const errorMessage = loginErrorMessage(error);
 
   return (
     <main className="grid min-h-screen place-items-center p-5 bg-slate-950 text-slate-100">
@@ -25,9 +24,9 @@ export default async function LoginPage({
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Student Portal</h1>
         <p className="mt-2 text-slate-300">Sign in with the account provisioned by your institution.</p>
 
-        {error && (
+        {errorMessage && (
           <p role="alert" className="mt-4 rounded-lg border border-red-800 bg-red-950/70 p-3 text-sm text-red-200">
-            You do not have access to the Student Portal.
+            {errorMessage}
           </p>
         )}
 

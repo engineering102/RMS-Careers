@@ -32,6 +32,28 @@ let mockCurriculum: any[] = [];
 let mockContentItems: any[] = [];
 let mockActivities: any[] = [];
 
+// Atomic XP ledger contract, in memory (see helpers/in-memory-xp-ledger.ts).
+vi.mock('@/lib/services/xp-ledger', async () => {
+  const { createInMemoryXpLedger } = await import('./helpers/in-memory-xp-ledger');
+  return createInMemoryXpLedger(() => ({ activities: mockActivities, stats: [] as any[] }));
+});
+
+// The lifecycle rule is SQL (enrollmentGrantsAccess); this mock db cannot evaluate WHERE clauses,
+// so batch access is modelled with the real exported access-granting statuses.
+vi.mock('@/lib/db/queries/entitlements', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/db/queries/entitlements')>();
+  return {
+    ...actual,
+    hasBatchAccess: async (studentId: number, batchId: string) =>
+      mockEnrollments.some(
+        (e) =>
+          e.studentId === studentId &&
+          e.batchId === batchId &&
+          (actual.ACCESS_GRANTING_ENROLLMENT_STATUSES as readonly string[]).includes(e.status)
+      )
+  };
+});
+
 vi.mock('@rms/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@rms/db')>();
 

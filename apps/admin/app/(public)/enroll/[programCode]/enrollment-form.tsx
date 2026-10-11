@@ -38,7 +38,6 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
     programName: string;
     programCode: string;
     status: string;
-    emailSent: boolean;
   } | null>(null);
 
   // Form field states
@@ -87,10 +86,9 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
           studentEmail: result.data.studentEmail,
           programName: result.data.programName,
           programCode: result.data.programCode,
-          status: result.data.status,
-          emailSent: result.data.emailSent
+          status: result.data.status
         });
-        toast.success('Registration completed successfully!');
+        toast.success('Registration received.');
       } else {
         setFormError(result.error);
         if (result.fieldErrors) {
@@ -144,16 +142,13 @@ export function EnrollmentForm({ programCode, programName }: EnrollmentFormProps
             </div>
           </div>
 
-          {successData.emailSent ? (
-            <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-              <span>A registration acknowledgement email has been sent to <strong>{successData.studentEmail}</strong>.</span>
-            </div>
-          ) : (
-            <p className="text-xs text-center text-muted-foreground">
-              Your registration is currently pending review by the academy administration.
-            </p>
-          )}
+          <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2">
+            <Mail className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+            <span>
+              If the details are valid, we will email <strong>{successData.studentEmail}</strong> with the next steps.
+              Registrations are reviewed by the academy administration.
+            </span>
+          </div>
         </CardContent>
       </Card>
     );

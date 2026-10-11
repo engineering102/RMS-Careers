@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { buildSecurityHeaders } from './security-headers';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@rms/db'],
@@ -14,6 +15,9 @@ const nextConfig: NextConfig = {
         search: ''
       }
     ]
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: buildSecurityHeaders({ isDev: process.env.NODE_ENV === 'development' }) }];
   }
 };
 

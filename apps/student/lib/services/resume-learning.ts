@@ -12,6 +12,7 @@ import { eq, and, sql, desc, asc, inArray, gte } from 'drizzle-orm';
 import { getBatchProgressSummary } from '@/lib/db/queries/progress';
 import type { ResumeLearningTarget, NextCurriculumItemTarget } from '@/lib/types/progress';
 import type { ContentType } from '@/lib/types/library';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 /**
  * Resolves the deterministic Resume Learning Target for an authenticated student.
@@ -41,7 +42,7 @@ export async function getResumeLearningTarget(
       .where(
         and(
           eq(enrollments.studentId, studentId),
-          sql`${enrollments.status} IN ('active', 'confirmed')`
+          enrollmentGrantsAccess()
         )
       );
 

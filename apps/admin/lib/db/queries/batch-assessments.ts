@@ -16,6 +16,7 @@ import {
   type QuizTypeEnum
 } from '@rms/db';
 import { eq, and, or, sql, desc, asc, inArray, ilike } from 'drizzle-orm';
+import { csvCell } from '@/lib/csv/escape';
 
 export interface BatchAssessmentOverviewItem {
   quizId: string;
@@ -571,11 +572,7 @@ export async function generateBatchAssessmentCsv(
       'Duration (Minutes)'
     ];
 
-    const escapeCsv = (val: unknown): string => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
-      return `"${str}"`;
-    };
+    const escapeCsv = csvCell;
 
     const csvLines = [headers.join(',')];
 

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { db, colleges, enrollments, programs, students, userRoles, users } from '@rms/db';
 import { and, eq, sql } from 'drizzle-orm';
-import { hasRole, verifyPassword } from '@rms/auth';
+import { hasRole, hashPassword, verifyPassword } from '@rms/auth';
 
 export type StudentIdentity = {
   userId: string;
@@ -13,15 +13,31 @@ export type StudentIdentity = {
   enrollments: Array<{ id: number; programName: string; status: string }>;
 };
 
+let equalizationHashPromise: Promise<string> | undefined;
+
+/** A bcrypt hash of a random secret, computed once per isolate; compared against when no account matches. */
+function equalizationHash(): Promise<string> {
+  equalizationHashPromise ??= hashPassword(crypto.randomUUID() + crypto.randomUUID());
+  return equalizationHashPromise;
+}
+
 export async function authenticateStudent(email: string, password: string): Promise<StudentIdentity | null> {
   if (!email || !password || !process.env.POSTGRES_URL) return null;
   try {
     const [user] = await db.select().from(users).where(sql`LOWER(${users.email}) = ${email.trim().toLowerCase()}`).limit(1);
-    if (!user || user.status !== 'active') return null;
-    const roles = await db.select().from(userRoles).where(eq(userRoles.userId, user.id));
-    if (!hasRole(roles, 'student') || !(await verifyPassword(password, user.passwordHash))) return null;
-    return getStudentIdentity(user.id);
-  } catch { return null; }
+    const roles = user ? await db.select().from(userRoles).where(eq(userRoles.userId, user.id)) : [];
+    const eligible = Boolean(user && user.status === 'active' && hasRole(roles, 'student'));
+    // Exactly one bcrypt comparison on every path, so response time does not reveal which emails have
+    // accounts (audit PR-08).
+    const passwordOk = await verifyPassword(password, eligible ? user!.passwordHash : await equalizationHash());
+    if (!eligible || !passwordOk) return null;
+    return getStudentIdentity(user!.id);
+  } catch (error) {
+    // Still rejected generically, but visible in Workers logs: an outage must not look like bad
+    // passwords (audit E.4). Error class only, never driver text or the email.
+    console.error('[student-auth] sign-in lookup failed:', error instanceof Error ? error.name : 'unknown');
+    return null;
+  }
 }
 
 export async function getStudentIdentity(userId: string): Promise<StudentIdentity | null> {

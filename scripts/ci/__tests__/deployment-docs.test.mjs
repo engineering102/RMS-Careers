@@ -108,6 +108,15 @@ describe('runbook checklist: Worker facts match the repository configuration', (
       assert.deepEqual(documented, [...cfg.secrets.required].sort(), `${cfg.name} secrets`);
     }
   });
+  test('email is required functionality: every Worker requires RESEND_API_KEY and EMAIL_FROM, and web also PARTNER_ENQUIRY_TO', () => {
+    for (const app of APPS) {
+      const required = wrangler(app).secrets.required;
+      assert.ok(required.includes('RESEND_API_KEY') && required.includes('EMAIL_FROM'), `${app} requires the email secrets`);
+    }
+    assert.ok(wrangler('web').secrets.required.includes('PARTNER_ENQUIRY_TO'));
+    assert.match(partA, /Email is required functionality for this release/);
+    assert.doesNotMatch(partA, /Optional \(email is skipped/);
+  });
   test('the admin CPU limit the runbook cites is the configured one, and no secret value is documented', () => {
     assert.equal(wrangler('admin').limits.cpu_ms, 300000);
     assert.match(partA, /`rms-admin` configures `limits\.cpu_ms` = 300000/);

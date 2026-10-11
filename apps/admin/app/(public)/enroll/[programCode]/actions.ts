@@ -10,6 +10,9 @@ import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollme
 import { sendEnrollmentConfirmationEmail, sendStudentActivationEmail } from '@/lib/email';
 import { getStudentPortalUrl } from '@/lib/email/student-portal-url';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
+import { PUBLIC_FORM_LIMIT, accountKey, enforceRateLimit, ipKey, trustedClientIp } from '@/lib/security/request-limits';
+import { generateToken, hashPassword } from '@rms/auth';
 
 const phoneRegex = /^(?:\+?91[\-\s]?)?[6-9]\d{9}$/;
 
@@ -50,8 +53,6 @@ export type EnrollmentActionResult =
         programName: string;
         programCode: string;
         status: 'pending';
-        registeredAt: string;
-        emailSent: boolean;
       };
     }
   | {
@@ -59,6 +60,21 @@ export type EnrollmentActionResult =
       error: string;
       fieldErrors?: Record<string, string>;
     };
+
+/**
+ * Outcomes that must look identical to the requester: revealing them would confirm whether an email
+ * already has a student record, an enrollment, or a staff account (audit F-02/F-26).
+ */
+const INDISTINGUISHABLE_OUTCOMES = new Set(['already_enrolled', 'privileged_identity', 'identity_conflict']);
+
+/** Spends the same bcrypt work the new-account path spends, so response time does not reveal it. */
+async function equalizeProvisioningCost(): Promise<void> {
+  try {
+    await hashPassword(generateToken(32));
+  } catch {
+    // Timing equalisation only; never affects the response.
+  }
+}
 
 export async function submitStudentEnrollment(
   rawInput: unknown
@@ -78,6 +94,16 @@ export async function submitStudentEnrollment(
         error: 'Please fix the validation errors in the form.',
         fieldErrors
       };
+    }
+
+    // Abuse control (audit F-04): every accepted request can create accounts and send email.
+    // Limited per client and per target email; the response does not reveal which key tripped.
+    const limit = await enforceRateLimit(PUBLIC_FORM_LIMIT, [
+      ipKey('enroll', trustedClientIp(await headers())),
+      accountKey('enroll', parseResult.data.email)
+    ]);
+    if (!limit.allowed) {
+      return { success: false, error: 'Too many registration attempts. Please wait a minute and try again.' };
     }
 
     const {
@@ -114,6 +140,14 @@ export async function submitStudentEnrollment(
       };
     }
 
+    // A program that has already ended no longer accepts registrations.
+    if (program.endDate && new Date(program.endDate).getTime() < Date.now()) {
+      return {
+        success: false,
+        error: 'Registration for this program is no longer available.'
+      };
+    }
+
     // 4. Server-Side Capacity Verification
     if (program.capacity > 0) {
       const currentEnrollmentsCount = await getProgramEnrollmentCount(program.id);
@@ -125,9 +159,11 @@ export async function submitStudentEnrollment(
       }
     }
 
-    // 5. Execute Student + Enrollment + Account provisioning in one atomic transaction
+    // 5. Execute Student + Enrollment + Account provisioning in one atomic transaction.
+    // Public mode: an existing student's profile is never changed and staff emails are refused.
     const enrollmentResult = await createEnrollmentWithStudentProvisioning({
       programId: program.id,
+      mode: 'public',
       student: {
         fullName,
         email,
@@ -138,26 +174,38 @@ export async function submitStudentEnrollment(
       }
     });
 
+    // The requester only learns that the request was received; what it means for an existing
+    // account is handled out of band (emails go to the address owner, staff cases to admins).
+    const acknowledgement: EnrollmentActionResult = {
+      success: true,
+      data: {
+        studentName: fullName,
+        studentEmail: email,
+        programName: program.name,
+        programCode: program.code,
+        status: 'pending'
+      }
+    };
+
     if (!enrollmentResult.success) {
-      if (enrollmentResult.error === 'already_enrolled') {
-        return {
-          success: false,
-          error: 'You are already registered for this program.'
-        };
+      if (INDISTINGUISHABLE_OUTCOMES.has(enrollmentResult.error)) {
+        if (enrollmentResult.error !== 'already_enrolled') {
+          console.warn('[Public Enrollment] Request not applied:', enrollmentResult.error);
+        }
+        await equalizeProvisioningCost();
+        return acknowledgement;
       }
-      if (enrollmentResult.error === 'identity_conflict') {
-        return {
-          success: false,
-          error: 'Enrollment could not be completed due to an account identity conflict. Please contact support.'
-        };
-      }
+      console.error('[Public Enrollment] Provisioning failed:', enrollmentResult.error);
       return {
         success: false,
-        error: enrollmentResult.message || 'An error occurred during enrollment. Please try again.'
+        error: 'An error occurred during enrollment. Please try again.'
       };
     }
 
     const { student, enrollment, activation } = enrollmentResult;
+    if (!enrollmentResult.isNewStudent) {
+      await equalizeProvisioningCost();
+    }
 
     // 6. Post-commit: Activation email dispatch (only if new activation token was generated)
     if (activation) {
@@ -179,7 +227,6 @@ export async function submitStudentEnrollment(
 
     // 7. Post-commit: Attempt registration acknowledgement dispatch without affecting enrollment/provisioning.
     // Note: Email failure MUST NOT roll back a valid database enrollment
-    let emailSent = false;
     try {
       const emailResult = await sendEnrollmentConfirmationEmail({
         studentName: student.fullName,
@@ -192,8 +239,9 @@ export async function submitStudentEnrollment(
       });
 
       if (emailResult.success) {
-        emailSent = true;
         await markEnrollmentConfirmationSent(enrollment.id);
+      } else {
+        console.error('[Action] Confirmation email not sent:', emailResult.reason ?? 'unknown');
       }
     } catch (emailErr) {
       console.error('[Action] Email dispatch caught error (enrollment preserved):', emailErr);
@@ -202,18 +250,7 @@ export async function submitStudentEnrollment(
     // Revalidate admin enrollments cache
     revalidatePath('/enrollments');
 
-    return {
-      success: true,
-      data: {
-        studentName: student.fullName,
-        studentEmail: student.email,
-        programName: program.name,
-        programCode: program.code,
-        status: 'pending',
-        registeredAt: enrollment.createdAt.toISOString(),
-        emailSent
-      }
-    };
+    return acknowledgement;
   } catch (error) {
     console.error('Error in submitStudentEnrollment:', error);
     return {

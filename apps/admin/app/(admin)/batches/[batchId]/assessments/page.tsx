@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
 import {
   getBatchById,
   getCollegeById,
@@ -9,6 +8,7 @@ import {
   getBatchAssessmentAttempts
 } from '@/lib/db/queries';
 import { BatchAssessmentsClient } from './assessments-client';
+import { requireAdminSession } from '@/lib/authz';
 
 export const metadata = {
   title: 'Batch Assessment Operations | Academy Control Plane'
@@ -20,10 +20,7 @@ export default async function BatchAssessmentsPage(props: {
   params: Promise<{ batchId: string }>;
   searchParams?: Promise<{ quizId?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user) {
-    redirect('/login');
-  }
+  const session = await requireAdminSession();
 
   const params = await props.params;
   const { batchId } = params;

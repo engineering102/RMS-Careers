@@ -15,8 +15,8 @@ Evidence labels: **[verified]** observed in this repository or by a read-only re
 | Worker | `rms-web` | `rms-admin` | `rms-student` |
 | Custom domain | `www.rms-careers.com` | `admin.rms-careers.com` | `student.rms-careers.com` |
 | `vars` (non-secret, in git) | none | `STUDENT_APP_URL`, `EMAIL_LOGO_URL` | `STUDENT_APP_URL` |
-| `secrets.required` | `POSTGRES_URL` | `POSTGRES_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET` | `POSTGRES_URL`, `AUTH_SECRET` |
-| Optional runtime secrets (code) | none | `RESEND_API_KEY`, `EMAIL_FROM` | `RESEND_API_KEY`, `EMAIL_FROM` |
+| `secrets.required` | `POSTGRES_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `PARTNER_ENQUIRY_TO` | `POSTGRES_URL`, `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM` | `POSTGRES_URL`, `AUTH_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM` |
+| Optional runtime secrets (code) | none | none (email is required, see above) | none (email is required, see above) |
 | Other | | `limits.cpu_ms: 300000` | |
 
 All three: `main: .open-next/worker.js`, assets `.open-next/assets`, flags `nodejs_compat`, `global_fetch_strictly_public`, compatibility date `2026-10-04`, a self service binding `WORKER_SELF_REFERENCE`, observability on. Auth uses `trustHost: true`, so no `AUTH_URL` is needed. No R2/KV/D1/Durable Object bindings exist.

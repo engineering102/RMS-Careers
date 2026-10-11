@@ -65,7 +65,9 @@ const { mockDb, dbState, triggers, resetDb } = vi.hoisted(() => {
     accountTokens: [] as MockAccountToken[],
     studentIdCounter: 1,
     enrollmentIdCounter: 1,
-    roleIdCounter: 1
+    roleIdCounter: 1,
+    /** Raw statements run through tx.execute (e.g. advisory locks). */
+    executed: [] as unknown[]
   };
 
   const triggers = {
@@ -114,6 +116,10 @@ const { mockDb, dbState, triggers, resetDb } = vi.hoisted(() => {
 
   function createClient(): any {
     return {
+      execute: async (query: unknown) => {
+        dbState.executed.push(query);
+        return { rows: [] };
+      },
       transaction: async (callback: any) => {
         const snap = snapshot();
         try {
@@ -348,6 +354,7 @@ const { mockDb, dbState, triggers, resetDb } = vi.hoisted(() => {
     dbState.studentIdCounter = 1;
     dbState.enrollmentIdCounter = 1;
     dbState.roleIdCounter = 1;
+    dbState.executed = [];
     triggers.forceUserInsertFailure = false;
     triggers.forceTokenInsertFailure = false;
   }
@@ -912,6 +919,132 @@ describe('Phase 3.1 — Enrollment Orchestration Service & Transaction Boundarie
       expect(dbState.enrollments).toHaveLength(1);
       expect(dbState.users).toHaveLength(1);
       expect(dbState.accountTokens).toHaveLength(1);
+    });
+  });
+
+  describe('8. Public self-registration (audit F-02)', () => {
+    const seedUser = (id: string, email: string, roles: string[], status: 'active' | 'pending_activation' = 'active') => {
+      dbState.users.push({ id, email, name: 'Seeded', passwordHash: 'hash', status, createdAt: new Date(), updatedAt: new Date() });
+      for (const role of roles) {
+        dbState.userRoles.push({ id: dbState.roleIdCounter++, userId: id, role, grantedAt: new Date() });
+      }
+    };
+    const seedStudent = (userId: string | null, email: string) => {
+      const student = {
+        id: dbState.studentIdCounter++,
+        userId,
+        collegeId: 'college-1',
+        fullName: 'Original Name',
+        email,
+        phone: '9000000000',
+        collegeRollNumber: 'ORIG-001',
+        branch: 'Original Branch',
+        year: 2,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      dbState.students.push(student);
+      return student;
+    };
+    const attackerInput = {
+      fullName: 'Attacker Chosen Name',
+      email: 'victim@example.com',
+      phone: '9111111111',
+      collegeRollNumber: 'EVIL-999',
+      branch: 'Hacked',
+      year: 4
+    };
+
+    it('creates a brand-new student, pending user, student role and activation token', async () => {
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 1, mode: 'public', student: sampleStudentInput });
+      expect(result.success).toBe(true);
+      if (!result.success) return;
+      expect(result.isNewStudent).toBe(true);
+      expect(dbState.students[0]).toMatchObject({ fullName: 'Ananya Sharma', collegeRollNumber: '21CS045' });
+      expect(dbState.users[0].status).toBe('pending_activation');
+      expect(dbState.userRoles.map((r) => r.role)).toEqual(['student']);
+      expect(result.activation).not.toBeNull();
+    });
+
+    it('never overwrites an existing student profile from anonymous input', async () => {
+      seedUser('usr_victim', 'victim@example.com', ['student']);
+      const victim = seedStudent('usr_victim', 'victim@example.com');
+      const snapshot = { ...victim };
+
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 2, mode: 'public', student: attackerInput });
+
+      expect(result.success).toBe(true);
+      expect(dbState.students).toHaveLength(1);
+      const after = dbState.students[0];
+      for (const field of ['fullName', 'phone', 'collegeRollNumber', 'branch', 'year', 'collegeId', 'userId'] as const) {
+        expect(after[field]).toEqual(snapshot[field]);
+      }
+      // A legitimate existing student is still enrolled (pending review) in the new program.
+      expect(dbState.enrollments).toHaveLength(1);
+      expect(dbState.enrollments[0]).toMatchObject({ studentId: victim.id, programId: 2, status: 'pending' });
+    });
+
+    it('admin imports still refresh the profile (authenticated, authorized source)', async () => {
+      seedUser('usr_victim', 'victim@example.com', ['student']);
+      seedStudent('usr_victim', 'victim@example.com');
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 2, student: attackerInput });
+      expect(result.success).toBe(true);
+      expect(dbState.students[0].fullName).toBe('Attacker Chosen Name');
+    });
+
+    it.each(['admin', 'super_admin', 'tutor'])('refuses a %s email without creating anything', async (role) => {
+      seedUser('usr_staff', 'victim@example.com', [role]);
+
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 1, mode: 'public', student: attackerInput });
+
+      expect(result).toMatchObject({ success: false, error: 'privileged_identity' });
+      expect(dbState.students).toHaveLength(0);
+      expect(dbState.enrollments).toHaveLength(0);
+      expect(dbState.userRoles.map((r) => r.role)).toEqual([role]);
+    });
+
+    it('never grants the student role to a staff account, even through an admin import', async () => {
+      seedUser('usr_admin', 'victim@example.com', ['admin']);
+
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 1, student: attackerInput });
+
+      expect(result).toMatchObject({ success: false, error: 'privileged_identity' });
+      expect(dbState.userRoles.map((r) => r.role)).toEqual(['admin']);
+      expect(dbState.students).toHaveLength(0);
+      expect(dbState.enrollments).toHaveLength(0);
+    });
+
+    it('rolls back when an existing student record is linked to a staff account', async () => {
+      seedUser('usr_admin', 'victim@example.com', ['admin', 'student']);
+      seedStudent('usr_admin', 'victim@example.com');
+
+      const result = await createEnrollmentWithStudentProvisioning({ programId: 3, mode: 'public', student: attackerInput });
+
+      expect(result).toMatchObject({ success: false, error: 'privileged_identity' });
+      expect(dbState.enrollments).toHaveLength(0);
+    });
+
+    it('rejects a repeated submission for the same program without duplicating anything', async () => {
+      const first = await createEnrollmentWithStudentProvisioning({ programId: 1, mode: 'public', student: sampleStudentInput });
+      const second = await createEnrollmentWithStudentProvisioning({ programId: 1, mode: 'public', student: sampleStudentInput });
+      expect(first.success).toBe(true);
+      expect(second).toMatchObject({ success: false, error: 'already_enrolled' });
+      expect(dbState.students).toHaveLength(1);
+      expect(dbState.users).toHaveLength(1);
+      expect(dbState.enrollments).toHaveLength(1);
+    });
+
+    it('serialises concurrent requests per email with a transaction-scoped advisory lock', async () => {
+      const { PgDialect } = await import('drizzle-orm/pg-core');
+      await createEnrollmentWithStudentProvisioning({
+        programId: 1,
+        mode: 'public',
+        student: { ...sampleStudentInput, email: ' Ananya.Sharma@Example.com ' }
+      });
+      expect(dbState.executed).toHaveLength(1);
+      const query = new PgDialect().sqlToQuery(dbState.executed[0] as any);
+      expect(query.sql).toContain('pg_advisory_xact_lock');
+      expect(query.params).toEqual(['enroll:ananya.sharma@example.com']);
     });
   });
 });

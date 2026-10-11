@@ -1,12 +1,15 @@
 import 'server-only';
 
-import { studentStats, type Student, type Enrollment } from '@rms/db';
+import { studentStats, userRoles, users, type Student, type Enrollment } from '@rms/db';
+import { hasRole } from '@rms/auth';
+import { eq, sql } from 'drizzle-orm';
 import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { findStudentByEmail, createOrUpdateStudent } from '../db/queries/students';
 import { checkExistingEnrollment, createEnrollmentRecord } from '../db/queries/enrollments';
 import {
   provisionStudentAccountCore,
   StudentProvisioningError,
+  PRIVILEGED_ROLES,
   type ProvisioningErrorCode
 } from '../db/queries/student-provisioning';
 
@@ -39,6 +42,13 @@ export interface CreateEnrollmentWithProvisioningInput {
   programId: number;
   batchId?: string | null;
   student: StudentEnrollmentInput;
+  /**
+   * `admin` (default): an authenticated administrator is the source of the data (bulk import), so an
+   * existing student's profile is refreshed from it.
+   * `public`: anonymous self-registration. Knowing an email proves nothing, so an existing student is
+   * enrolled AS-IS (no profile change) and emails belonging to staff accounts are refused.
+   */
+  mode?: 'admin' | 'public';
 }
 
 export type EnrollmentWithProvisioningSuccess = {
@@ -85,23 +95,51 @@ export async function createEnrollmentWithStudentProvisioning(
   client: AnyDbClient = dbTx
 ): Promise<CreateEnrollmentWithProvisioningResult> {
   const { programId, batchId, student: studentData } = input;
+  const mode = input.mode ?? 'admin';
   const cleanEmail = studentData.email.trim().toLowerCase();
 
   try {
     const executeInTx = async (tx: AnyDbClient): Promise<EnrollmentWithProvisioningSuccess> => {
+      // 0. Serialise concurrent requests for the same email (duplicate students/users/enrollments).
+      if ('execute' in tx && typeof (tx as { execute?: unknown }).execute === 'function') {
+        await (tx as typeof dbTx).execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`enroll:${cleanEmail}`}, 0))`);
+      }
+
       // 1. Check if student already exists before insert/update to accurately track new vs reused
       const existingStudent = await findStudentByEmail(cleanEmail, tx);
       const isNewStudent = !existingStudent;
 
-      // 2. Create or reuse student record using tx
-      const student = await createOrUpdateStudent(
-        {
-          ...studentData,
-          collegeId: studentData.collegeId || existingStudent?.collegeId || null,
-          email: cleanEmail
-        },
-        tx
-      );
+      let student: Student;
+      if (mode === 'public') {
+        if (!existingStudent) {
+          // A staff account with this email must not acquire a student identity via the public form.
+          const [emailUser] = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(sql`LOWER(${users.email}) = ${cleanEmail}`)
+            .limit(1);
+          if (emailUser) {
+            const roles = await tx.select().from(userRoles).where(eq(userRoles.userId, emailUser.id));
+            if (hasRole(roles, PRIVILEGED_ROLES)) {
+              throw new StudentProvisioningError('privileged_identity', 'Email belongs to a staff account');
+            }
+          }
+        }
+        // 2a. Public: create a new student, or use the existing record unchanged.
+        student = existingStudent
+          ? existingStudent
+          : await createOrUpdateStudent({ ...studentData, collegeId: studentData.collegeId || null, email: cleanEmail }, tx);
+      } else {
+        // 2b. Admin: create or refresh the student record from administrator-supplied data.
+        student = await createOrUpdateStudent(
+          {
+            ...studentData,
+            collegeId: studentData.collegeId || existingStudent?.collegeId || null,
+            email: cleanEmail
+          },
+          tx
+        );
+      }
 
       // If student is associated with a college, ensure student_stats row exists atomically
       if (student.collegeId) {

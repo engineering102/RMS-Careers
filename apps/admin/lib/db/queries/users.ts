@@ -4,6 +4,14 @@ import { db, users, userRoles, type User, type UserRole } from '@rms/db';
 import { eq, sql } from 'drizzle-orm';
 import { hashPassword, verifyPassword, hasAdminPrivileges } from '@rms/auth';
 
+let equalizationHashPromise: Promise<string> | undefined;
+
+/** A bcrypt hash of a random secret, computed once per isolate; compared against when no account matches. */
+function equalizationHash(): Promise<string> {
+  equalizationHashPromise ??= hashPassword(crypto.randomUUID() + crypto.randomUUID());
+  return equalizationHashPromise;
+}
+
 export interface UserWithRoles extends User {
   roles: UserRole[];
 }
@@ -42,7 +50,7 @@ export async function getUserByEmail(email: string): Promise<UserWithRoles | nul
       roles: rolesResult
     };
   } catch (error) {
-    console.error('Error fetching user by email:', error);
+    console.error('Error fetching user by email:', error instanceof Error ? error.name : 'unknown');
     return null;
   }
 }
@@ -67,29 +75,16 @@ export async function authenticateAdmin(
 
   try {
     const userWithRoles = await getUserByEmail(emailOrUsername);
-    if (!userWithRoles) {
-      return null;
-    }
+    const adminRole = userWithRoles?.roles.find((r) => hasAdminPrivileges([r.role]));
+    const eligible = Boolean(userWithRoles && userWithRoles.status === 'active' && adminRole);
 
-    // 1. Account status verification
-    if (userWithRoles.status !== 'active') {
-      return null;
-    }
-
-    // 2. Authorization check: Must have admin or super_admin role
-    const adminRole = userWithRoles.roles.find((r) =>
-      hasAdminPrivileges([r.role])
-    );
-    if (!adminRole) {
-      return null;
-    }
-
-    // 3. Password hash verification (constant-time compare)
+    // Exactly one bcrypt comparison on every path (unknown email, inactive, non-admin, wrong password),
+    // so response time does not reveal which accounts exist (audit PR-08).
     const isPasswordValid = await verifyPassword(
       passwordCandidate,
-      userWithRoles.passwordHash
+      eligible ? userWithRoles!.passwordHash : await equalizationHash()
     );
-    if (!isPasswordValid) {
+    if (!eligible || !isPasswordValid || !userWithRoles || !adminRole) {
       return null;
     }
 
@@ -101,7 +96,7 @@ export async function authenticateAdmin(
         .where(eq(users.id, userWithRoles.id));
     } catch (updateError) {
       // Non-blocking for authentication flow
-      console.warn('Could not update lastLoginAt for admin:', updateError);
+      console.warn('Could not update lastLoginAt for admin:', updateError instanceof Error ? updateError.name : 'unknown');
     }
 
     return {
@@ -111,7 +106,8 @@ export async function authenticateAdmin(
       role: adminRole.role as 'admin' | 'super_admin'
     };
   } catch (error) {
-    console.error('Authentication verification error:', error);
+    // Error class only: driver messages can contain SQL text or connection details.
+    console.error('[admin-auth] sign-in lookup failed:', error instanceof Error ? error.name : 'unknown');
     return null;
   }
 }
@@ -155,7 +151,33 @@ export async function createAdminUser(data: {
       role: assignedRole
     };
   } catch (error) {
-    console.error('Error creating admin user:', error);
+    console.error('Error creating admin user:', error instanceof Error ? error.name : 'unknown');
     return null;
   }
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Current account state used to revalidate an admin session on every server-side request
+ * (see lib/session-validation.ts). Returns null for unknown ids. Database errors propagate so the
+ * caller can fail closed.
+ */
+export async function getCurrentAdminRecord(
+  userId: string
+): Promise<{ id: string; status: string; roles: string[]; updatedAt: Date | null } | null> {
+  if (!userId || !UUID_REGEX.test(userId) || !process.env.POSTGRES_URL) return null;
+  const [user] = await db
+    .select({ id: users.id, status: users.status, updatedAt: users.updatedAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!user) return null;
+  const roles = await db.select({ role: userRoles.role }).from(userRoles).where(eq(userRoles.userId, user.id));
+  return {
+    id: user.id,
+    status: user.status,
+    roles: roles.map((r) => r.role),
+    updatedAt: user.updatedAt ? new Date(user.updatedAt) : null
+  };
 }

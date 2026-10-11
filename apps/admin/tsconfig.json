@@ -18,8 +18,12 @@
     "paths": {
       "@/components/*": ["components/*"],
       "@/lib/*": ["lib/*"],
+      "@rms/db/schema": ["../../packages/db/src/schema"],
       "@rms/db/tx": ["../../packages/db/src/tx"],
-      "@rms/db/guard-env": ["../../packages/db/src/guard-env"]
+      "@rms/db/xp-ledger": ["../../packages/db/src/xp-ledger"],
+      "@rms/db/guard-env": ["../../packages/db/src/guard-env"],
+      "@rms/db/migration-runner": ["../../packages/db/src/migration-runner"],
+      "@rms/db/node-tooling": ["../../packages/db/src/node-tooling"]
     },
     "plugins": [
       {

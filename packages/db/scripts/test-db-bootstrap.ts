@@ -4,19 +4,13 @@
  * creates the sentinel table that the integration setup requires. Refuses anything else.
  * Reads TEST_DATABASE_URL only (shell or <repo>/.env.test.local) - never .env.local.
  */
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { neon } from '@neondatabase/serverless';
 import { assertDatabaseAllowed } from '../src/guard';
 import { normalizeEndpoint } from '../src/guard';
 import { classifyContext, findRepoRoot, readTestDatabaseEndpoint, readTestDatabaseUrl } from '../src/guard-env';
-
-function splitMigration(sqlText: string): string[] {
-  return sqlText
-    .split('--> statement-breakpoint')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+import { runMigrations } from '../src/migration-runner';
+import { connectExecutor, readMigrationFiles, sha256Hex } from '../src/node-tooling';
 
 async function main() {
   const url = readTestDatabaseUrl();
@@ -43,14 +37,18 @@ async function main() {
     throw new Error('[db-guard] test database is not empty and has no sentinel; refusing to bootstrap.');
   }
 
-  const drizzleDir = path.join(root, 'packages', 'db', 'drizzle');
-  const journal = JSON.parse(readFileSync(path.join(drizzleDir, 'meta', '_journal.json'), 'utf8')) as {
-    entries: Array<{ tag: string }>;
-  };
-  for (const { tag } of journal.entries) {
-    const statements = splitMigration(readFileSync(path.join(drizzleDir, `${tag}.sql`), 'utf8'));
-    for (const statement of statements) await sql(statement);
-    console.log(`[test-db] applied ${tag} (${statements.length} statements)`);
+  // Same runner and journal as production (one transaction per migration), so every fresh test
+  // database rehearses the production migration path (audit PR-06).
+  const exec = await connectExecutor(url!);
+  try {
+    const result = await runMigrations(exec, readMigrationFiles(path.join(root, 'packages', 'db', 'drizzle')), {
+      apply: true,
+      sha256: sha256Hex,
+      log: (line) => console.log(`[test-db] ${line}`)
+    });
+    console.log(`[test-db] applied: ${result.applied.join(', ') || 'none'}`);
+  } finally {
+    await exec.close();
   }
   await sql('CREATE TABLE IF NOT EXISTS _rms_test_sentinel (created_at timestamptz NOT NULL DEFAULT now())');
   await sql('INSERT INTO _rms_test_sentinel DEFAULT VALUES');

@@ -19,6 +19,7 @@ import type {
   LeaderboardData
 } from '@/lib/types/leaderboards';
 import { getStartOfWeekIst } from '@/lib/services/activity-reward';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 /**
  * Fetches the Batch Cohort Leaderboard (Weekly or All-Time).
@@ -42,7 +43,7 @@ export async function getBatchLeaderboard(
       and(
         eq(enrollments.studentId, studentId),
         eq(enrollments.batchId, batchId),
-        inArray(enrollments.status, ['active', 'confirmed'])
+        enrollmentGrantsAccess()
       )
     )
     .limit(1);
@@ -377,7 +378,7 @@ export async function getLeaderboardData(params: {
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        inArray(enrollments.status, ['active', 'confirmed'])
+        enrollmentGrantsAccess()
       )
     );
 

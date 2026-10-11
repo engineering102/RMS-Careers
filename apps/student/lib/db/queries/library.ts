@@ -9,6 +9,7 @@ import type {
   LibraryFilterParams,
   LibraryQueryResult
 } from '@/lib/types/library';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 export type {
   ContentType,
@@ -86,7 +87,7 @@ export async function getLibraryItems(
         .where(
           and(
             eq(enrollments.studentId, studentId),
-            sql`${enrollments.status} IN ('active', 'confirmed')`
+            enrollmentGrantsAccess()
           )
         );
 

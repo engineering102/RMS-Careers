@@ -15,6 +15,9 @@ import {
   type SubmissionStatusEnum
 } from '@rms/db';
 import { eq, and, sql, desc, inArray, ilike, or } from 'drizzle-orm';
+import { awardActivityXp, type ExecutingClient } from '@rms/db/xp-ledger';
+
+const PROJECT_APPROVAL_XP = 100;
 
 export interface RubricCriterion {
   id?: string;
@@ -593,20 +596,23 @@ export async function updateSubmissionReviewStatus(
       })
       .where(eq(assignmentSubmissions.id, submissionId));
 
-    // 6. Record activity ledger on approval (best effort)
+    // 6. Approval XP through the shared ledger (audit F-07): idempotent per submission, IST activity
+    // day, and student_stats/streak updated in the same statement. Best effort: the review itself is
+    // already saved, so a ledger failure is logged rather than reported as a failed review.
     if (newStatus === 'approved') {
       try {
-        const todayIst = new Date().toISOString().split('T')[0];
-        await client.insert(activities).values({
-          studentId: submission.studentId,
-          batchId,
-          activityType: 'assignment_approved',
-          referenceId: submission.id,
-          xpAwarded: 100,
-          activityDateIst: todayIst
-        });
+        await awardActivityXp(
+          {
+            studentId: submission.studentId,
+            batchId,
+            activityType: 'assignment_approved',
+            referenceId: submission.id,
+            xp: PROJECT_APPROVAL_XP,
+            now
+          },
+          client as unknown as ExecutingClient
+        );
       } catch (actErr) {
-        // Log non-fatal activity insert error
         console.warn('Failed to record assignment_approved activity ledger:', actErr);
       }
     }

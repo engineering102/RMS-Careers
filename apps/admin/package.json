@@ -15,7 +15,8 @@
     "preview": "pnpm cf:build && opennextjs-cloudflare preview",
     "deploy": "pnpm cf:build && opennextjs-cloudflare deploy",
     "test:int": "vitest run -c vitest.int.config.ts",
-    "admin:seed:test": "tsx scripts/seed-admin.ts --target=test"
+    "admin:seed:test": "tsx scripts/seed-admin.ts --target=test",
+    "admin:bootstrap-first-admin": "tsx scripts/bootstrap-first-admin.ts"
   },
   "dependencies": {
     "@rms/db": "workspace:*",

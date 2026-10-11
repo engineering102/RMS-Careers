@@ -12,11 +12,16 @@ import {
   MapPin
 } from 'lucide-react';
 import { partnerEnquiryContent } from '@/lib/data/homepage-content';
+import { submitPartnerEnquiry } from '@/app/actions/partner-enquiry';
 
 export function PartnerFormSection() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { formConfig } = partnerEnquiryContent;
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // Honeypot: hidden from people and assistive tech; only bots fill it.
+  const [honeypot, setHoneypot] = useState('');
+  const { formConfig, submission } = partnerEnquiryContent;
 
   const [formData, setFormData] = useState({
     // Your Details
@@ -52,16 +57,27 @@ export function PartnerFormSection() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.consent) return;
+    if (!formData.consent || loading) return;
     setLoading(true);
+    setSubmitError(null);
+    setFieldErrors({});
 
-    // Minimum clean public lead submission handler
-    setTimeout(() => {
+    try {
+      // Success is shown only when the server confirms the enquiry was delivered.
+      const result = await submitPartnerEnquiry({ ...formData, company_website_hp: honeypot });
+      if (result.success) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(result.error);
+        setFieldErrors(result.fieldErrors ?? {});
+      }
+    } catch {
+      setSubmitError(submission.failureMessage);
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-    }, 600);
+    }
   };
 
   return (
@@ -87,7 +103,7 @@ export function PartnerFormSection() {
               <CheckCircle2 className="h-8 w-8" />
             </div>
             <h3 className="text-xl sm:text-2xl font-bold text-foreground">
-              Partnership Inquiry Received
+              {submission.successTitle}
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Thank you, <span className="font-semibold text-foreground">{formData.fullName}</span>. Our team will review the requirements for <span className="font-semibold text-foreground">{formData.institutionName}</span> and reach out to <span className="font-semibold text-foreground">{formData.email}</span> within 1 business day.
@@ -102,6 +118,18 @@ export function PartnerFormSection() {
             onSubmit={handleSubmit}
             className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-xl space-y-8"
           >
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
+              <label htmlFor="company_website_hp">Leave this field empty</label>
+              <input
+                id="company_website_hp"
+                name="company_website_hp"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
             {/* 1. Your Details */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
@@ -380,6 +408,27 @@ export function PartnerFormSection() {
                   I represent this institution and authorize RMS Careers to contact me regarding institutional collaboration.
                 </span>
               </label>
+
+              {submitError && (
+                <div role="alert" className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3.5 text-xs sm:text-sm text-foreground space-y-1">
+                  <p className="font-semibold">{submission.failureTitle}</p>
+                  <p>{submitError}</p>
+                  {Object.keys(fieldErrors).length > 0 && (
+                    <ul className="list-disc pl-5 text-muted-foreground">
+                      {Object.entries(fieldErrors).map(([field, message]) => (
+                        <li key={field}>{message}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="text-muted-foreground">
+                    Or email{' '}
+                    <a className="underline font-medium text-primary" href={`mailto:${submission.fallbackContactEmail}`}>
+                      {submission.fallbackContactEmail}
+                    </a>
+                    .
+                  </p>
+                </div>
+              )}
 
               <button
                 type="submit"

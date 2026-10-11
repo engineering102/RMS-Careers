@@ -427,6 +427,35 @@ export async function persistExternalAssessmentImport(
       };
     }
 
+    // Re-validate on confirm (audit F-13): rows are echoed back from the browser after the preview, so
+    // only rows for students enrolled in THIS batch, with sane scores, are persisted. Same rules as the
+    // preview (external-assessment-parser.ts); anything else is counted as skipped.
+    const enrolledRows = await client
+      .select({ studentId: enrollments.studentId })
+      .from(enrollments)
+      .where(
+        and(
+          eq(enrollments.batchId, batchId),
+          sql`${enrollments.status} IN ('active', 'confirmed', 'completed')`
+        )
+      );
+    const enrolledStudentIds = new Set(enrolledRows.map((r) => r.studentId));
+    const acceptable = rows.filter(
+      (r) =>
+        Number.isInteger(r.studentId) &&
+        enrolledStudentIds.has(r.studentId) &&
+        typeof r.assessmentCode === 'string' &&
+        r.assessmentCode.trim().length > 0 &&
+        r.assessmentCode.length <= 100 &&
+        Number.isFinite(r.maxScore) &&
+        r.maxScore > 0 &&
+        Number.isFinite(r.obtainedScore) &&
+        r.obtainedScore >= 0 &&
+        r.obtainedScore <= r.maxScore &&
+        (r.percentile === null || r.percentile === undefined || (Number.isFinite(r.percentile) && r.percentile >= 0 && r.percentile <= 100))
+    );
+    const rejectedCount = rows.length - acceptable.length;
+
     // 2. Fetch all existing records in this batch to identify duplicates deterministically
     const existing = await client
       .select({
@@ -444,10 +473,10 @@ export async function persistExternalAssessmentImport(
 
     let insertedCount = 0;
     let updatedCount = 0;
-    let skippedCount = 0;
     const now = new Date();
 
-    for (const r of rows) {
+    let skippedCount = rejectedCount;
+    for (const r of acceptable) {
       const key = `${r.studentId}::${r.assessmentCode.toLowerCase()}`;
       const existingId = existingMap.get(key);
 

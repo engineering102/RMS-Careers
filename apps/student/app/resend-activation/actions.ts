@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { headers } from 'next/headers';
 import { requestActivationResend } from '@/lib/db/activation';
+import { accountKey, enforceAuthLimits, ipKey, trustedClientIp } from '@/lib/security/request-limits';
 
 const schema = z.object({
   email: z.string().email('Please enter a valid email address.')
@@ -23,9 +24,10 @@ export async function resendActivationAction(
     return { error: parsed.error.issues[0]?.message || 'Invalid email address.' };
   }
 
-  const headerList = await headers();
-  const forwardedFor = headerList.get('x-forwarded-for');
-  const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : headerList.get('x-real-ip') || undefined;
+  // Client identity from Cloudflare only (never x-forwarded-for); limits per client and per account.
+  const clientIp = trustedClientIp(await headers()) ?? undefined;
+  const limit = await enforceAuthLimits({ client: ipKey('activation-resend', clientIp ?? null), account: accountKey('activation-resend', parsed.data.email) });
+  if (!limit.allowed) return { error: 'Too many requests. Please wait a minute and try again.' };
 
   return requestActivationResend(parsed.data.email, clientIp);
 }

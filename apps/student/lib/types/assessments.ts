@@ -81,6 +81,8 @@ export interface PracticeQuizSubmissionResult {
   isFirstPass: boolean;
   xpAwarded: number;
   submittedAt: Date;
+  /** True when quizzes.show_explanations withholds correct answers/explanations (they are stripped). */
+  answerKeyHidden?: boolean;
   questionResults: QuestionGradingResult[];
 }
 

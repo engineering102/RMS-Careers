@@ -8,6 +8,7 @@ import {
   CardTitle
 } from '@/components/ui/card';
 import { signIn } from '@/lib/auth';
+import { toPostLoginTarget } from '@/lib/auth-redirect';
 import { GraduationCap } from 'lucide-react';
 import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
@@ -46,7 +47,7 @@ export default async function LoginPage(props: {
                 await signIn('credentials', {
                   username,
                   password,
-                  redirectTo: searchParams.callbackUrl || '/programs'
+                  redirectTo: toPostLoginTarget(searchParams.callbackUrl)
                 });
               } catch (error) {
                 if (error instanceof AuthError) {
@@ -101,7 +102,7 @@ export default async function LoginPage(props: {
             action={async () => {
               'use server';
               await signIn('github', {
-                redirectTo: searchParams.callbackUrl || '/programs'
+                redirectTo: toPostLoginTarget(searchParams.callbackUrl)
               });
             }}
             className="w-full"

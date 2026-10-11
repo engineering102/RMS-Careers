@@ -5,6 +5,7 @@ import {
 } from '@/lib/db/queries';
 import type { ContentTypeEnum } from '@rms/db';
 import { ContentClient } from './content-client';
+import { requireAdminSession } from '@/lib/authz';
 
 export const metadata = {
   title: 'Content Library | Academy Control Plane'
@@ -20,6 +21,7 @@ export default async function ContentPage(props: {
     q?: string;
   }>;
 }) {
+  await requireAdminSession();
   const searchParams = await props.searchParams;
 
   const searchQuery = searchParams.q || undefined;

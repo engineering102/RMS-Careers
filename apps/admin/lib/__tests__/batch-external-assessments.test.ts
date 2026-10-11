@@ -733,6 +733,27 @@ CS-2026-001,85,100,92,ALGO-101,Algorithms Test,HackerRank`;
       expect(result.updatedCount).toBe(0);
       expect(mockExternalAssessmentRecords[0].obtainedScore).toBe(60); // unchanged
     });
+
+    it('re-validates confirmed rows: skips other-batch students and impossible scores (audit F-13)', async () => {
+      const base = { assessmentCode: 'CODE-02', assessmentName: 'Mock', provider: 'P', maxScore: 100, percentile: null };
+      const result = await persistExternalAssessmentImport({
+        batchId: sampleBatchId,
+        userId: sampleUserId,
+        duplicateStrategy: 'update',
+        rows: [
+          { ...base, studentId: 1, obtainedScore: 80 }, // valid
+          { ...base, studentId: 99, obtainedScore: 80 }, // enrolled in another batch
+          { ...base, studentId: 12345, obtainedScore: 80 }, // not enrolled anywhere
+          { ...base, studentId: 2, obtainedScore: 150 }, // above max
+          { ...base, studentId: 3, obtainedScore: -1 }, // negative
+          { ...base, studentId: 3, obtainedScore: 50, percentile: 140 } // percentile out of range
+        ]
+      });
+
+      expect(result.insertedCount).toBe(1);
+      expect(result.skippedCount).toBe(5);
+      expect(mockExternalAssessmentRecords.filter((r) => r.assessmentCode === 'CODE-02').map((r) => r.studentId)).toEqual([1]);
+    });
   });
 
   // ==========================================

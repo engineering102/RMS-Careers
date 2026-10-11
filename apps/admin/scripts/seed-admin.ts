@@ -1,9 +1,14 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, sql } from 'drizzle-orm';
-import * as schema from '@rms/db';
+// The schema entry, not '@rms/db': the client module imports 'server-only', which throws outside
+// Next.js. That is why `pnpm admin:seed` crashed (audit E.6).
+import * as schema from '@rms/db/schema';
 import { hashPassword, hasAdminPrivileges } from '@rms/auth';
 import { prepareSeedTarget } from '@rms/db/guard-env';
+import { promptHidden } from '@rms/db/node-tooling';
+
+const MIN_PASSWORD_LENGTH = 12;
 
 async function bootstrapAdmin() {
   // Slice 0 guard: explicit --target=test|development, production is rejected (exits non-zero).
@@ -15,28 +20,43 @@ async function bootstrapAdmin() {
     process.exit(1);
   }
 
-  // Accept credentials via CLI arguments or environment variables
+  // The password may NOT be a command-line argument (argv is visible in shell history and the process
+  // list). It comes from ADMIN_INITIAL_PASSWORD or, interactively, a hidden prompt. There is no default
+  // password. The old `<email> <password> [name]` form is refused rather than guessed at.
   const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+  if (positional.length > 1) {
+    console.error('ERROR: unexpected arguments. Do not pass the password on the command line.');
+    console.error('Usage: pnpm admin:seed[:test] <email> [--name="Full Name"]');
+    process.exit(1);
+  }
+  const nameFlag = process.argv.find((a) => a.startsWith('--name='))?.slice('--name='.length);
   const email = positional[0] || process.env.ADMIN_INITIAL_EMAIL;
-  const password = positional[1] || process.env.ADMIN_INITIAL_PASSWORD;
-  const name = positional[2] || process.env.ADMIN_INITIAL_NAME || 'RMS Lead Administrator';
+  const name = nameFlag || process.env.ADMIN_INITIAL_NAME || 'RMS Lead Administrator';
 
-  if (!email || !password) {
+  if (!email) {
     console.log(`
 Usage:
-  pnpm exec tsx scripts/seed-admin.ts <email> <password> [name]
+  pnpm admin:seed <email> [--name="Full Name"]        (development, rms_dev* only)
+  pnpm admin:seed:test <email> [--name="Full Name"]   (pinned test database)
 
-Or set environment variables:
-  ADMIN_INITIAL_EMAIL="admin@rms-careers.com"
-  ADMIN_INITIAL_PASSWORD="your-secure-password"
-  ADMIN_INITIAL_NAME="Admin Name"
-  pnpm exec tsx scripts/seed-admin.ts
+The password is read from ADMIN_INITIAL_PASSWORD, or prompted for (hidden) in an interactive terminal.
+Production is not a seed target: see the first-admin runbook in docs/audits/production-readiness-audit.md.
 `);
     process.exit(1);
   }
 
-  if (password.length < 8) {
-    console.error('ERROR: Password must be at least 8 characters long.');
+  let password = process.env.ADMIN_INITIAL_PASSWORD;
+  if (!password) {
+    password = await promptHidden('Password for the new administrator (hidden): ');
+    const again = await promptHidden('Repeat the password: ');
+    if (password !== again) {
+      console.error('ERROR: passwords do not match.');
+      process.exit(1);
+    }
+  }
+
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    console.error(`ERROR: Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
     process.exit(1);
   }
 
@@ -111,6 +131,7 @@ Or set environment variables:
 }
 
 bootstrapAdmin().catch((err) => {
-  console.error('[BOOTSTRAP] Fatal Error:', err);
+  // Message only, credentials redacted: a driver error can carry the connection string.
+  console.error('[BOOTSTRAP] Fatal Error:', err instanceof Error ? err.message.replace(/postgres(ql)?:\S+/g, '<redacted>') : 'unknown');
   process.exit(1);
 });

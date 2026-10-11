@@ -20,6 +20,7 @@ import {
 } from '@rms/db';
 import { eq, and, sql, desc, inArray, or } from 'drizzle-orm';
 import { formatDate } from '@/lib/utils/format-date';
+import { csvCell } from '@/lib/csv/escape';
 
 export interface BatchAcademicAnalyticsData {
   batch: {
@@ -166,13 +167,8 @@ export type AnalyticsReportType =
   | 'external'
   | 'needs_attention';
 
-function escapeCsv(val: any): string {
-  const str = String(val ?? '');
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+/** Formula-safe, always-quoted CSV cell (see lib/csv/escape.ts). */
+const escapeCsv = (value: unknown) => csvCell(value, 'minimal');
 
 /**
  * Retrieves comprehensive academic analytics for a batch.

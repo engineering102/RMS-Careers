@@ -8,6 +8,7 @@ import {
   getEligibleContentForBatch
 } from '@/lib/db/queries';
 import { BatchCurriculumClient } from './curriculum-client';
+import { requireAdminSession } from '@/lib/authz';
 
 export const metadata = {
   title: 'Batch Curriculum Builder | Academy Control Plane'
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic';
 export default async function BatchCurriculumPage(props: {
   params: Promise<{ batchId: string }>;
 }) {
+  await requireAdminSession();
   const params = await props.params;
   const { batchId } = params;
 
