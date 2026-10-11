@@ -18,7 +18,18 @@
     "admin:seed:test": "pnpm --filter @rms/admin admin:seed:test",
     "student:seed:test": "pnpm --filter @rms/student student:seed:test",
     "ci:affected": "node scripts/ci/affected.mjs",
-    "test:ci-scripts": "node --test \"scripts/ci/__tests__/*.test.mjs\""
+    "test:ci-scripts": "node --test \"scripts/ci/__tests__/*.test.mjs\"",
+    "test:e2e": "playwright test -c e2e/playwright.local.config.ts",
+    "test:e2e:headed": "playwright test -c e2e/playwright.local.config.ts --headed",
+    "test:e2e:ui": "playwright test -c e2e/playwright.local.config.ts --ui",
+    "test:e2e:prod": "playwright test -c e2e/playwright.production.config.ts",
+    "test:e2e:prod:auth": "playwright test -c e2e/playwright.production-auth.config.ts",
+    "test:e2e:prod:auth:headed": "playwright test -c e2e/playwright.production-auth.config.ts --headed",
+    "test:e2e:report": "playwright show-report e2e/playwright-report/local",
+    "test:e2e:install": "playwright install chromium"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "pnpm@9.15.4",
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
+  }
 }

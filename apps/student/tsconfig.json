@@ -18,6 +18,7 @@
       "@/*": ["./*"],
       "@rms/db/schema": ["../../packages/db/src/schema"],
       "@rms/db/tx": ["../../packages/db/src/tx"],
+      "@rms/db/xp-ledger": ["../../packages/db/src/xp-ledger"],
       "@rms/db/guard-env": ["../../packages/db/src/guard-env"]
     },
     "plugins": [{ "name": "next" }]
