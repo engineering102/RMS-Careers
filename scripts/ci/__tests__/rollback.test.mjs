@@ -484,7 +484,7 @@ describe('parseArgs', () => {
   });
 });
 
-describe('capturing the version id from the wrangler output file (contract for the future deploy job)', () => {
+describe('capturing the version id from the wrangler output file (contract used by deploy.mjs)', () => {
   const entry = (o = {}) => JSON.stringify({ type: 'deploy', version: 1, worker_name: 'rms-web', worker_tag: 't', version_id: VA, timestamp: 'x', ...o });
   test('exactly one deploy entry with a UUID yields the id; other entry types are ignored', () => {
     assert.equal(versionIdFromWranglerOutput(`${JSON.stringify({ type: 'wrangler-session' })}\n${entry()}\n`, 'rms-web'), VA);

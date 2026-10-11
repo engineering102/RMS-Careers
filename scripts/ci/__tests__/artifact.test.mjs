@@ -449,7 +449,7 @@ describe('phase 4 building blocks (nothing deploys)', () => {
     }
   });
 
-  test('deployArgs is NOT wired to any command or workflow yet', () => {
+  test('deployArgs is wired to exactly one caller (scripts/ci/deploy.mjs, once); no workflow, command or other script', () => {
     const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
     const files = [];
     const walk = (dir) => {
@@ -463,9 +463,12 @@ describe('phase 4 building blocks (nothing deploys)', () => {
     walk(path.join(root, 'scripts'));
     walk(path.join(root, '.github'));
     const users = files.filter((f) => !/__tests__/.test(f) && /deployArgs\(/.test(fs.readFileSync(f, 'utf8')));
-    assert.deepEqual(users.map((f) => path.basename(f)), ['artifact.mjs'], 'only the definition may mention it');
+    assert.deepEqual(users.map((f) => path.basename(f)).sort(), ['artifact.mjs', 'deploy.mjs'], 'only the definition and the one reviewed caller may mention it');
     const src = fs.readFileSync(path.join(root, 'scripts', 'ci', 'artifact.mjs'), 'utf8');
-    assert.equal([...src.matchAll(/deployArgs\(/g)].length, 1, 'defined once, called nowhere');
+    assert.equal([...src.matchAll(/deployArgs\(/g)].length, 1, 'defined once in artifact.mjs, called nowhere there');
+    const caller = fs.readFileSync(path.join(root, 'scripts', 'ci', 'deploy.mjs'), 'utf8');
+    assert.equal([...caller.matchAll(/deployArgs\(/g)].length, 1, 'deploy.mjs builds the command in exactly one place');
+    for (const f of files.filter((x) => /\.ya?ml$/.test(x))) assert.doesNotMatch(fs.readFileSync(f, 'utf8'), /deployArgs/, `${path.basename(f)}: workflows never build the command themselves`);
   });
 
   test('localDevArgs: loopback only, local mode, placeholder variables, never a deploy', () => {

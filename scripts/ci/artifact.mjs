@@ -4,7 +4,8 @@
  *
  * NOTHING HERE DEPLOYS. No command executes `wrangler deploy` without `--dry-run`, and the dry run and the local
  * smoke refuse to start if any Cloudflare/Wrangler variable is present in the environment. `deployArgs` only BUILDS
- * the future production argument list (pinned and tested); no CLI command calls it yet.
+ * the production argument list (pinned and tested); no CLI command of this file runs it. Its only caller is
+ * scripts/ci/deploy.mjs, which runs it behind the master switch and the Environment check.
  *
  *   package          scan apps/<app>/.open-next (+ wrangler.jsonc, package.json, open-next.config.ts) and write
  *                    <app>.open-next.tar.gz, inventory.json and manifest.json to --out
@@ -921,12 +922,13 @@ export function dryRunDeploy({ app, repoRoot, outDir, appDir = path.join(repoRoo
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Phase 4 building blocks (nothing here is wired to a command that deploys)
+// Phase 4 building blocks (pure functions; nothing in this file runs a deploy, deploy.mjs is the only caller)
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
- * The exact argument list of the future production deploy of an EXTRACTED, VERIFIED artifact. It is a pure function:
- * no CLI command and no workflow calls it yet. Pinned by tests so the command shape is reviewed before it is wired.
+ * The exact argument list of the production deploy of an EXTRACTED, VERIFIED artifact. It is a pure function and runs
+ * nothing: no CLI command of this file calls it, and no workflow does. Its only caller is scripts/ci/deploy.mjs (the
+ * real deploy and the printed rehearsal command). Pinned by tests so the command shape stays reviewed.
  *
  *  - `--config wrangler.jsonc` (with OPEN_NEXT_DEPLOY=true in the environment) stops wrangler delegating to
  *    `opennextjs-cloudflare deploy`; neither it nor `pnpm deploy` is used because both can rebuild.

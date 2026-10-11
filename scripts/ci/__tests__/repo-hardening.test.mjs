@@ -49,7 +49,7 @@ describe('workflow supply chain', () => {
     assert.deepEqual([...new Set(secrets)].sort(), ['TEST_DATABASE_ENDPOINT', 'TEST_DATABASE_URL']);
   });
 
-  test('no workflow anywhere declares a production environment or Cloudflare credential, except the gated rollback workflow', () => {
+  test('no workflow anywhere declares a production environment or Cloudflare credential, except the gated rollback and per-app deploy workflows', () => {
     for (const f of workflows) {
       const code = nonComment(read(workflowDir, f)).join('\n');
       if (f === 'rollback.yml') {
@@ -68,6 +68,18 @@ describe('workflow supply chain', () => {
         assert.match(code, /CLOUDFLARE_ACCOUNT_ID: \$\{\{ vars\.CLOUDFLARE_ACCOUNT_ID \}\}/, f);
         assert.deepEqual(code.match(/^\s+[a-z-]+: write$/gm)?.map((l) => l.trim()), ['deployments: write'], f);
         assert.match(code, /group: deploy-\$\{\{ inputs\.app \}\}\n\s+cancel-in-progress: false/, f);
+        continue;
+      }
+      if (f === 'deploy-app.yml') {
+        // Second reviewed exception (Phase 4 deploy, on main): the per-app deploy job, reachable only as a reusable workflow
+        // called from deploy.yml. One Environment, exactly the two Cloudflare names, one secret reference. Its behaviour is
+        // pinned in depth by deploy-workflow.test.mjs.
+        assert.deepEqual(code.match(/^\s+environment:.*$/gm).map((l) => l.trim()), ['environment: production-${{ inputs.app }}'], f);
+        const names = [...new Set(code.match(/CLOUDFLARE_[A-Z_]+|CF_API\w*|CF_ACCOUNT\w*|WRANGLER_\w+|\w*API_TOKEN/g))].sort();
+        assert.deepEqual(names, ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'], f);
+        assert.match(code, /^on:\n {2}workflow_call:\n/m, f);
+        assert.doesNotMatch(code, /^\s+(push|pull_request|pull_request_target|schedule|workflow_run|workflow_dispatch|repository_dispatch):/m, f);
+        assert.deepEqual(code.match(/\$\{\{\s*secrets\.[A-Z_]+\s*\}\}/g), ['${{ secrets.CLOUDFLARE_API_TOKEN }}'], f);
         continue;
       }
       assert.doesNotMatch(code, /^\s+environment:/m, f);
