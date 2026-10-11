@@ -32,14 +32,18 @@ export type GuardedOperation =
   | 'test-seed'
   | 'test-reset'
   | 'test-cleanup'
-  | 'dev-seed';
+  | 'dev-seed'
+  | 'dev-migrate'
+  | 'test-migrate';
 
 const ALLOWED_CLASSES: Record<GuardedOperation, readonly DatabaseClassification[]> = {
   'test-run': ['test'],
   'test-seed': ['test'],
   'test-reset': ['test'],
   'test-cleanup': ['test'],
-  'dev-seed': ['development']
+  'dev-seed': ['development'],
+  'dev-migrate': ['development'],
+  'test-migrate': ['test']
 };
 
 export class DatabaseGuardError extends Error {

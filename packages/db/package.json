@@ -30,13 +30,28 @@
       "types": "./src/guard-env.ts",
       "import": "./src/guard-env.ts",
       "default": "./src/guard-env.ts"
+    },
+    "./xp-ledger": {
+      "types": "./src/xp-ledger.ts",
+      "import": "./src/xp-ledger.ts",
+      "default": "./src/xp-ledger.ts"
+    },
+    "./migration-runner": {
+      "types": "./src/migration-runner.ts",
+      "import": "./src/migration-runner.ts",
+      "default": "./src/migration-runner.ts"
+    },
+    "./node-tooling": {
+      "types": "./src/node-tooling.ts",
+      "import": "./src/node-tooling.ts",
+      "default": "./src/node-tooling.ts"
     }
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:db:bootstrap": "tsx scripts/test-db-bootstrap.ts"
