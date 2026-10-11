@@ -414,6 +414,16 @@ export const partnerEnquiryContent = {
       'Next academic year',
       'Just exploring'
     ]
+  },
+  // Shown only after the enquiry was actually delivered / when delivery failed (no simulated success).
+  submission: {
+    successTitle: 'Partnership Inquiry Received',
+    failureTitle: 'We could not submit your enquiry',
+    failureMessage:
+      'Your enquiry was not delivered. Please try again in a few minutes, or email us directly and we will respond.',
+    // Same partnership address already published in finalCtaContent.institutionCta.
+    fallbackContactEmail: 'partnerships@rms-careers.com',
+    rateLimitedMessage: 'Too many enquiries from this connection. Please wait a minute and try again.'
   }
 };
 

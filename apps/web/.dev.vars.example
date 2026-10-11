@@ -1,3 +1,9 @@
 # Local `pnpm --filter @rms/web preview` (Cloudflare workerd) reads secrets from apps/web/.dev.vars.
 # Copy this file to .dev.vars and fill in real values. .dev.vars is gitignored.
 POSTGRES_URL=""
+
+# Partner enquiry delivery (lib/partner-enquiry/deliver.ts). Without all three the form reports a failure
+# instead of claiming success. PARTNER_ENQUIRY_TO is the recipient inbox (comma-separated for several).
+RESEND_API_KEY=
+EMAIL_FROM=
+PARTNER_ENQUIRY_TO=
