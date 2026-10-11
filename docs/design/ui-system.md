@@ -71,3 +71,21 @@ Themes:
 Fonts: Inter (`font-sans`) and JetBrains Mono (`font-mono`) are loaded with `next/font/google` in each app's `app/fonts.ts`. They are self-hosted at build time, so CSP `font-src 'self'` is enough. Web unit tests that import `app/layout.tsx` use the stub in `apps/web/lib/__tests__/stubs/next-font-google.ts` (aliased in `vitest.config.ts`).
 
 Prefer tokens (`bg-card`, `text-muted-foreground`, `text-success`) over raw palette classes (`bg-slate-900`, `text-emerald-400`) in new and touched code.
+
+---
+
+## 5. Shared UI Primitives (student + admin)
+
+Identical copies live in `apps/student/components/ui/` and `apps/admin/components/ui/` (same file, same API). Change both together.
+
+| Primitive | Use instead of | Notes |
+|---|---|---|
+| `Label`, `Input`, `Textarea` | raw `<label>`/`<input>`/`<textarea>` with ad-hoc classes | Pair `Label htmlFor` with the control `id`; `aria-invalid="true"` turns the border destructive. Admin already had `Input` |
+| `Alert` (+ `AlertTitle`, `AlertDescription`) | inline red/green `<p>` feedback | Variants `default/info/success/warning/destructive`. Role is automatic: `alert` for destructive/warning, `status` otherwise; pass `role` to override |
+| `ConfirmDialog` | hand-rolled `fixed inset-0` modals, `window.confirm()`, per-page confirm state | `role="alertdialog"`, focus trap, Escape/Cancel return. Destructive variant focuses Cancel first. Cannot be dismissed while pending. Never closes itself: call `onOpenChange(false)` after the action succeeds |
+| `PageHeader` | per-page title/description/action blocks | `title`, `description`, `eyebrow`, `actions`, `leading` (breadcrumb/back link), `level` |
+| `StatCard` | bespoke metric tiles | `label` must say exactly what is counted; `tone` colours only the icon |
+| `Skeleton` | custom pulse divs | Decorative (`aria-hidden`); mark the loading region with `aria-busy` |
+| `EmptyState` | bespoke empty panels | Student: `components/ui/empty-state.tsx`; admin: `components/admin/empty-state.tsx` (same API) |
+
+Adopting these in existing screens is done per screen in Phases 3–5, keeping every server action call and its arguments unchanged.
