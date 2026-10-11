@@ -11,6 +11,7 @@ import type {
   ExternalAssessmentRecord,
   PerformanceTier
 } from '@/lib/types/external-assessments';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 /**
  * Derives the standardized performance tier from percentile and percentage metrics.
@@ -48,7 +49,7 @@ export async function getStudentExternalAssessments(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        inArray(enrollments.status, ['active', 'confirmed'])
+        enrollmentGrantsAccess()
       )
     );
 

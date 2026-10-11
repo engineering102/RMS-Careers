@@ -1,11 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, studentDsaProgress, activities, studentStats, enrollments } from '@rms/db';
-import { eq, and, sql } from 'drizzle-orm';
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { db, studentDsaProgress } from '@rms/db';
+import { eq, and } from 'drizzle-orm';
+import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
+import { awardActivityXp } from '@/lib/services/xp-ledger';
 import { getDsaQuestionBySlug } from '@/lib/data/dsa-sheets';
-import { getTodayDateIst } from '@/lib/types/overview';
 import type { RecordDsaProblemInput } from '@/lib/types/dsa';
 
 export type ActionResult<T = unknown> =
@@ -13,12 +13,6 @@ export type ActionResult<T = unknown> =
   | { success: false; error: string; code?: string };
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function getYesterdayDateIst(referenceDate: Date = new Date()): string {
-  const d = new Date(referenceDate);
-  d.setDate(d.getDate() - 1);
-  return getTodayDateIst(d);
-}
 
 /**
  * Server Action: Records or updates a solved DSA problem for the authenticated student.
@@ -63,25 +57,9 @@ export async function recordDsaProblemSolved(
 
     const sanitizedNotes = notes && notes.trim().length > 0 ? notes.trim() : null;
 
-    // 4. Validate batchId entitlement if supplied
-    let verifiedBatchId: string | null = null;
-    if (batchId && UUID_REGEX.test(batchId)) {
-      const [enrollment] = await db
-        .select({ batchId: enrollments.batchId })
-        .from(enrollments)
-        .where(
-          and(
-            eq(enrollments.studentId, studentId),
-            eq(enrollments.batchId, batchId),
-            sql`${enrollments.status} IN ('active', 'confirmed')`
-          )
-        )
-        .limit(1);
-
-      if (enrollment) {
-        verifiedBatchId = batchId;
-      }
-    }
+    // 4. XP is attributed to a batch only when the student currently has access to it.
+    const verifiedBatchId =
+      batchId && UUID_REGEX.test(batchId) && (await hasBatchAccess(studentId, batchId)) ? batchId : null;
 
     // 5. Check if problem was already solved by this student
     const [existing] = await db
@@ -127,8 +105,6 @@ export async function recordDsaProblemSolved(
     }
 
     const now = new Date();
-    const todayIst = getTodayDateIst(now);
-    const yesterdayIst = getYesterdayDateIst(now);
 
     // 7. Insert or update progress record
     if (existing) {
@@ -157,66 +133,17 @@ export async function recordDsaProblemSolved(
         .onConflictDoNothing();
     }
 
-    // 8. Record in activities table (idempotent XP ledger)
-    await db
-      .insert(activities)
-      .values({
-        studentId,
-        batchId: verifiedBatchId,
-        activityType: 'dsa_solved',
-        referenceId: problemSlug,
-        xpAwarded: xpToAward,
-        activityDateIst: todayIst,
-        createdAt: now
-      })
-      .onConflictDoNothing();
-
-    // 9. Update student stats (XP, streak, and dsa_solved_count)
-    const [stats] = await db
-      .select({
-        studentId: studentStats.studentId,
-        totalXp: studentStats.totalXp,
-        currentStreak: studentStats.currentStreak,
-        longestStreak: studentStats.longestStreak,
-        dsaSolvedCount: studentStats.dsaSolvedCount,
-        lastActivityDateIst: studentStats.lastActivityDateIst
-      })
-      .from(studentStats)
-      .where(eq(studentStats.studentId, studentId))
-      .limit(1);
-
-    if (stats) {
-      const prevActivity = stats.lastActivityDateIst;
-      let newCurrentStreak = stats.currentStreak;
-
-      if (prevActivity === todayIst) {
-        // Already active today; streak stays unchanged
-      } else if (prevActivity === yesterdayIst) {
-        // Consecutive day
-        newCurrentStreak += 1;
-      } else {
-        // Missed day or fresh start
-        newCurrentStreak = 1;
-      }
-
-      const newLongestStreak = Math.max(stats.longestStreak, newCurrentStreak);
-      const newTotalXp = stats.totalXp + xpToAward;
-      const newLevel = Math.floor(newTotalXp / 100) + 1;
-      const newDsaCount = stats.dsaSolvedCount + 1;
-
-      await db
-        .update(studentStats)
-        .set({
-          totalXp: newTotalXp,
-          currentLevel: newLevel,
-          currentStreak: newCurrentStreak,
-          longestStreak: newLongestStreak,
-          dsaSolvedCount: newDsaCount,
-          lastActivityDateIst: todayIst,
-          updatedAt: now
-        })
-        .where(eq(studentStats.studentId, studentId));
-    }
+    // 8. Idempotent, race-safe XP + streak + dsa_solved_count (single statement; see xp-ledger.ts).
+    // Concurrent requests for the same problem award once; the response reports what was awarded.
+    const award = await awardActivityXp({
+      studentId,
+      batchId: verifiedBatchId,
+      activityType: 'dsa_solved',
+      referenceId: problemSlug,
+      xp: xpToAward,
+      now
+    });
+    const xpAwarded = award.xpAwarded;
 
     // Revalidate paths for instant client freshness
     revalidatePath('/dsa');
@@ -227,8 +154,8 @@ export async function recordDsaProblemSolved(
 
     return {
       success: true,
-      data: { isNewlySolved: true, xpAwarded: xpToAward },
-      message: `Problem solved! +${xpToAward} XP`
+      data: { isNewlySolved: award.awarded, xpAwarded },
+      message: award.awarded ? `Problem solved! +${xpAwarded} XP` : 'Submission details updated.'
     };
   } catch (error: any) {
     if (

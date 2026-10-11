@@ -31,6 +31,12 @@ let mockDsaProgress: any[] = [];
 let mockActivities: any[] = [];
 let mockStudentStats: any[] = [];
 
+// Atomic XP ledger contract, in memory (see helpers/in-memory-xp-ledger.ts).
+vi.mock('@/lib/services/xp-ledger', async () => {
+  const { createInMemoryXpLedger } = await import('./helpers/in-memory-xp-ledger');
+  return createInMemoryXpLedger(() => ({ activities: mockActivities, stats: mockStudentStats }));
+});
+
 vi.mock('@rms/db', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@rms/db')>();
 

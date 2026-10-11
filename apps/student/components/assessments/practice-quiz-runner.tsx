@@ -372,7 +372,12 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                     let optionClasses =
                       'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40';
 
-                    if (submissionResult && grading) {
+                    if (submissionResult && grading && submissionResult.answerKeyHidden) {
+                      // Answer key withheld by the quiz policy: show only the student's own selection.
+                      optionClasses = isSelected
+                        ? 'border-purple-500/60 bg-purple-500/10 text-purple-200'
+                        : 'border-slate-800/60 bg-slate-950/20 text-slate-500';
+                    } else if (submissionResult && grading) {
                       const isOptionCorrect = grading.correctOptionIds.includes(option.id);
                       if (isOptionCorrect) {
                         // Authoritative correct option

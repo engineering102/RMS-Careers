@@ -36,7 +36,14 @@ vi.mock('@/lib/db/queries/entitlements', () => ({
       fullName: 'Test Student'
     },
     enrollments: mockEnrollments
-  }))
+  })),
+  // Mirrors the enrollment-status part of enrollmentGrantsAccess() using its real exported constants.
+  hasBatchAccess: vi.fn().mockImplementation(async (_studentId: number, batchId: string) => {
+    const { ACCESS_GRANTING_ENROLLMENT_STATUSES } = await import('@/lib/db/access-policy');
+    return mockEnrollments.some(
+      (e) => e.batchId === batchId && (ACCESS_GRANTING_ENROLLMENT_STATUSES as readonly string[]).includes(e.status)
+    );
+  })
 }));
 
 // Mock database
@@ -486,5 +493,33 @@ describe('Slice 13: Project Submissions & GitHub Validator', () => {
         expect(result.code).toBe('NOT_YET_AVAILABLE');
       }
     });
+  });
+
+  describe('4. Enrollment-state eligibility (audit F-06)', () => {
+    const submit = () =>
+      submitProjectAssignment({
+        assignmentId: TEST_ASSIGNMENT_ID,
+        contentItemId: TEST_CONTENT_ITEM_ID,
+        batchId: TEST_BATCH_ID,
+        githubUrl: 'https://github.com/student/e-commerce-microservices'
+      });
+
+    it.each(['active', 'confirmed'])('accepts a submission from a %s enrollment', async (status) => {
+      mockEnrollments = [{ id: 'enr-1', studentId: TEST_STUDENT_ID, batchId: TEST_BATCH_ID, status }];
+      const result = await submit();
+      expect(result.success).toBe(true);
+      expect(mockAssignmentSubmissions).toHaveLength(1);
+    });
+
+    it.each(['pending', 'waitlisted', 'cancelled', 'transferred', 'completed', 'dropped', 'revoked', 'suspended'])(
+      'rejects a submission from a %s enrollment without writing anything',
+      async (status) => {
+        mockEnrollments = [{ id: 'enr-1', studentId: TEST_STUDENT_ID, batchId: TEST_BATCH_ID, status }];
+        const result = await submit();
+        expect(result).toMatchObject({ success: false, code: 'UNAUTHORIZED_BATCH' });
+        expect(mockAssignmentSubmissions).toHaveLength(0);
+        expect(mockFetch).not.toHaveBeenCalled();
+      }
+    );
   });
 });

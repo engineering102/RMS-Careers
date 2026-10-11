@@ -1,9 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, activities, enrollments } from '@rms/db';
-import { eq, and, sql } from 'drizzle-orm';
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { db, enrollments } from '@rms/db';
+import { eq, and } from 'drizzle-orm';
+import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
+import { awardActivityXp } from '@/lib/services/xp-ledger';
 import { getContentItem } from '@/lib/db/queries/content';
 
 export type ActionResult<T = unknown> =
@@ -12,18 +13,7 @@ export type ActionResult<T = unknown> =
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Returns current date in Asia/Kolkata timezone as YYYY-MM-DD.
- */
-function getKolkataDateString(): string {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  return formatter.format(new Date());
-}
+const LECTURE_COMPLETION_XP = 5;
 
 /**
  * Server Action: Marks a lecture/resource as watched and completed for the authenticated student.
@@ -57,21 +47,15 @@ export async function markLectureWatched(
       return { success: false, error: 'Content not found', code: 'NOT_FOUND' };
     }
 
-    // 4. Validate batch entitlement if batchId was provided
+    // 4. Validate batch entitlement if batchId was provided (shared lifecycle policy).
     let verifiedBatchId: string | null = null;
     if (batchId && UUID_REGEX.test(batchId)) {
-      const [enrollment] = await db
-        .select({ batchId: enrollments.batchId, status: enrollments.status })
-        .from(enrollments)
-        .where(
-          and(
-            eq(enrollments.studentId, studentId),
-            eq(enrollments.batchId, batchId)
-          )
-        )
-        .limit(1);
-
-      if (!enrollment || (enrollment.status !== 'active' && enrollment.status !== 'confirmed')) {
+      if (!(await hasBatchAccess(studentId, batchId))) {
+        const [enrollment] = await db
+          .select({ status: enrollments.status })
+          .from(enrollments)
+          .where(and(eq(enrollments.studentId, studentId), eq(enrollments.batchId, batchId)))
+          .limit(1);
         return {
           success: false,
           error: enrollment?.status === 'completed'
@@ -80,46 +64,25 @@ export async function markLectureWatched(
           code: 'UNAUTHORIZED_BATCH'
         };
       }
-
       verifiedBatchId = batchId;
     }
 
-    // 5. Check if completion is already recorded in activities
-    const [existing] = await db
-      .select({ id: activities.id })
-      .from(activities)
-      .where(
-        and(
-          eq(activities.studentId, studentId),
-          eq(activities.activityType, 'lecture_completed'),
-          eq(activities.referenceId, contentItemId)
-        )
-      )
-      .limit(1);
+    // 5. Idempotent, race-safe completion + XP (ledger and student_stats move together; audit F-07).
+    const award = await awardActivityXp({
+      studentId,
+      batchId: verifiedBatchId,
+      activityType: 'lecture_completed',
+      referenceId: contentItemId,
+      xp: LECTURE_COMPLETION_XP
+    });
 
-    if (existing) {
+    if (!award.awarded) {
       return {
         success: true,
         data: { isCompleted: true, xpAwarded: 0 },
         message: 'Already marked as completed'
       };
     }
-
-    // 6. Record completion in activities table (idempotent + awards 5 XP)
-    const activityDateIst = getKolkataDateString();
-    const xpToAward = 5;
-
-    await db
-      .insert(activities)
-      .values({
-        studentId,
-        batchId: verifiedBatchId,
-        activityType: 'lecture_completed',
-        referenceId: contentItemId,
-        xpAwarded: xpToAward,
-        activityDateIst
-      })
-      .onConflictDoNothing();
 
     // Revalidate paths for instant client freshness
     revalidatePath(`/content/${contentItemId}`);
@@ -130,8 +93,8 @@ export async function markLectureWatched(
 
     return {
       success: true,
-      data: { isCompleted: true, xpAwarded: xpToAward },
-      message: `Completed! +${xpToAward} XP`
+      data: { isCompleted: true, xpAwarded: award.xpAwarded },
+      message: `Completed! +${award.xpAwarded} XP`
     };
   } catch (error: any) {
     if (

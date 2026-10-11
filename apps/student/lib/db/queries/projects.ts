@@ -16,6 +16,7 @@ import type {
   RubricCriterion,
   ProjectSubmissionStatus
 } from '@/lib/types/projects';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 /**
  * Validates that an enrolled student can access a project assignment,
@@ -37,7 +38,7 @@ export async function getProjectAssignmentForStudent(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        inArray(enrollments.status, ['active', 'confirmed'])
+        enrollmentGrantsAccess()
       )
     );
 
@@ -280,7 +281,7 @@ export async function getStudentProjectAssignments(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        inArray(enrollments.status, ['active', 'confirmed'])
+        enrollmentGrantsAccess()
       )
     );
 

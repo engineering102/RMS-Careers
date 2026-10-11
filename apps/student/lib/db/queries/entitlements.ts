@@ -2,9 +2,11 @@ import 'server-only';
 
 import { redirect, notFound } from 'next/navigation';
 import { db, students, users, userRoles, enrollments, programs, batches, colleges } from '@rms/db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { hasRole } from '@rms/auth';
 import { auth } from '@/lib/auth';
+import { isSessionCurrent } from '@/lib/auth/session-revocation';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 export class AuthorizationError extends Error {
   constructor(message = 'Unauthorized') {
@@ -63,7 +65,8 @@ export interface StudentEntitlementContext {
  * Derives user ID strictly from the server-validated session context.
  */
 export async function getStudentEntitlementContext(
-  userId: string
+  userId: string,
+  session?: { authTime?: number }
 ): Promise<StudentEntitlementContext> {
   if (!userId || !process.env.POSTGRES_URL) {
     return {
@@ -83,13 +86,17 @@ export async function getStudentEntitlementContext(
         id: users.id,
         email: users.email,
         name: users.name,
-        status: users.status
+        status: users.status,
+        updatedAt: users.updatedAt
       })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
 
-    if (!user || user.status !== 'active') {
+    // Revoked session: credentials changed (e.g. password reset) after this session signed in.
+    const revoked = Boolean(session) && !isSessionCurrent(session?.authTime, user?.updatedAt ? new Date(user.updatedAt) : null);
+
+    if (!user || user.status !== 'active' || revoked) {
       return {
         isStudent: false,
         isActive: user?.status === 'active',
@@ -162,7 +169,7 @@ export async function getStudentEntitlementContext(
       .where(
         and(
           eq(enrollments.studentId, studentRecord.id),
-          sql`${enrollments.status} IN ('active', 'confirmed')`
+          enrollmentGrantsAccess()
         )
       );
 
@@ -220,13 +227,38 @@ export async function requireStudentEntitlement(): Promise<StudentEntitlementCon
     redirect('/login?error=Unauthorized');
   }
 
-  const context = await getStudentEntitlementContext(session.user.id);
+  const context = await getStudentEntitlementContext(session.user.id, { authTime: session.user.authTime });
 
   if (!context.isStudent || !context.student) {
     redirect('/login?error=Unauthorized');
   }
 
   return context;
+}
+
+
+/**
+ * Non-throwing check used by Server Actions: does the student currently hold an access-granting
+ * enrollment in this batch?
+ */
+export async function hasBatchAccess(
+  studentId: number,
+  batchId: string,
+  client: Pick<typeof db, 'select'> = db
+): Promise<boolean> {
+  if (!studentId || !batchId) return false;
+  const [row] = await client
+    .select({ id: enrollments.id })
+    .from(enrollments)
+    .where(
+      and(
+        eq(enrollments.studentId, studentId),
+        eq(enrollments.batchId, batchId),
+        enrollmentGrantsAccess()
+      )
+    )
+    .limit(1);
+  return Boolean(row);
 }
 
 /**
@@ -250,9 +282,7 @@ export async function assertBatchEntitlement(
   }
 
   const allowCompleted = options?.allowCompleted ?? true;
-  const statusCondition = allowCompleted
-    ? sql`${enrollments.status} IN ('active', 'confirmed', 'completed')`
-    : sql`${enrollments.status} IN ('active', 'confirmed')`;
+  const statusCondition = enrollmentGrantsAccess({ includeCompleted: allowCompleted });
 
   try {
     const [row] = await db
@@ -354,3 +384,5 @@ export {
   ACTIVE_COHORT_COOKIE_MAX_AGE
 } from '@/lib/constants/cohort';
 
+
+export { ACCESS_GRANTING_ENROLLMENT_STATUSES, enrollmentGrantsAccess } from '@/lib/db/access-policy';

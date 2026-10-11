@@ -26,6 +26,7 @@ import type {
   BatchWorkspaceData,
   EnrolledBatchSummary
 } from '@/lib/types/batch-workspace';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 export type {
   CurriculumItem,
@@ -90,7 +91,7 @@ export async function getBatchWorkspace(
       .where(
         and(
           eq(enrollments.studentId, studentId),
-          sql`${enrollments.status} IN ('active', 'confirmed')`
+          enrollmentGrantsAccess()
         )
       );
 

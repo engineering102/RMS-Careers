@@ -5,11 +5,10 @@ import {
   db,
   assignments,
   assignmentSubmissions,
-  enrollments,
   batchCurriculum
 } from '@rms/db';
 import { eq, and } from 'drizzle-orm';
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
 import type {
   SubmitProjectInput,
   SubmitProjectResult
@@ -144,20 +143,9 @@ export async function submitProjectAssignment(
       };
     }
 
-    // 3. Verify batch entitlement
-    const [enrollment] = await db
-      .select({ id: enrollments.id })
-      .from(enrollments)
-      .where(
-        and(
-          eq(enrollments.studentId, studentId),
-          eq(enrollments.batchId, batchId),
-          eq(enrollments.status, 'active')
-        )
-      )
-      .limit(1);
-
-    if (!enrollment) {
+    // 3. Verify batch entitlement with the shared lifecycle policy (active AND confirmed enrollments
+    // qualify; revoked/suspended/cancelled/etc. and deactivated batches/colleges do not). Audit F-06.
+    if (!(await hasBatchAccess(studentId, batchId))) {
       return {
         success: false,
         error: 'You are not actively enrolled in this batch.',

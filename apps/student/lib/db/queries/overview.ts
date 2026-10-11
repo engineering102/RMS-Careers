@@ -25,6 +25,7 @@ import {
   formatIstDateReadable,
   calculateHeatmapIntensity
 } from '@/lib/types/overview';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 export type {
   StudentStatsOverview,
@@ -123,7 +124,7 @@ export async function getStudentOverview(
         .where(
           and(
             eq(enrollments.studentId, studentId),
-            sql`${enrollments.status} IN ('active', 'confirmed')`
+            enrollmentGrantsAccess()
           )
         );
 

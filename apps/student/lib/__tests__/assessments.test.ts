@@ -31,6 +31,18 @@ vi.mock('next/navigation', () => ({
   })
 }));
 
+// The transactional client runs the callback against the same in-memory mock.
+vi.mock('@rms/db/tx', async () => {
+  const mocked = await import('@rms/db');
+  return { dbTx: { transaction: (cb: (tx: unknown) => unknown) => cb(mocked.db) } };
+});
+
+// Atomic XP ledger contract, in memory (see helpers/in-memory-xp-ledger.ts).
+vi.mock('@/lib/services/xp-ledger', async () => {
+  const { createInMemoryXpLedger } = await import('./helpers/in-memory-xp-ledger');
+  return createInMemoryXpLedger(() => ({ activities: mockActivities, stats: mockStudentStats }));
+});
+
 // In-memory mock database state
 let mockUsers: any[] = [];
 let mockUserRoles: any[] = [];
@@ -133,10 +145,13 @@ vi.mock('@rms/db', async (importOriginal) => {
             const makeBatchChain = () => ({
               innerJoin: () => makeBatchChain(),
               leftJoin: () => makeBatchChain(),
-              where: () => ({
-                limit: () => Promise.resolve(mockBatchCurriculumRows),
-                orderBy: () => Promise.resolve(mockBatchCurriculumRows)
-              })
+              where: () => {
+                // Awaitable directly (aggregate queries) or via limit/orderBy.
+                const p = Promise.resolve(mockBatchCurriculumRows);
+                (p as any).limit = () => Promise.resolve(mockBatchCurriculumRows);
+                (p as any).orderBy = () => Promise.resolve(mockBatchCurriculumRows);
+                return p;
+              }
             });
             return makeBatchChain();
           }
@@ -196,6 +211,7 @@ vi.mock('@rms/db', async (importOriginal) => {
               where: () => {
                 const p = Promise.resolve(mockQuizAttempts);
                 (p as any).limit = () => Promise.resolve(mockQuizAttempts);
+                (p as any).orderBy = () => ({ limit: () => Promise.resolve(mockQuizAttempts) });
                 (p as any).groupBy = () => {
                   const map = new Map<string, any>();
                   for (const a of mockQuizAttempts) {
@@ -268,13 +284,19 @@ vi.mock('@rms/db', async (importOriginal) => {
             if (table === actual.studentStats && mockStudentStats.length > 0) {
               Object.assign(mockStudentStats[0], setValues);
             }
-            if (table === actual.quizAttempts && mockQuizAttempts.length > 0) {
+            // Mirrors the compare-and-set finalisation: only an unsubmitted attempt is updated.
+            const updated: any[] = [];
+            if (table === actual.quizAttempts && mockQuizAttempts.length > 0 && !mockQuizAttempts[0].submittedAt) {
               Object.assign(mockQuizAttempts[0], setValues);
+              updated.push({ id: mockQuizAttempts[0].id });
             }
-            return Promise.resolve();
+            const p = Promise.resolve();
+            (p as any).returning = () => Promise.resolve(updated);
+            return p;
           }
         })
-      })
+      }),
+      execute: () => Promise.resolve({ rows: [] })
     }
   };
 });
@@ -339,7 +361,8 @@ describe('Slice 11: Practice Knowledge Checks & Assessments', () => {
         slug: 'js-async-patterns',
         description: 'Test your understanding of Promises, event loop, and async/await.',
         quizType: 'practice',
-        passingScorePercent: 60
+        passingScorePercent: 60,
+        showExplanations: 'immediate'
       }
     ];
 
@@ -592,7 +615,9 @@ describe('Slice 12: Formal Timed Assessments', () => {
     mockBatchCurriculumRows = [
       {
         id: TEST_FORMAL_QUIZ_ID,
+        quizId: TEST_FORMAL_QUIZ_ID,
         contentItemId: TEST_FORMAL_CONTENT_ID,
+        showExplanations: 'after_deadline',
         programId: 1,
         programName: 'Full Stack Web Development',
         programCode: 'FSWD',
@@ -785,6 +810,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000013',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt,
           submittedAt: null,
           score: 0,
@@ -824,6 +850,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000014',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt: new Date(Date.now() - 30 * 60 * 1000),
           submittedAt: new Date(Date.now() - 5 * 60 * 1000), // Already submitted
           score: 5,
@@ -853,6 +880,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000015',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt,
           submittedAt: null,
           score: 0,
@@ -883,6 +911,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000015',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt,
           submittedAt: null,
           score: 0,
@@ -916,6 +945,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000016',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt: new Date(),
           submittedAt: null,
           score: 0,
@@ -944,6 +974,7 @@ describe('Slice 12: Formal Timed Assessments', () => {
           id: '77777777-7777-4777-8777-000000000017',
           quizId: TEST_FORMAL_QUIZ_ID,
           studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
           startedAt: new Date(),
           submittedAt: null,
           score: 0,

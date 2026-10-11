@@ -25,6 +25,8 @@ import type {
   QuestionGradingResult,
   QuestionType
 } from '@/lib/types/assessments';
+import { isFormalAnswerKeyVisible } from '@/lib/services/assessment-policy';
+import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -51,7 +53,7 @@ export async function getStudentPracticeQuizzes(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        sql`${enrollments.status} IN ('active', 'confirmed')`
+        enrollmentGrantsAccess()
       )
     );
 
@@ -230,7 +232,7 @@ export async function getPracticeQuizForRunner(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        sql`${enrollments.status} IN ('active', 'confirmed')`
+        enrollmentGrantsAccess()
       )
     );
 
@@ -433,7 +435,7 @@ export async function getStudentFormalAssessments(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        sql`${enrollments.status} IN ('active', 'confirmed')`
+        enrollmentGrantsAccess()
       )
     );
 
@@ -632,7 +634,7 @@ export async function getFormalAssessmentForRunner(
     .where(
       and(
         eq(enrollments.studentId, studentId),
-        sql`${enrollments.status} IN ('active', 'confirmed')`
+        enrollmentGrantsAccess()
       )
     );
 
@@ -751,9 +753,8 @@ export async function getFormalAssessmentForRunner(
       const pct =
         attempt.maxScore > 0 ? Math.round((attempt.score * 100) / attempt.maxScore) : 0;
 
-      // Post-deadline explanation policy:
-      // Explanations suppressed until batch_curriculum.dueAt has elapsed
-      const explanationsSuppressed = Boolean(dueAt && now < dueAt);
+      // Answer-key policy: never before the batch due date, and never when show_explanations = 'never'.
+      const explanationsSuppressed = !isFormalAnswerKeyVisible(row.showExplanations, dueAt, now);
 
       let questionResults: QuestionGradingResult[] | undefined = undefined;
 
@@ -813,7 +814,7 @@ export async function getFormalAssessmentForRunner(
         tabBlurCount: attempt.tabBlurCount,
         isAutoSubmitted: false,
         explanationsSuppressed,
-        publishDate: dueAt,
+        publishDate: row.showExplanations === 'never' ? null : dueAt,
         questionResults
       };
     } else {
@@ -865,4 +866,36 @@ export async function getFormalAssessmentForRunner(
     activeAttempt,
     completedAttempt
   };
+}
+
+/**
+ * Server-side inputs for the practice-quiz answer-key policy: the quiz's configured policy and the
+ * latest due date among the student's access-granting batch placements of that quiz. Never derived
+ * from client input.
+ */
+export async function getPracticeAnswerKeyContext(
+  studentId: number,
+  quizId: string
+): Promise<{ policy: string | null; dueAt: Date | null }> {
+  const [quiz] = await db
+    .select({ showExplanations: quizzes.showExplanations, contentItemId: quizzes.contentItemId })
+    .from(quizzes)
+    .where(eq(quizzes.id, quizId))
+    .limit(1);
+  if (!quiz) return { policy: null, dueAt: null };
+
+  const [placement] = await db
+    .select({ dueAt: sql<Date | null>`max(${batchCurriculum.dueAt})` })
+    .from(batchCurriculum)
+    .innerJoin(enrollments, eq(enrollments.batchId, batchCurriculum.batchId))
+    .where(
+      and(
+        eq(batchCurriculum.contentItemId, quiz.contentItemId),
+        eq(enrollments.studentId, studentId),
+        enrollmentGrantsAccess()
+      )
+    );
+
+  const dueAt = placement?.dueAt ? new Date(placement.dueAt) : null;
+  return { policy: quiz.showExplanations, dueAt };
 }
