@@ -398,7 +398,9 @@ describe('documentation states what is and is not implemented', () => {
   });
   test('neither document claims a deployment has happened', () => {
     assert.doesNotMatch(runbook, /successfully deployed to production|deployed successfully|is live in production|pipeline (has )?deployed/i);
-    assert.match(runbook, /Nothing has been deployed by this pipeline/);
+    // The runbook records the real deployments (2026-10-10 bootstrap, 2026-10-11 release) in a dated log, not as a standing claim.
+    assert.match(runbook, /All three Workers have been deployed through this pipeline, twice/);
+    assert.match(runbook, /## Deployment log/);
     assert.match(spec, /No deployment has ever been performed/);
     assert.match(spec, /Production rollback is NOT operational yet/);
   });
