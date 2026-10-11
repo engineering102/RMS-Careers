@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
+import { fontVariables } from './fonts';
 import { AnnouncementBar } from '@/components/homepage/announcement-bar';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
@@ -79,7 +80,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+    <html lang="en" suppressHydrationWarning className={`scroll-smooth ${fontVariables}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
