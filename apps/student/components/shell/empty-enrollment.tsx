@@ -1,6 +1,6 @@
 import { AlertCircle, Building2, HelpCircle } from 'lucide-react';
 import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
-import { signOutAction } from '@/lib/actions/auth';
+import { SIGN_OUT_PATH } from '@/lib/constants/session';
 
 export function EmptyEnrollmentView({ context }: { context: StudentEntitlementContext }) {
   const student = context.student;
@@ -37,7 +37,7 @@ export function EmptyEnrollmentView({ context }: { context: StudentEntitlementCo
             <span>Contact your college coordinator or TPO for batch onboarding</span>
           </div>
 
-          <form action={signOutAction}>
+          <form action={SIGN_OUT_PATH} method="post">
             <button
               type="submit"
               className="text-xs font-medium text-slate-400 hover:text-slate-200 underline transition"

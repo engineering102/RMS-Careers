@@ -24,10 +24,18 @@
     "vars": {
         "STUDENT_APP_URL": "https://student.rms-careers.com"
     },
+    // Cloudflare Workers Rate Limiting (audit F-04). Read by lib/security/request-limits.ts; keep limit/period
+    // equal to the in-code fallback rules. namespace_id must be unique per binding within the Cloudflare account.
+    "ratelimits": [
+        // Audit PR-08: strict per account, classroom-sized per client IP (see enforceAuthLimits).
+        { "name": "AUTH_ACCOUNT_RATE_LIMITER", "namespace_id": "1301", "simple": { "limit": 5, "period": 60 } },
+        { "name": "AUTH_CLIENT_RATE_LIMITER", "namespace_id": "1302", "simple": { "limit": 60, "period": 60 } }
+    ],
     // Secrets are never committed. Set with `wrangler secret put <NAME>` (or the dashboard).
-    // Optional: RESEND_API_KEY, EMAIL_FROM (email is skipped with provider_not_configured when unset).
+    // RESEND_API_KEY and EMAIL_FROM are required (audit F-19): without them activation, recovery and
+    // enrollment emails are silently skipped and new students cannot onboard.
     "secrets": {
-        "required": ["POSTGRES_URL", "AUTH_SECRET"]
+        "required": ["POSTGRES_URL", "AUTH_SECRET", "RESEND_API_KEY", "EMAIL_FROM"]
     },
     "observability": {
         "enabled": true

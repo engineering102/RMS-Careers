@@ -60,6 +60,8 @@ export const studentAuthConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        // Sign-in time; survives sliding refreshes (unlike iat) and drives revocation (session-revocation.ts).
+        token.authTime = Date.now();
       }
       return token;
     },
@@ -67,6 +69,7 @@ export const studentAuthConfig: NextAuthConfig = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as 'student';
+        session.user.authTime = typeof token.authTime === 'number' ? token.authTime : undefined;
       }
       return session;
     }

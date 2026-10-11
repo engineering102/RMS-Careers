@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { X, LogOut, GraduationCap, Building2, CheckCircle2 } from 'lucide-react';
 import { STUDENT_NAV_ITEMS } from './nav-items';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
-import { signOutAction } from '@/lib/actions/auth';
+import { SIGN_OUT_PATH } from '@/lib/constants/session';
 import { CohortSwitcher } from './cohort-switcher';
 import { cn } from '@/lib/utils';
 
@@ -125,7 +125,7 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
                 <span className="truncate">{student?.collegeName || 'RMS Partner College'}</span>
               </div>
             </div>
-            <form action={signOutAction}>
+            <form action={SIGN_OUT_PATH} method="post">
               <button
                 type="submit"
                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-900 hover:text-slate-100 transition"
