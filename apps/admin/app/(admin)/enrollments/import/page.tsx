@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { getPrograms, getActiveColleges, getBatches } from '@/lib/db';
 import { BulkImportClient } from './import-client';
+import { requireAdminSession } from '@/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export const metadata = {
 };
 
 export default async function BulkImportPage() {
+  await requireAdminSession();
   const [allColleges, allPrograms, allBatches] = await Promise.all([
     getActiveColleges(),
     getPrograms(),

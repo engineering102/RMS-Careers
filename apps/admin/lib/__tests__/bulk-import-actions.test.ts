@@ -486,6 +486,44 @@ describe('Bulk Import Server Actions', () => {
       expect(mockRevalidatePath).toHaveBeenCalledWith('/batches');
     });
 
+    it('re-validates rows server-side and never imports a tampered "valid" row (audit F-13)', async () => {
+      mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
+        success: true,
+        isNewStudent: true,
+        student: { id: 10, ...validRow },
+        enrollment: { id: 100, studentId: 10, programId: 1, batchId: 'batch-uuid-1' },
+        userId: 'student-user',
+        activation: null
+      });
+      const tampered: ValidatedImportRow[] = [
+        { ...validRow, rowIndex: 4, email: 'not-an-email', status: 'valid' },
+        { ...validRow, rowIndex: 5, email: 'x@example.com', phone: '12345', status: 'valid' },
+        { ...validRow, rowIndex: 6, email: 'y@example.com', year: 9, status: 'valid' }
+      ];
+
+      const result = await executeBulkImportAction({
+        programId: 1,
+        batchId: 'batch-uuid-1',
+        rows: [validRow, ...tampered],
+        sendEmails: false
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockCreateEnrollmentWithStudentProvisioning).toHaveBeenCalledTimes(1);
+      expect(mockCreateEnrollmentWithStudentProvisioning.mock.calls[0][0].student.email).toBe('vikram.j@example.com');
+    });
+
+    it('rejects an import whose rows are all tampered', async () => {
+      const result = await executeBulkImportAction({
+        programId: 1,
+        batchId: 'batch-uuid-1',
+        rows: [{ ...validRow, email: 'bad', status: 'valid' }],
+        sendEmails: false
+      });
+      expect(result).toEqual({ success: false, error: 'No valid rows available to import.' });
+      expect(mockCreateEnrollmentWithStudentProvisioning).not.toHaveBeenCalled();
+    });
+
     it('reuses existing student record when student is already in database', async () => {
       const existingStudent = { id: 25, fullName: 'Vikram Joshi', email: 'vikram.j@example.com' };
       mockCreateEnrollmentWithStudentProvisioning.mockResolvedValue({
@@ -618,6 +656,12 @@ describe('Bulk Import Server Actions', () => {
       expect(report).toContain('Issue / Reason');
       expect(report).toContain('Invalid email address format');
       expect(report).toContain('Test Student');
+    });
+
+    it('both helpers refuse an unauthenticated caller (actions are reachable by id from any public path)', async () => {
+      mockAuth.mockResolvedValue(null);
+      expect(await getDownloadTemplateCsvAction()).toBe('');
+      expect(await getDownloadErrorReportCsvAction([])).toBe('');
     });
   });
 });

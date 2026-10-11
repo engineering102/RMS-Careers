@@ -5,6 +5,7 @@ import {
   getPrograms
 } from '@/lib/db/queries';
 import { BatchesClient } from './batches-client';
+import { requireAdminSession } from '@/lib/authz';
 
 export const metadata = {
   title: 'Batches | Academy Enrollment'
@@ -19,6 +20,7 @@ export default async function BatchesPage(props: {
     q?: string;
   }>;
 }) {
+  await requireAdminSession();
   const searchParams = await props.searchParams;
 
   const collegeId = searchParams.college || undefined;

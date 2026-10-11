@@ -240,8 +240,20 @@ export async function executeBulkImportAction(input: {
       return { success: false, error: 'Selected batch does not belong to the selected program.' };
     }
 
-    // Filter only valid rows to import
-    const validRowsToImport = rows.filter((r) => r.status === 'valid');
+    // Re-validate server-side (audit F-13): rows come back from the browser after the preview, so a
+    // client-side "valid" flag proves nothing. Only rows that pass the same validator are imported.
+    const revalidated = validateImportRows(
+      (Array.isArray(rows) ? rows : []).map((r) => ({
+        rowIndex: Number(r?.rowIndex) || 0,
+        fullName: String(r?.fullName ?? ''),
+        email: String(r?.email ?? ''),
+        phone: String(r?.phone ?? ''),
+        collegeRollNumber: String(r?.collegeRollNumber ?? ''),
+        branch: String(r?.branch ?? ''),
+        academicYear: String(r?.year ?? '')
+      }))
+    );
+    const validRowsToImport = revalidated.filter((r) => r.status === 'valid');
     if (validRowsToImport.length === 0) {
       return { success: false, error: 'No valid rows available to import.' };
     }
@@ -356,12 +368,18 @@ export async function executeBulkImportAction(input: {
   }
 }
 
+// Server Actions are POST endpoints reachable by action id from any path the middleware lets through
+// (including the public /enroll/* form), so even these pure helpers authenticate (final review).
 export async function getDownloadTemplateCsvAction(): Promise<string> {
+  const session = await auth();
+  if (!session?.user) return '';
   return generateCsvTemplate();
 }
 
 export async function getDownloadErrorReportCsvAction(
   rows: ValidatedImportRow[]
 ): Promise<string> {
+  const session = await auth();
+  if (!session?.user) return '';
   return generateErrorReportCsv(rows);
 }

@@ -10,7 +10,11 @@ const ACTIVATION_TTL_HOURS = 168;
 export type ProvisioningErrorCode =
   | 'identity_conflict'
   | 'identity_integrity_error'
+  | 'privileged_identity'
   | 'provisioning_failed';
+
+/** Roles whose accounts must never be turned into (or linked to) a student identity by provisioning. */
+export const PRIVILEGED_ROLES = ['super_admin', 'admin', 'tutor'] as const;
 
 export class StudentProvisioningError extends Error {
   constructor(
@@ -69,6 +73,13 @@ export async function provisionStudentAccountCore(
   }
 
   if (user) {
+    // Never attach a student identity or role to a staff account (audit F-02). Applies to the public
+    // form and to admin imports alike; such accounts must be handled by an administrator explicitly.
+    const existingRoles = await tx.select().from(userRoles).where(eq(userRoles.userId, user.id));
+    if (hasRole(existingRoles, PRIVILEGED_ROLES)) {
+      throw new StudentProvisioningError('privileged_identity', 'Email belongs to a staff account');
+    }
+
     const linkedStudents = await tx.select({ id: students.id }).from(students).where(eq(students.userId, user.id));
     if (linkedStudents.some((linked) => linked.id !== student.id)) {
       throw new StudentProvisioningError('identity_conflict', 'User account is already linked to another student');

@@ -45,5 +45,6 @@ export function generateErrorReportCsv(rows: ValidatedImportRow[]): string {
     'Issue / Reason': r.issue || 'N/A'
   }));
 
-  return Papa.unparse(reportData);
+  // escapeFormulae: rows may contain anonymous, attacker-controlled text (audit F-12).
+  return Papa.unparse(reportData, { escapeFormulae: true });
 }

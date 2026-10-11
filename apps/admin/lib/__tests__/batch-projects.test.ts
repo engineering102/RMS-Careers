@@ -3,6 +3,11 @@ import util from 'node:util';
 
 vi.mock('server-only', () => ({}));
 
+// Shared XP ledger (@rms/db/xp-ledger): its SQL is covered by the student xp-ledger tests and the
+// integration tier; here we assert that approvals go through it.
+const { mockAwardActivityXp } = vi.hoisted(() => ({ mockAwardActivityXp: vi.fn() }));
+vi.mock('@rms/db/xp-ledger', () => ({ awardActivityXp: (...args: unknown[]) => mockAwardActivityXp(...args) }));
+
 const mockAuth = vi.fn();
 vi.mock('@/lib/auth', () => ({
   auth: () => mockAuth()
@@ -163,6 +168,8 @@ vi.mock('@rms/db', async (importOriginal) => {
                 // If fields requested match overview fields (status, assignmentId)
                 if (fields && 'status' in fields && !('studentName' in fields)) {
                   return subsToUse.map((s) => ({
+                    id: s.id,
+                    studentId: s.studentId,
                     assignmentId: s.assignmentId,
                     status: s.status,
                     submittedAt: s.submittedAt
@@ -663,6 +670,38 @@ describe('Slice C3: Project Evaluation Workbench', () => {
       expect(mockAssignmentSubmissions[0].status).toBe('approved');
       expect(mockAssignmentSubmissions[0].score).toBe(98);
       expect(mockAssignmentSubmissions[0].reviewedByTutorId).toBe(sampleTutorId);
+    });
+
+    it('awards approval XP once through the shared ledger (audit F-07)', async () => {
+      mockAssignmentSubmissions[0].status = 'under_review';
+      mockAwardActivityXp.mockResolvedValue({ awarded: true, xpAwarded: 100 });
+
+      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'approved', score: 90 });
+
+      expect(res.success).toBe(true);
+      expect(mockAwardActivityXp).toHaveBeenCalledTimes(1);
+      expect(mockAwardActivityXp.mock.calls[0][0]).toMatchObject({
+        studentId: 101,
+        batchId: sampleBatchId,
+        activityType: 'assignment_approved',
+        referenceId: sampleSubmissionId,
+        xp: 100
+      });
+    });
+
+    it('awards nothing for non-approval transitions', async () => {
+      await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'under_review' });
+      expect(mockAwardActivityXp).not.toHaveBeenCalled();
+    });
+
+    it('keeps the saved review when the ledger write fails', async () => {
+      mockAssignmentSubmissions[0].status = 'under_review';
+      mockAwardActivityXp.mockRejectedValue(new Error('ledger unavailable'));
+
+      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'approved', score: 90 });
+
+      expect(res.success).toBe(true);
+      expect(mockAssignmentSubmissions[0].status).toBe('approved');
     });
 
     it('rejects invalid state transitions (submitted -> approved directly)', async () => {

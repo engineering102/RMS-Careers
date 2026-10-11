@@ -12,6 +12,7 @@ import {
 } from '@/lib/db/queries';
 import { sendEnrollmentConfirmationEmail } from '@/lib/email';
 import { revalidatePath } from 'next/cache';
+import { csvRow } from '@/lib/csv/escape';
 
 export async function updateEnrollmentStatusAction(
   id: number,
@@ -197,21 +198,20 @@ export async function exportEnrollmentsCsvAction(
     const csvRows = [
       headers.join(','),
       ...items.map((item) => {
-        const fields = [
-          `"${(item.student.fullName || '').replace(/"/g, '""')}"`,
-          `"${(item.student.email || '').replace(/"/g, '""')}"`,
-          `"${(item.student.phone || '').replace(/"/g, '""')}"`,
-          `"${(item.student.collegeRollNumber || '').replace(/"/g, '""')}"`,
-          `"${(item.student.branch || '').replace(/"/g, '""')}"`,
-          `"${formatYearStr(item.student.year)}"`,
-          `"${(item.program.name || '').replace(/"/g, '""')}"`,
-          `"${(item.program.code || '').replace(/"/g, '""')}"`,
-          `"${item.status}"`,
-          `"${new Date(item.createdAt).toISOString()}"`,
-          `"${item.confirmationSentAt ? 'Sent' : 'Not Sent'}"`,
-          `"${item.confirmationSentAt ? new Date(item.confirmationSentAt).toISOString() : ''}"`
-        ];
-        return fields.join(',');
+        return csvRow([
+          item.student.fullName || '',
+          item.student.email || '',
+          item.student.phone || '',
+          item.student.collegeRollNumber || '',
+          item.student.branch || '',
+          formatYearStr(item.student.year),
+          item.program.name || '',
+          item.program.code || '',
+          item.status,
+          new Date(item.createdAt).toISOString(),
+          item.confirmationSentAt ? 'Sent' : 'Not Sent',
+          item.confirmationSentAt ? new Date(item.confirmationSentAt).toISOString() : ''
+        ]);
       })
     ];
 
