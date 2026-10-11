@@ -23,6 +23,7 @@ export const TRUSTED_CREATOR = 'github-actions[bot]';
 const PAGE_SIZE = 100;
 const MAX_PAGES = 10;
 const FULL_SHA = /^[0-9a-f]{40}$/;
+export const VERSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export class TrackingError extends Error {
   constructor(code, message) {
@@ -32,11 +33,15 @@ export class TrackingError extends Error {
 }
 
 /** Payload stored with every record. The reader trusts a record only if it matches its own deployment. */
-export function recordPayload({ app, sha, runId, runUrl, kind }) {
+export function recordPayload({ app, sha, runId, runUrl, kind, versionId }) {
   if (!APPS.includes(app)) throw new TrackingError('bad-app', `unknown app "${app}"`);
   if (!FULL_SHA.test(sha ?? '')) throw new TrackingError('bad-sha', 'sha must be a full 40-character lowercase commit SHA');
   if (!RECORD_KINDS.includes(kind)) throw new TrackingError('bad-kind', `kind must be one of ${RECORD_KINDS.join(', ')}`);
-  return { marker: RECORD_MARKER, app, sha, runId: String(runId ?? ''), runUrl: runUrl ?? '', kind };
+  if (versionId !== undefined && !VERSION_ID.test(versionId)) throw new TrackingError('bad-version-id', 'versionId must be a lowercase Cloudflare Worker version UUID');
+  if (kind === 'rollback' && versionId === undefined) throw new TrackingError('bad-version-id', 'a rollback record must carry the Worker version it restores');
+  // `versionId` is the exact Cloudflare Worker version this record's SHA is live as. A record without it still moves the
+  // diff base (lastGood) but can never be a rollback target and cannot be reconciled with live state.
+  return { marker: RECORD_MARKER, app, sha, runId: String(runId ?? ''), runUrl: runUrl ?? '', kind, ...(versionId !== undefined ? { versionId } : {}) };
 }
 
 function validRecord(deployment, app) {
@@ -46,6 +51,8 @@ function validRecord(deployment, app) {
   if (p.app !== app || deployment.environment !== ENVIRONMENTS[app]) return 'wrong-app';
   if (!FULL_SHA.test(p.sha ?? '') || p.sha !== deployment.sha) return 'sha-mismatch';
   if (!RECORD_KINDS.includes(p.kind)) return 'bad-kind';
+  if ('versionId' in p && !(typeof p.versionId === 'string' && VERSION_ID.test(p.versionId))) return 'bad-version-id';
+  if (p.kind === 'rollback' && !('versionId' in p)) return 'bad-version-id';
   return null;
 }
 
@@ -56,6 +63,86 @@ function validRecord(deployment, app) {
  */
 export async function lastGood({ api, app }) {
   if (!APPS.includes(app)) throw new TrackingError('bad-app', `unknown app "${app}"`);
+  const { ordered, exhausted } = await listOrdered({ api, app });
+  const ignored = {};
+  for (const deployment of ordered) {
+    const why = validRecord(deployment, app);
+    if (why) {
+      ignored[why] = (ignored[why] ?? 0) + 1;
+      continue;
+    }
+    if (await hasSuccess(api, deployment)) {
+      return { status: 'found', sha: deployment.payload.sha, kind: deployment.payload.kind, deploymentId: deployment.id };
+    }
+  }
+  if (!exhausted) throw new TrackingError('unreadable', `more than ${MAX_PAGES * PAGE_SIZE} deployments: refusing to guess`);
+  return { status: 'none', ignored };
+}
+
+const TERMINAL_STATES = ['success', 'failure', 'error', 'inactive'];
+
+/**
+ * Everything rollback needs from the record, read completely or not at all (fail closed). Only valid records of ours count.
+ *
+ *   records[]      newest first: { deploymentId, sha, kind, versionId?, success, settled }
+ *   last           newest record that ever had a success status (the diff base), or null
+ *   newest         newest record of any outcome, or null. `settled` is false for an interrupted run
+ *   verified       Map versionId -> sha for records that reached success (the only possible rollback targets)
+ *   newerVersions  Set of versionIds of records NEWER than `last` that did not succeed (a failed deploy or rollback may or
+ *                  may not have gone live, so these are the other versions the Worker is allowed to be running)
+ *
+ * A versionId tied to two different SHAs anywhere in the history is ambiguous and aborts the read: the version identity is
+ * the whole point of the record, so it must be one-to-one.
+ */
+export async function rollbackHistory({ api, app }) {
+  if (!APPS.includes(app)) throw new TrackingError('bad-app', `unknown app "${app}"`);
+  const { ordered, exhausted } = await listOrdered({ api, app });
+  if (!exhausted) throw new TrackingError('unreadable', `more than ${MAX_PAGES * PAGE_SIZE} deployments: refusing to guess`);
+  const records = [];
+  for (const deployment of ordered) {
+    if (validRecord(deployment, app)) continue;
+    const statuses = await readStatuses(api, deployment);
+    records.push({
+      deploymentId: deployment.id,
+      sha: deployment.payload.sha,
+      kind: deployment.payload.kind,
+      versionId: deployment.payload.versionId,
+      success: statuses.some((s) => s.state === 'success'),
+      settled: statuses.some((s) => TERMINAL_STATES.includes(s.state))
+    });
+  }
+  const shaOf = new Map();
+  for (const r of records) {
+    if (r.versionId === undefined) continue;
+    if (shaOf.has(r.versionId) && shaOf.get(r.versionId) !== r.sha) {
+      throw new TrackingError('ambiguous-version', `version ${r.versionId} is recorded for two different commits (${shaOf.get(r.versionId).slice(0, 12)} and ${r.sha.slice(0, 12)})`);
+    }
+    shaOf.set(r.versionId, r.sha);
+  }
+  const lastIndex = records.findIndex((r) => r.success);
+  const last = lastIndex === -1 ? null : records[lastIndex];
+  const verified = new Map(records.filter((r) => r.success && r.versionId !== undefined).map((r) => [r.versionId, r.sha]));
+  const newerVersions = new Set(records.slice(0, lastIndex === -1 ? 0 : lastIndex).filter((r) => r.versionId !== undefined).map((r) => r.versionId));
+  return { records, last, newest: records[0] ?? null, verified, newerVersions };
+}
+
+async function hasSuccess(api, deployment) {
+  // auto_inactive turns an old success into "inactive" once a newer success exists, so look at the whole history.
+  return (await readStatuses(api, deployment)).some((s) => s.state === 'success');
+}
+
+async function readStatuses(api, deployment) {
+  let statuses;
+  try {
+    statuses = await api.listStatuses(deployment.id);
+  } catch (err) {
+    throw new TrackingError('unreadable', `cannot read statuses of deployment ${deployment.id}: ${err.message}`);
+  }
+  if (!Array.isArray(statuses)) throw new TrackingError('unreadable', `statuses of deployment ${deployment.id} are not a list`);
+  return statuses;
+}
+
+async function listOrdered({ api, app }) {
   const environment = ENVIRONMENTS[app];
   const all = [];
   let exhausted = false;
@@ -74,27 +161,32 @@ export async function lastGood({ api, app }) {
     }
   }
   const ordered = [...all].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : b.id - a.id));
-  const ignored = {};
-  for (const deployment of ordered) {
-    const why = validRecord(deployment, app);
-    if (why) {
-      ignored[why] = (ignored[why] ?? 0) + 1;
-      continue;
-    }
-    let statuses;
+  return { ordered, exhausted };
+}
+
+/**
+ * The Cloudflare version id a `wrangler deploy` produced, from the NDJSON file wrangler writes when
+ * WRANGLER_OUTPUT_FILE_PATH is set (entry `{type: "deploy", worker_name, version_id}`; read from wrangler 4.147.0 source:
+ * `version_id` is null when wrangler aborted or ran with --dry-run). Exactly one `deploy` entry with a UUID is required;
+ * zero, several, null, malformed, or another Worker's entry is an error: the id is the identity of the record.
+ * Nothing calls this yet (the deploy workflow does not exist); it pins the capture contract. [assumption] unproven live.
+ */
+export function versionIdFromWranglerOutput(text, workerName) {
+  const deploys = [];
+  for (const line of String(text ?? '').split(/\r?\n/).filter((l) => l.trim())) {
+    let entry;
     try {
-      statuses = await api.listStatuses(deployment.id);
-    } catch (err) {
-      throw new TrackingError('unreadable', `cannot read statuses of deployment ${deployment.id}: ${err.message}`);
+      entry = JSON.parse(line);
+    } catch {
+      throw new TrackingError('bad-output', 'wrangler output file contains a line that is not JSON');
     }
-    if (!Array.isArray(statuses)) throw new TrackingError('unreadable', `statuses of deployment ${deployment.id} are not a list`);
-    // auto_inactive turns an old success into "inactive" once a newer success exists, so look at the whole history.
-    if (statuses.some((s) => s.state === 'success')) {
-      return { status: 'found', sha: deployment.payload.sha, kind: deployment.payload.kind, deploymentId: deployment.id };
-    }
+    if (entry?.type === 'deploy') deploys.push(entry);
   }
-  if (!exhausted) throw new TrackingError('unreadable', `more than ${MAX_PAGES * PAGE_SIZE} deployments: refusing to guess`);
-  return { status: 'none', ignored };
+  if (deploys.length !== 1) throw new TrackingError('bad-output', `expected exactly one deploy entry in the wrangler output, found ${deploys.length}`);
+  const [d] = deploys;
+  if (d.worker_name !== null && d.worker_name !== undefined && d.worker_name !== workerName) throw new TrackingError('bad-output', `the deploy entry is for Worker "${d.worker_name}", not "${workerName}"`);
+  if (typeof d.version_id !== 'string' || !VERSION_ID.test(d.version_id)) throw new TrackingError('bad-output', 'the deploy entry has no valid version_id (wrangler aborted or ran a dry run)');
+  return d.version_id;
 }
 
 /** Exit code 0 -> true, 1 -> false. Anything else (unknown commit, shallow clone, not a repo) throws. */
@@ -177,8 +269,8 @@ export function githubApi({ repo, token, fetchImpl = fetch, apiUrl = 'https://ap
 }
 
 /** Writers for a future deploy job. A record is `success` only after the smoke test passed. */
-export async function createRecord(api, { app, sha, runId, runUrl, kind }) {
-  const payload = recordPayload({ app, sha, runId, runUrl, kind });
+export async function createRecord(api, { app, sha, runId, runUrl, kind, versionId }) {
+  const payload = recordPayload({ app, sha, runId, runUrl, kind, versionId });
   const deployment = await api.createDeployment({ sha, environment: ENVIRONMENTS[app], payload, description: `${kind} ${app} @ ${sha.slice(0, 12)}` });
   if (!deployment?.id) throw new TrackingError('write-failed', 'GitHub did not return a deployment id');
   return deployment.id;

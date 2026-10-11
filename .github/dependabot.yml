@@ -1,0 +1,24 @@
+# Dependabot version updates: GitHub Actions only.
+#
+# Why only this ecosystem: every action in .github/workflows is pinned to a full commit SHA with a `# vX.Y.Z` comment,
+# and Dependabot is what keeps those pins current (it rewrites the SHA and the comment together). No dependabot.yml
+# existed before. The npm/pnpm workspace is deliberately NOT configured here: dependency update policy for the
+# application packages is a separate decision.
+#
+# Dependabot PRs cannot read Actions secrets, so the integration job is skipped on them by design and ci-gate tolerates
+# exactly that skip (see docs/development/testing.md). Treat these PRs like any other workflow change: review the diff,
+# and let CODEOWNERS (once enforced) require owner approval for .github/**.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: ci
