@@ -22,31 +22,31 @@ export default async function ActivatePage({
   }
 
   return (
-    <main className="grid min-h-screen place-items-center p-5 bg-slate-950 text-slate-100">
-      <section className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-7 shadow-2xl">
-        <p className="text-sm font-semibold tracking-wider text-blue-400 uppercase">RMS Careers</p>
+    <main className="grid min-h-screen place-items-center p-5 bg-background text-foreground">
+      <section className="w-full max-w-md rounded-2xl border border-input bg-card p-7 shadow-2xl">
+        <p className="text-sm font-semibold tracking-wider text-primary uppercase">RMS Careers</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Activate your account</h1>
-        <p className="mt-2 text-slate-300">Set your password to access your Student Learning Portal.</p>
+        <p className="mt-2 text-foreground/80">Set your password to access your Student Learning Portal.</p>
 
         <div className="mt-7">
           {tokenState.status === 'valid' && (
             <div className="space-y-4">
-              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Account</p>
-                <p className="font-medium text-slate-100 mt-0.5">{tokenState.name} ({tokenState.email})</p>
+              <div className="rounded-lg border border-border bg-background/70 p-3 text-sm text-foreground/80">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Account</p>
+                <p className="font-medium text-foreground mt-0.5">{tokenState.name} ({tokenState.email})</p>
               </div>
               <ActivationForm token={token!} />
             </div>
           )}
 
           {tokenState.status === 'already_active' && (
-            <div role="alert" className="rounded-xl border border-blue-800 bg-blue-950/60 p-5 text-sm text-blue-200 space-y-3">
-              <p className="font-semibold text-blue-100">Account Already Activated</p>
+            <div role="alert" className="rounded-xl border border-primary/40 bg-primary/10 p-5 text-sm text-foreground space-y-3">
+              <p className="font-semibold text-foreground">Account Already Activated</p>
               <p>Your student account is already active. You can sign in directly using your password.</p>
               <div className="pt-2">
                 <Link
                   href="/login"
-                  className="inline-block rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600 transition"
+                  className="inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition"
                 >
                   Go to Sign In
                 </Link>
@@ -55,19 +55,19 @@ export default async function ActivatePage({
           )}
 
           {tokenState.status === 'consumed' && (
-            <div role="alert" className="rounded-xl border border-amber-800 bg-amber-950/60 p-5 text-sm text-amber-200 space-y-3">
-              <p className="font-semibold text-amber-100">Activation Link Already Used</p>
+            <div role="alert" className="rounded-xl border border-warning/40 bg-warning/10 p-5 text-sm text-foreground space-y-3">
+              <p className="font-semibold text-foreground">Activation Link Already Used</p>
               <p>This single-use activation link has already been consumed. If you have already set your password, please sign in. If you forgot your password, you can reset it.</p>
               <div className="pt-2 flex gap-3">
                 <Link
                   href="/login"
-                  className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600 transition"
+                  className="rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/forgot-password"
-                  className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 font-semibold text-slate-200 hover:bg-slate-700 transition"
+                  className="rounded-lg border border-input bg-secondary px-4 py-2 font-semibold text-foreground hover:bg-accent transition"
                 >
                   Reset Password
                 </Link>
@@ -76,13 +76,13 @@ export default async function ActivatePage({
           )}
 
           {tokenState.status === 'expired' && (
-            <div role="alert" className="rounded-xl border border-red-800 bg-red-950/60 p-5 text-sm text-red-200 space-y-3">
-              <p className="font-semibold text-red-100">Activation Link Expired</p>
+            <div role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 p-5 text-sm text-foreground space-y-3">
+              <p className="font-semibold text-foreground">Activation Link Expired</p>
               <p>Activation links expire after 7 days for security. You can request a fresh activation link to complete your setup.</p>
               <div className="pt-2">
                 <Link
                   href="/resend-activation"
-                  className="inline-block rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600 transition"
+                  className="inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition"
                 >
                   Request New Activation Link
                 </Link>
@@ -91,13 +91,13 @@ export default async function ActivatePage({
           )}
 
           {(tokenState.status === 'invalid' || tokenState.status === 'missing') && (
-            <div role="alert" className="rounded-xl border border-red-800 bg-red-950/60 p-5 text-sm text-red-200 space-y-3">
-              <p className="font-semibold text-red-100">Invalid Activation Link</p>
+            <div role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 p-5 text-sm text-foreground space-y-3">
+              <p className="font-semibold text-foreground">Invalid Activation Link</p>
               <p>This activation link is invalid, incomplete, or missing. Please check your invitation email or request a new link.</p>
               <div className="pt-2">
                 <Link
                   href="/resend-activation"
-                  className="inline-block rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600 transition"
+                  className="inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition"
                 >
                   Request Activation Link
                 </Link>
@@ -106,9 +106,9 @@ export default async function ActivatePage({
           )}
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already activated?{' '}
-          <Link className="text-blue-400 hover:underline font-medium" href="/login">
+          <Link className="text-primary hover:underline font-medium" href="/login">
             Sign in to your portal
           </Link>
         </p>

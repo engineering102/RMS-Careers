@@ -26,7 +26,7 @@ export function DashboardShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Desktop Sidebar */}
       <Sidebar context={context} activeCohort={activeCohort} />
 

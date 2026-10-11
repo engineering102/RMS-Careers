@@ -89,3 +89,28 @@ Identical copies live in `apps/student/components/ui/` and `apps/admin/component
 | `EmptyState` | bespoke empty panels | Student: `components/ui/empty-state.tsx`; admin: `components/admin/empty-state.tsx` (same API) |
 
 Adopting these in existing screens is done per screen in Phases 3–5, keeping every server action call and its arguments unchanged.
+
+---
+
+## 6. Student palette → token map (Phase 1.3 migration)
+
+The student portal is migrated folder by folder from hardcoded Tailwind palette classes to tokens. Use this table so every slice maps the same way. Prefixes (`hover:`, `focus:`, `sm:`…) and opacity suffixes (`/60`) are kept.
+
+| Old (dark UI) | Token | Note |
+|---|---|---|
+| `bg-slate-950` | `bg-background` | |
+| `bg-slate-900` | `bg-card` | Slightly darker surface than slate-900 (web's dark card) |
+| `bg-slate-800` | `bg-secondary` | |
+| `bg-slate-700`, `hover:bg-slate-700` | `bg-accent` | `--accent` is slate-700 in dark |
+| `border-slate-800` | `border-border` | Exact match |
+| `border-slate-700`, `border-slate-600` | `border-input` | `--input` is slate-600 in dark |
+| `text-slate-100/200`, `text-white` (on neutral) | `text-foreground` | |
+| `text-slate-300` | `text-foreground/80` | |
+| `text-slate-400/500/600`, `placeholder-slate-500` | `text-muted-foreground` | slate-500/600 were below AA as text; this raises them |
+| `bg-blue-500/600` + `text-white` | `bg-primary text-primary-foreground` | Dark text on blue (AA); hover becomes `hover:bg-primary/90` |
+| `text-blue-300/400`, `border-blue-500`, `ring-blue-*` | `text-primary`, `border-primary`, `ring-ring` | |
+| emerald / amber / sky | `success` / `warning` / `info` | `-400` shades map to the token; `-950` tints map to `/10` |
+| red / rose | `destructive` | Dark `--destructive` is red-500 with dark foreground text |
+| tinted-panel body text (`text-*-100/200`) | `text-foreground` | The tint and border carry the meaning |
+
+Left as-is on purpose: decorative gradients (avatar), categorical icon colours (notification types), and black modal overlays (`bg-black/70`).
