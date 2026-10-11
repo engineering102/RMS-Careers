@@ -1,3 +1,5 @@
+import { buildSecurityHeaders } from './security-headers';
+
 export default {
   transpilePackages: ['@rms/db', '@rms/auth'],
   images: {
@@ -13,5 +15,8 @@ export default {
         search: ''
       }
     ]
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: buildSecurityHeaders({ isDev: process.env.NODE_ENV === 'development' }) }];
   }
 };

@@ -1,7 +1,24 @@
 import type { NextAuthConfig } from 'next-auth';
 
+/**
+ * Pinned admin session cookie (audit PR-10, owner-approved). Without this, Auth.js picks cookie names
+ * and the Secure flag per request from the detected protocol: inside a Server Action it reads
+ * `x-forwarded-proto`, which Next/OpenNext set to `http` for its internal request, while the
+ * middleware sees `https://`. Sign-in then wrote `authjs.session-token` (no Secure) but the middleware
+ * looked for `__Secure-authjs.session-token` and treated the admin as signed out. Pinning the name and
+ * `useSecureCookies` makes every code path agree. `__Host-` = Secure, Path=/, no Domain (host-only).
+ */
+export const ADMIN_SESSION_COOKIE = '__Host-rms-admin-sess';
+
 export const authConfig: NextAuthConfig = {
   trustHost: true,
+  useSecureCookies: true,
+  cookies: {
+    sessionToken: {
+      name: ADMIN_SESSION_COOKIE,
+      options: { httpOnly: true, sameSite: 'lax', path: '/', secure: true }
+    }
+  },
   pages: {
     signIn: '/login'
   },

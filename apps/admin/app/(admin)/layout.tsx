@@ -25,18 +25,18 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { auth } from '@/lib/auth';
 import { User } from './user';
 import Providers from './providers';
 import { NavItem } from './nav-item';
 import { SearchInput } from './search';
+import { requireAdminSession } from '@/lib/authz';
 
 export default async function AdminLayout({
   children
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await requireAdminSession();
   const isSuperAdmin = session?.user?.role === 'super_admin';
 
   return (

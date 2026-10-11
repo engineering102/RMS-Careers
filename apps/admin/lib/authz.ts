@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { redirect } from 'next/navigation';
+import type { Session } from 'next-auth';
 import { auth } from '@/lib/auth';
 
 export type AuthzResult =
@@ -27,4 +29,17 @@ export async function requireSuperAdmin(): Promise<AuthzResult> {
     return { ok: false, error: 'Forbidden. Super administrator privileges required.' };
   }
   return result;
+}
+
+/** Where pages send a session that failed server-side revalidation (clears the cookie, then /login). */
+export const SESSION_REVOKED_PATH = '/api/session/revoked';
+
+/**
+ * Page/layout guard. The middleware only verifies the JWT signature; this re-checks the account in
+ * the database (see lib/auth.ts) so a deactivated admin cannot keep reading admin pages.
+ */
+export async function requireAdminSession(): Promise<Session> {
+  const session = await auth();
+  if (!session?.user) redirect(SESSION_REVOKED_PATH);
+  return session;
 }
