@@ -120,3 +120,6 @@ Additional rules:
 - Deep borders (`-700` to `-900`) become `border-<token>/40` (`/50` for destructive, `/30` when the original opacity was 40% or less).
 - Filled status buttons use the token's foreground: `bg-success text-success-foreground hover:bg-success/90`, likewise for primary and destructive.
 - Sequential scales (the activity heatmap) use one token with stepped opacity so the ramp stays readable: `bg-success/15` → `/35` → `/60` → `bg-success`. The legend uses the same steps.
+- Interactive state is always `primary`: action buttons, selected answers and their checkmarks, "Answered" markers, progress fills. A hue used only as a section label (the purple assessment badges, icons and exam-rules callout) stays categorical.
+- Surfaces that float over scrolling content (`sticky`/`fixed`) must stay opaque. A status tint there uses an opaque mix, not a translucent token: `bg-[color-mix(in_srgb,hsl(var(--destructive))_18%,hsl(var(--card)))]` (the exam timer under 1 minute; warning at 14% under 5 minutes).
+- Ordinal tiers (external assessments): Elite `success`, Advanced `info`, Proficient `warning`, Developing neutral (`bg-muted`, `text-muted-foreground`). Each bar is a same-token gradient (`from-success to-success/60`) so the bar matches its badge.

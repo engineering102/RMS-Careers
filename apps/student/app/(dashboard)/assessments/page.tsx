@@ -47,31 +47,31 @@ export default async function AssessmentsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <Timer className="h-4 w-4 text-amber-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Timer className="h-4 w-4 text-warning" />
               <span>Formal Timed Assessments</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Scheduled examinations with authoritative countdown timers and single-attempt lifecycle.
             </p>
           </div>
 
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {formalAssessments.length}{' '}
             {formalAssessments.length === 1 ? 'assessment' : 'assessments'}
           </span>
         </div>
 
         {formalAssessments.length === 0 ? (
-          <Card className="border-slate-800 bg-slate-900/40">
+          <Card className="border-border bg-card/40">
             <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
                 <Timer className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200">
+              <h3 className="text-sm font-semibold text-foreground">
                 No Formal Assessments Scheduled
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                 There are currently no formal examinations scheduled in your active batch timelines.
                 New assessments will unlock as your cohort reaches curriculum milestones.
               </p>
@@ -90,31 +90,31 @@ export default async function AssessmentsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4 text-purple-400" />
               <span>Practice Knowledge Checks</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Untimed quizzes with instant explanations, repeatable practice, and placement preparation.
             </p>
           </div>
 
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {practiceQuizzes.length}{' '}
             {practiceQuizzes.length === 1 ? 'assessment' : 'assessments'}
           </span>
         </div>
 
         {practiceQuizzes.length === 0 ? (
-          <Card className="border-slate-800 bg-slate-900/40">
+          <Card className="border-border bg-card/40">
             <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
                 <ClipboardCheck className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200">
+              <h3 className="text-sm font-semibold text-foreground">
                 No Practice Knowledge Checks Available
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                 There are currently no practice knowledge checks assigned to your enrolled programs.
               </p>
             </CardContent>
@@ -132,31 +132,31 @@ export default async function AssessmentsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <FolderGit2 className="h-4 w-4 text-amber-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <FolderGit2 className="h-4 w-4 text-warning" />
               <span>Project Assignments</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Industry-grade project deliverables evaluated against git workflows and technical rubrics.
             </p>
           </div>
 
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {projectAssignments.length}{' '}
             {projectAssignments.length === 1 ? 'project' : 'projects'}
           </span>
         </div>
 
         {projectAssignments.length === 0 ? (
-          <Card className="border-slate-800 bg-slate-900/40">
+          <Card className="border-border bg-card/40">
             <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
                 <FolderGit2 className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200">
+              <h3 className="text-sm font-semibold text-foreground">
                 No Project Deliverables Assigned
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                 Project assignments and repository submission briefs will appear here as your batch progresses.
               </p>
             </CardContent>
@@ -177,31 +177,31 @@ export default async function AssessmentsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <Award className="h-4 w-4 text-emerald-400" />
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Award className="h-4 w-4 text-success" />
               <span>External Standardized Assessments</span>
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-muted-foreground">
               Official standardized placement benchmarks and third-party proctored test report cards.
             </p>
           </div>
 
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {externalAssessments.length}{' '}
             {externalAssessments.length === 1 ? 'report card' : 'report cards'}
           </span>
         </div>
 
         {externalAssessments.length === 0 ? (
-          <Card className="border-slate-800 bg-slate-900/40">
+          <Card className="border-border bg-card/40">
             <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
                 <Award className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-200">
+              <h3 className="text-sm font-semibold text-foreground">
                 No External Assessments Ingested
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                 Standardized test scores conducted on partner assessment platforms (such as HackerEarth,
                 AMCAT, or TCS iON) will appear here once verified and imported by administrators.
               </p>

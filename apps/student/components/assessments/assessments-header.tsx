@@ -45,23 +45,23 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
               <ClipboardCheck className="h-3.5 w-3.5" />
               Assessment Center
             </span>
-            <span className="text-xs text-slate-500 font-mono">Formal & Practice</span>
+            <span className="text-xs text-muted-foreground font-mono">Formal & Practice</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Assessment Center
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Timed formal cohort examinations and self-paced practice knowledge checks.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60 backdrop-blur-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400">Total Assessments</p>
-              <p className="text-2xl font-bold text-slate-100 mt-0.5">{allTotal}</p>
+              <p className="text-xs text-muted-foreground">Total Assessments</p>
+              <p className="text-2xl font-bold text-foreground mt-0.5">{allTotal}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <ClipboardCheck className="h-5 w-5" />
@@ -69,39 +69,39 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60 backdrop-blur-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400">Completed</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-0.5">{allCompleted}</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
+              <p className="text-2xl font-bold text-success mt-0.5">{allCompleted}</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="p-2.5 rounded-xl bg-success/10 border border-success/20 text-success">
               <CheckCircle2 className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60 backdrop-blur-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400">Avg. Score</p>
-              <p className="text-2xl font-bold text-blue-400 mt-0.5">
+              <p className="text-xs text-muted-foreground">Avg. Score</p>
+              <p className="text-2xl font-bold text-primary mt-0.5">
                 {totalPercentages.length > 0 ? `${averagePercentage}%` : '—'}
               </p>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary">
               <Award className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60 backdrop-blur-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400">Quiz XP Earned</p>
-              <p className="text-2xl font-bold text-amber-400 mt-0.5">+{estimatedXp}</p>
+              <p className="text-xs text-muted-foreground">Quiz XP Earned</p>
+              <p className="text-2xl font-bold text-warning mt-0.5">+{estimatedXp}</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <div className="p-2.5 rounded-xl bg-warning/10 border border-warning/20 text-warning">
               <Zap className="h-5 w-5" />
             </div>
           </CardContent>

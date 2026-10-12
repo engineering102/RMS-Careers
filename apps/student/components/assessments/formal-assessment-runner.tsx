@@ -211,7 +211,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             asChild
             variant="ghost"
             size="sm"
-            className="text-slate-400 hover:text-slate-200 -ml-2 text-xs gap-1.5"
+            className="text-muted-foreground hover:text-foreground -ml-2 text-xs gap-1.5"
           >
             <Link href="/assessments">
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -219,20 +219,20 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             </Link>
           </Button>
 
-          <span className="text-slate-600">/</span>
+          <span className="text-muted-foreground">/</span>
           <Link
             href={`/batches/${initialData.batchId}`}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-xs text-primary hover:text-primary transition-colors"
           >
             {initialData.batchName}
           </Link>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-primary/10 text-primary border border-primary/20">
             {initialData.programCode}
           </span>
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
             <Timer className="h-3 w-3" />
             Formal Exam ({initialData.timeLimitMinutes}m)
           </span>
@@ -241,8 +241,8 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
       {/* Error Message Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2.5">
-          <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2.5">
+          <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -251,51 +251,51 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
       {/* 1. PRE-ATTEMPT BRIEFING VIEW                         */}
       {/* ---------------------------------------------------- */}
       {!isExamActive && !completedAttempt && (
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60 backdrop-blur-sm">
           <CardContent className="p-6 sm:p-8 space-y-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-purple-400">
                 <Timer className="h-4 w-4" />
                 <span>Timed Formal Examination</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 {initialData.title}
               </h1>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-2xl">
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                 {initialData.description ||
                   'Formal examination aligned with your cohort curriculum. Please ensure you have a stable network connection before starting.'}
               </p>
             </div>
 
             {/* Exam Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-y border-slate-800">
-              <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 space-y-1">
-                <span className="text-[11px] text-slate-500 font-medium">Duration</span>
-                <p className="text-sm font-bold text-amber-400 flex items-center gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-y border-border">
+              <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
+                <span className="text-[11px] text-muted-foreground font-medium">Duration</span>
+                <p className="text-sm font-bold text-warning flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {initialData.timeLimitMinutes} Minutes
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 space-y-1">
-                <span className="text-[11px] text-slate-500 font-medium">Total Questions</span>
-                <p className="text-sm font-bold text-slate-200 flex items-center gap-1">
-                  <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+              <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
+                <span className="text-[11px] text-muted-foreground font-medium">Total Questions</span>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1">
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   {totalQuestions} Questions
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 space-y-1">
-                <span className="text-[11px] text-slate-500 font-medium">Total Points</span>
-                <p className="text-sm font-bold text-slate-200 flex items-center gap-1">
-                  <Award className="h-3.5 w-3.5 text-slate-400" />
+              <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
+                <span className="text-[11px] text-muted-foreground font-medium">Total Points</span>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1">
+                  <Award className="h-3.5 w-3.5 text-muted-foreground" />
                   {initialData.totalPoints} Points
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 space-y-1">
-                <span className="text-[11px] text-slate-500 font-medium">Pass Threshold</span>
-                <p className="text-sm font-bold text-emerald-400 flex items-center gap-1">
+              <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
+                <span className="text-[11px] text-muted-foreground font-medium">Pass Threshold</span>
+                <p className="text-sm font-bold text-success flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {initialData.passingScorePercent}%
                 </p>
@@ -308,35 +308,35 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                 <AlertTriangle className="h-4 w-4 text-purple-400" />
                 <span>Examination Protocol & Policies</span>
               </div>
-              <ul className="text-xs text-slate-400 space-y-1.5 list-disc pl-5 leading-relaxed">
+              <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-5 leading-relaxed">
                 <li>
-                  <strong className="text-slate-300">Single Attempt:</strong> Once submitted, you cannot retake this formal assessment.
+                  <strong className="text-foreground/80">Single Attempt:</strong> Once submitted, you cannot retake this formal assessment.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Continuous Timer:</strong> Once begun, the timer cannot be paused. Closing the tab or refreshing does not reset the clock.
+                  <strong className="text-foreground/80">Continuous Timer:</strong> Once begun, the timer cannot be paused. Closing the tab or refreshing does not reset the clock.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Auto-Submission:</strong> When the countdown reaches 00:00, your selected answers will be submitted automatically.
+                  <strong className="text-foreground/80">Auto-Submission:</strong> When the countdown reaches 00:00, your selected answers will be submitted automatically.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Focus Monitoring:</strong> Window and tab-switch events are recorded as part of the telemetry audit log.
+                  <strong className="text-foreground/80">Focus Monitoring:</strong> Window and tab-switch events are recorded as part of the telemetry audit log.
                 </li>
                 <li>
-                  <strong className="text-slate-300">Delayed Explanations:</strong> Detailed explanations and answer keys are suppressed until the batch due date has passed.
+                  <strong className="text-foreground/80">Delayed Explanations:</strong> Detailed explanations and answer keys are suppressed until the batch due date has passed.
                 </li>
               </ul>
             </div>
 
             {/* Action Bar */}
             <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 Ready to begin? Click below when you are seated and prepared.
               </span>
 
               <Button
                 disabled={isStarting}
                 onClick={handleBeginAssessment}
-                className="bg-purple-600 hover:bg-purple-500 text-white text-xs gap-2 px-6 h-10 font-semibold"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-2 px-6 h-10 font-semibold"
               >
                 {isStarting ? (
                   <>
@@ -365,20 +365,20 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
           <div
             className={`sticky top-4 z-30 p-4 rounded-xl border backdrop-blur-md shadow-xl flex items-center justify-between gap-4 transition-all ${
               remainingSeconds < 60
-                ? 'bg-rose-950/90 border-rose-500/50 text-rose-200 animate-pulse'
+                ? 'bg-[color-mix(in_srgb,hsl(var(--destructive))_18%,hsl(var(--card)))] border-destructive/50 text-foreground animate-pulse'
                 : remainingSeconds < 300
-                  ? 'bg-amber-950/90 border-amber-500/50 text-amber-200'
-                  : 'bg-slate-900/90 border-slate-700 text-slate-100'
+                  ? 'bg-[color-mix(in_srgb,hsl(var(--warning))_14%,hsl(var(--card)))] border-warning/50 text-foreground'
+                  : 'bg-card/90 border-input text-foreground'
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`p-2 rounded-lg ${
                   remainingSeconds < 60
-                    ? 'bg-rose-500/20 text-rose-300'
+                    ? 'bg-destructive/20 text-destructive'
                     : remainingSeconds < 300
-                      ? 'bg-amber-500/20 text-amber-300'
-                      : 'bg-purple-500/20 text-purple-300'
+                      ? 'bg-warning/20 text-warning'
+                      : 'bg-primary/20 text-primary'
                 }`}
               >
                 <Timer className="h-5 w-5" />
@@ -396,11 +396,11 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground">
                   {answeredCount} of {totalQuestions} Answered
                 </span>
                 {tabBlurCount > 0 && (
-                  <p className="text-[11px] text-amber-400 font-mono">
+                  <p className="text-[11px] text-warning font-mono">
                     {tabBlurCount} tab {tabBlurCount === 1 ? 'switch' : 'switches'} detected
                   </p>
                 )}
@@ -410,7 +410,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                 type="button"
                 disabled={isSubmitting}
                 onClick={() => setConfirmSubmitOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs gap-1.5 px-4 font-semibold shadow-md"
+                className="bg-success hover:bg-success/90 text-success-foreground text-xs gap-1.5 px-4 font-semibold shadow-md"
               >
                 <Check className="h-3.5 w-3.5" />
                 <span>Submit Exam</span>
@@ -420,18 +420,18 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
           {/* Confirmation Modal Overlay */}
           {confirmSubmitOpen && (
-            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-                <div className="flex items-center gap-3 text-amber-400">
+            <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+                <div className="flex items-center gap-3 text-warning">
                   <AlertTriangle className="h-6 w-6" />
-                  <h3 className="text-base font-bold text-slate-100">
+                  <h3 className="text-base font-bold text-foreground">
                     Confirm Final Submission
                   </h3>
                 </div>
 
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  You have answered <strong className="text-white">{answeredCount}</strong> of{' '}
-                  <strong className="text-white">{totalQuestions}</strong> questions.
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  You have answered <strong className="text-foreground">{answeredCount}</strong> of{' '}
+                  <strong className="text-foreground">{totalQuestions}</strong> questions.
                   Once submitted, your attempt will be finalized and you cannot make further changes.
                 </p>
 
@@ -441,7 +441,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                     size="sm"
                     disabled={isSubmitting}
                     onClick={() => setConfirmSubmitOpen(false)}
-                    className="text-slate-400 text-xs"
+                    className="text-muted-foreground text-xs"
                   >
                     Return to Questions
                   </Button>
@@ -449,7 +449,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                     size="sm"
                     disabled={isSubmitting}
                     onClick={handleManualSubmit}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs gap-1.5 font-semibold"
+                    className="bg-success hover:bg-success/90 text-success-foreground text-xs gap-1.5 font-semibold"
                   >
                     {isSubmitting ? (
                       <>
@@ -476,29 +476,29 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               return (
                 <Card
                   key={question.id}
-                  className="border-slate-800 bg-slate-900/60 backdrop-blur-sm"
+                  className="border-border bg-card/60 backdrop-blur-sm"
                 >
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     {/* Header */}
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 font-mono">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary border border-input text-xs font-bold text-foreground/80 font-mono">
                           {qIdx + 1}
                         </span>
 
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700/80">
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-input/80">
                           {question.questionType === 'single_choice'
                             ? 'Single Choice'
                             : 'Multiple Choice'}
                         </span>
 
-                        <span className="text-[11px] text-slate-500 font-medium">
+                        <span className="text-[11px] text-muted-foreground font-medium">
                           {question.points} {question.points === 1 ? 'Point' : 'Points'}
                         </span>
                       </div>
 
                       {selectedOptionIds.length > 0 && (
-                        <span className="text-[11px] text-purple-400 font-medium flex items-center gap-1">
+                        <span className="text-[11px] text-primary font-medium flex items-center gap-1">
                           <Check className="h-3 w-3" />
                           Answered
                         </span>
@@ -506,7 +506,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                     </div>
 
                     {/* Question Text */}
-                    <p className="text-sm sm:text-base font-medium text-slate-100 leading-relaxed">
+                    <p className="text-sm sm:text-base font-medium text-foreground leading-relaxed">
                       {question.questionText}
                     </p>
 
@@ -527,8 +527,8 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                                 : 'cursor-pointer'
                             } ${
                               isSelected
-                                ? 'border-purple-500/60 bg-purple-500/10 text-purple-200 ring-1 ring-purple-500/30'
-                                : 'border-slate-800 bg-slate-950/40 text-slate-300 hover:border-slate-700 hover:bg-slate-800/40'
+                                ? 'border-primary/60 bg-primary/10 text-foreground ring-1 ring-primary/30'
+                                : 'border-border bg-background/40 text-foreground/80 hover:border-input hover:bg-secondary/40'
                             }`}
                           >
                             <div
@@ -538,8 +538,8 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                                   : 'rounded'
                               } ${
                                 isSelected
-                                  ? 'bg-purple-600 border-purple-500 text-white'
-                                  : 'border-slate-700 bg-slate-900'
+                                  ? 'bg-primary border-primary text-primary-foreground'
+                                  : 'border-input bg-card'
                               }`}
                             >
                               {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -566,8 +566,8 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
           <Card
             className={`border ${
               completedAttempt.isPassed
-                ? 'border-emerald-500/40 bg-emerald-950/20'
-                : 'border-slate-800 bg-slate-900/60'
+                ? 'border-success/40 bg-success/5'
+                : 'border-border bg-card/60'
             } backdrop-blur-sm`}
           >
             <CardContent className="p-6 sm:p-8 space-y-6">
@@ -576,8 +576,8 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   <div
                     className={`p-3 rounded-xl border ${
                       completedAttempt.isPassed
-                        ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-300'
+                        ? 'bg-success/20 border-success/30 text-success'
+                        : 'bg-secondary border-input text-foreground/80'
                     }`}
                   >
                     {completedAttempt.isPassed ? (
@@ -588,12 +588,12 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   </div>
 
                   <div>
-                    <h2 className="text-xl font-bold text-slate-100">
+                    <h2 className="text-xl font-bold text-foreground">
                       {completedAttempt.isPassed
                         ? 'Formal Assessment Passed'
                         : 'Formal Assessment Completed'}
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {completedAttempt.isAutoSubmitted
                         ? 'Automatically submitted upon timer completion.'
                         : 'Submitted and evaluated server-side.'}
@@ -603,16 +603,16 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-2xl font-black text-slate-100">
+                    <div className="text-2xl font-black text-foreground">
                       {completedAttempt.percentage}%
                     </div>
-                    <div className="text-[11px] text-slate-400">
+                    <div className="text-[11px] text-muted-foreground">
                       {completedAttempt.score} / {completedAttempt.maxScore} points
                     </div>
                   </div>
 
                   {completedAttempt.isPassed && (
-                    <div className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1.5 text-xs font-semibold">
+                    <div className="px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/30 text-warning flex items-center gap-1.5 text-xs font-semibold">
                       <Zap className="h-4 w-4" />
                       <span>+20 XP</span>
                     </div>
@@ -621,7 +621,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               </div>
 
               {/* Telemetry info */}
-              <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-3">
+              <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-3">
                 <div className="flex items-center gap-4">
                   <span>
                     Submitted:{' '}
@@ -634,7 +634,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   </span>
 
                   {completedAttempt.tabBlurCount > 0 && (
-                    <span className="text-amber-400 font-mono text-[11px]">
+                    <span className="text-warning font-mono text-[11px]">
                       {completedAttempt.tabBlurCount} tab switch{' '}
                       {completedAttempt.tabBlurCount === 1 ? 'event' : 'events'} logged
                     </span>
@@ -645,7 +645,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   asChild
                   variant="outline"
                   size="sm"
-                  className="border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-300 text-xs"
+                  className="border-input bg-card/60 hover:bg-secondary text-foreground/80 text-xs"
                 >
                   <Link href="/assessments">Return to Assessments</Link>
                 </Button>
@@ -655,18 +655,18 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
           {/* Explanations Suppression Banner (Section 9.2: Suppressed until dueAt) */}
           {completedAttempt.explanationsSuppressed ? (
-            <Card className="border-slate-800 bg-slate-900/40">
+            <Card className="border-border bg-card/40">
               <CardContent className="p-8 text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+                <div className="mx-auto w-12 h-12 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
                   <EyeOff className="h-6 w-6" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-200">
+                <h3 className="text-base font-semibold text-foreground">
                   Detailed Explanations Suppressed
                 </h3>
-                <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
                   In accordance with formal examination integrity protocols, question explanations and authoritative answer keys remain confidential until the cohort deadline{' '}
                   {completedAttempt.publishDate && (
-                    <strong className="text-slate-300">
+                    <strong className="text-foreground/80">
                       ({new Date(completedAttempt.publishDate).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -683,11 +683,11 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             /* Post-Deadline Published Explanations */
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Lightbulb className="h-4 w-4 text-purple-400" />
                   <span>Question Breakdown & Educational Explanations</span>
                 </h3>
-                <span className="text-xs text-emerald-400 font-medium">Results Published</span>
+                <span className="text-xs text-success font-medium">Results Published</span>
               </div>
 
               {completedAttempt.questionResults.map((result, idx) => (
@@ -695,45 +695,45 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   key={result.questionId}
                   className={`border ${
                     result.isCorrect
-                      ? 'border-emerald-500/30 bg-slate-900/80'
-                      : 'border-rose-500/30 bg-slate-900/80'
+                      ? 'border-success/30 bg-card/80'
+                      : 'border-destructive/30 bg-card/80'
                   }`}
                 >
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 font-mono">
+                        <span className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary border border-input text-xs font-bold text-foreground/80 font-mono">
                           {idx + 1}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                           {result.earnedPoints} / {result.points} pts
                         </span>
                       </div>
 
                       {result.isCorrect ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-success/10 text-success border border-success/20">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Correct
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">
                           <XCircle className="h-3.5 w-3.5" />
                           Incorrect
                         </span>
                       )}
                     </div>
 
-                    <p className="text-sm font-medium text-slate-100">
+                    <p className="text-sm font-medium text-foreground">
                       {result.questionText}
                     </p>
 
                     {result.explanationText && (
-                      <div className="p-3.5 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-1">
-                        <span className="text-[11px] font-semibold text-blue-400 flex items-center gap-1">
+                      <div className="p-3.5 rounded-lg bg-primary/10 border border-primary/20 space-y-1">
+                        <span className="text-[11px] font-semibold text-primary flex items-center gap-1">
                           <Lightbulb className="h-3 w-3" />
                           Explanation
                         </span>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                        <p className="text-xs text-foreground/80 leading-relaxed">
                           {result.explanationText}
                         </p>
                       </div>
