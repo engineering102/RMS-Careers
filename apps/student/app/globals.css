@@ -70,11 +70,13 @@
     --muted: 217 33% 12%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 33% 15%;
+    /* accent = hover fill (slate-700); input = field borders (slate-600) */
+    --accent: 215 25% 27%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    /* red-500 with dark text: readable as text, border and button on dark surfaces */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 222 47% 11%;
 
     --success: 158 64% 52%;
     --success-foreground: 222 47% 11%;
@@ -86,7 +88,7 @@
     --info-foreground: 222 47% 11%;
 
     --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --input: 215 19% 35%;
     --ring: 217 91% 60%;
   }
 }

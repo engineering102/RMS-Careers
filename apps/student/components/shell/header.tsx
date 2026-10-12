@@ -35,27 +35,27 @@ export function Header({
     : 'ST';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-800 bg-slate-950/90 px-4 md:px-8 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/90 px-4 md:px-8 backdrop-blur-md">
       {/* Left: Mobile Menu Trigger + Mobile Brand */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileNav}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-800 text-slate-300 hover:bg-slate-900 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 hover:bg-card md:hidden"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
         <div className="flex items-center gap-2 md:hidden">
-          <GraduationCap className="h-5 w-5 text-blue-400" />
-          <span className="text-xs font-bold tracking-wider text-slate-100 uppercase">RMS Portal</span>
+          <GraduationCap className="h-5 w-5 text-primary" />
+          <span className="text-xs font-bold tracking-wider text-foreground uppercase">RMS Portal</span>
         </div>
 
         {/* Desktop Breadcrumb / Title */}
         <div className="hidden md:block">
-          <h1 className="text-base font-semibold text-slate-100">Learning Dashboard</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-base font-semibold text-foreground">Learning Dashboard</h1>
+          <p className="text-xs text-muted-foreground">
             {student?.collegeName || 'RMS Partner College'}
             {student?.branch ? ` · ${student.branch}` : ''}
           </p>
@@ -88,7 +88,7 @@ export function Header({
         <form action={SIGN_OUT_PATH} method="post" className="hidden sm:block">
           <button
             type="submit"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary hover:text-foreground transition"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Sign out</span>

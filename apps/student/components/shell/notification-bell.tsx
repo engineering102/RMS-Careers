@@ -90,17 +90,17 @@ export function NotificationBell({
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'PROJECT_REVIEWED':
-        return <CheckCircle2 className="h-4 w-4 text-emerald-400" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'ASSESSMENT_DUE_SOON':
-        return <Clock className="h-4 w-4 text-amber-400" />;
+        return <Clock className="h-4 w-4 text-warning" />;
       case 'STREAK_MILESTONE':
         return <Flame className="h-4 w-4 text-orange-400" />;
       case 'MILESTONE_UNLOCKED':
         return <Award className="h-4 w-4 text-purple-400" />;
       case 'STUDENT_ACTIVATED':
-        return <Sparkles className="h-4 w-4 text-blue-400" />;
+        return <Sparkles className="h-4 w-4 text-primary" />;
       default:
-        return <Bell className="h-4 w-4 text-slate-400" />;
+        return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -110,13 +110,13 @@ export function NotificationBell({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground/80 hover:bg-secondary hover:text-foreground transition focus:outline-none focus:ring-2 focus:ring-ring/40"
         aria-label="Open notifications"
         aria-expanded={isOpen}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-sm ring-2 ring-slate-950 animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm ring-2 ring-background animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -124,13 +124,13 @@ export function NotificationBell({
 
       {/* Popover Drawer */}
       {isOpen && (
-        <div className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-xl border border-slate-800 bg-slate-900/95 p-0 shadow-2xl backdrop-blur-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-xl border border-border bg-card/95 p-0 shadow-2xl backdrop-blur-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-950/60">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background/60">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-100">Notifications</span>
+              <span className="text-sm font-semibold text-foreground">Notifications</span>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-medium text-blue-300">
+                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[11px] font-medium text-primary">
                   {unreadCount} unread
                 </span>
               )}
@@ -142,7 +142,7 @@ export function NotificationBell({
                   type="button"
                   onClick={handleMarkAllAsRead}
                   disabled={isMarkingAll}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition disabled:opacity-50"
+                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition disabled:opacity-50"
                   title="Mark all as read"
                 >
                   <Check className="h-3.5 w-3.5" />
@@ -152,7 +152,7 @@ export function NotificationBell({
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition"
+                className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
                 aria-label="Close notifications"
               >
                 <X className="h-4 w-4" />
@@ -161,40 +161,40 @@ export function NotificationBell({
           </div>
 
           {/* Notification List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
+          <div className="max-h-80 overflow-y-auto divide-y divide-border/60">
             {notifications.length === 0 ? (
               <div className="py-8 text-center px-4">
-                <Bell className="mx-auto h-8 w-8 text-slate-600 mb-2" />
-                <p className="text-xs font-medium text-slate-300">You have no unread notifications.</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">We will alert you on assignments, milestones and deadlines.</p>
+                <Bell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-xs font-medium text-foreground/80">You have no unread notifications.</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">We will alert you on assignments, milestones and deadlines.</p>
               </div>
             ) : (
               notifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
                   onClick={() => handleMarkAsRead(n.id, n.actionUrl)}
-                  className={`flex gap-3 p-3.5 transition cursor-pointer hover:bg-slate-800/60 ${
-                    !n.isRead ? 'bg-blue-950/20' : ''
+                  className={`flex gap-3 p-3.5 transition cursor-pointer hover:bg-secondary/60 ${
+                    !n.isRead ? 'bg-primary/5' : ''
                   }`}
                 >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-800/80 border border-slate-700/50">
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary/80 border border-input/50">
                     {getEventIcon(n.type)}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-xs font-medium truncate ${!n.isRead ? 'text-slate-100 font-semibold' : 'text-slate-300'}`}>
+                      <p className={`text-xs font-medium truncate ${!n.isRead ? 'text-foreground font-semibold' : 'text-foreground/80'}`}>
                         {n.title}
                       </p>
                       {!n.isRead && (
-                        <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1" />
+                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
                       {n.body}
                     </p>
                     {n.actionUrl && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-blue-400 font-medium mt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] text-primary font-medium mt-1">
                         View item <ExternalLink className="h-2.5 w-2.5" />
                       </span>
                     )}
@@ -205,11 +205,11 @@ export function NotificationBell({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-slate-800 px-4 py-2.5 bg-slate-950/80 text-center">
+          <div className="border-t border-border px-4 py-2.5 bg-background/80 text-center">
             <Link
               href="/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-medium text-blue-400 hover:text-blue-300 transition inline-flex items-center gap-1"
+              className="text-xs font-medium text-primary hover:text-primary transition inline-flex items-center gap-1"
             >
               View all notifications →
             </Link>
