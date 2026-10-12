@@ -49,11 +49,11 @@ export function CompletionButton({
   if (isCompleted) {
     return (
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs font-semibold text-emerald-300">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="inline-flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3.5 py-2 text-xs font-semibold text-success">
+          <CheckCircle2 className="h-4 w-4 text-success" />
           <span>Completed</span>
           {completedAt && (
-            <span className="text-[11px] font-normal text-emerald-400/80 border-l border-emerald-500/30 pl-2 ml-0.5">
+            <span className="text-[11px] font-normal text-success/80 border-l border-success/30 pl-2 ml-0.5">
               {formatDate(completedAt, {
                 month: 'short',
                 day: 'numeric'
@@ -62,7 +62,7 @@ export function CompletionButton({
           )}
         </div>
         {feedback && (
-          <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">
+          <span className="text-xs text-success font-medium flex items-center gap-1">
             <Sparkles className="h-3 w-3" />
             {feedback}
           </span>
@@ -77,7 +77,7 @@ export function CompletionButton({
         onClick={handleMarkCompleted}
         disabled={isPending}
         size="sm"
-        className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 h-9 gap-1.5 shadow-sm transition-all"
+        className="bg-success hover:bg-success/90 text-success-foreground font-medium text-xs px-4 h-9 gap-1.5 shadow-sm transition-all"
       >
         {isPending ? (
           <>
@@ -93,7 +93,7 @@ export function CompletionButton({
       </Button>
 
       {feedback && (
-        <span className="text-xs text-amber-400 font-medium">
+        <span className="text-xs text-warning font-medium">
           {feedback}
         </span>
       )}

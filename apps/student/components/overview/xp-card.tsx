@@ -24,19 +24,19 @@ export function XpCard({ stats }: XpCardProps) {
   const xpRemainingToNextLevel = Math.max(0, nextLevelTargetXp - totalXp);
 
   return (
-    <Card className="relative overflow-hidden border-slate-800 bg-gradient-to-br from-slate-900/90 to-blue-950/20 backdrop-blur-sm">
-      <div className="absolute top-0 right-0 -mr-8 -mt-8 h-28 w-28 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
+    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card/90 to-primary/5 backdrop-blur-sm">
+      <div className="absolute top-0 right-0 -mr-8 -mt-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
 
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
             <Sparkles className="h-4 w-4" />
           </div>
-          <CardTitle className="text-sm font-medium text-slate-300">Global XP</CardTitle>
+          <CardTitle className="text-sm font-medium text-foreground/80">Global XP</CardTitle>
         </div>
         <Badge
           variant="outline"
-          className="border-blue-500/30 bg-blue-500/10 text-blue-300 font-semibold"
+          className="border-primary/30 bg-primary/10 text-primary font-semibold"
         >
           Level {currentLevel}
         </Badge>
@@ -45,20 +45,20 @@ export function XpCard({ stats }: XpCardProps) {
       <CardContent className="space-y-4 pt-1">
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-slate-100">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground">
               {formatNumber(totalXp)}
             </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
               XP Earned
             </span>
           </div>
 
           {totalXp === 0 ? (
-            <p className="mt-1 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
               Earn XP by completing coding challenges, lectures, quizzes, and projects.
             </p>
           ) : (
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               {xpRemainingToNextLevel > 0
                 ? `${formatNumber(xpRemainingToNextLevel)} XP to Level ${currentLevel + 1}`
                 : `Max progress reached for Level ${currentLevel}`}
@@ -68,11 +68,11 @@ export function XpCard({ stats }: XpCardProps) {
 
         {/* Level Progress Bar */}
         <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] text-slate-400 font-medium">
+          <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
             <span>Progress to Lvl {currentLevel + 1}</span>
             <span>{levelProgressPercent}%</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
               style={{ width: `${levelProgressPercent}%` }}
@@ -85,14 +85,14 @@ export function XpCard({ stats }: XpCardProps) {
         </div>
 
         {/* Quick Stats Footer */}
-        <div className="pt-2 flex items-center justify-between border-t border-slate-800/80 text-xs text-slate-400">
+        <div className="pt-2 flex items-center justify-between border-t border-border/80 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <Trophy className="h-3.5 w-3.5 text-amber-400" />
+            <Trophy className="h-3.5 w-3.5 text-warning" />
             <span>DSA Solved:</span>
-            <span className="font-semibold text-slate-200">{stats.dsaSolvedCount ?? 0}</span>
+            <span className="font-semibold text-foreground">{stats.dsaSolvedCount ?? 0}</span>
           </div>
-          <div className="flex items-center gap-1 text-[11px] text-slate-500">
-            <Zap className="h-3 w-3 text-blue-400" />
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Zap className="h-3 w-3 text-primary" />
             <span>Server Authoritative</span>
           </div>
         </div>

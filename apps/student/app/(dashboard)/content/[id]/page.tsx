@@ -92,12 +92,12 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
           {/* Lecture Description & Overview */}
           {item.description && (
-            <Card className="border-slate-800 bg-slate-900/40">
+            <Card className="border-border bg-card/40">
               <CardContent className="p-5 sm:p-6 space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   About this Lecture
                 </h4>
-                <p className="text-sm text-slate-300 leading-relaxed">
+                <p className="text-sm text-foreground/80 leading-relaxed">
                   {item.description}
                 </p>
               </CardContent>
@@ -140,7 +140,7 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
       {/* 3. Next Lesson Navigation / Cohort Continuity Banner */}
       {effectiveBatchId && (
-        <div className="pt-4 border-t border-slate-800/80">
+        <div className="pt-4 border-t border-border/80">
           <NextLessonBanner
             batchId={effectiveBatchId}
             batchName={item.relatedBatchContext?.batchName}

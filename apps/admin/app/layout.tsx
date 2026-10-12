@@ -1,5 +1,6 @@
 import './globals.css';
 import { Toaster } from 'sonner';
+import { fontVariables } from './fonts';
 
 export const metadata = {
   title: 'Academy Enrollment - Admin',
@@ -12,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={fontVariables}>
       <body className="flex min-h-screen w-full flex-col">
         {children}
         <Toaster richColors position="top-right" />

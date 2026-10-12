@@ -35,27 +35,27 @@ export default async function ResetPasswordPage({
   }
 
   return (
-    <main className="grid min-h-screen place-items-center p-5 bg-slate-950 text-slate-100">
-      <section className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-7 shadow-2xl">
-        <p className="text-sm font-semibold tracking-wider text-blue-400 uppercase">RMS Careers</p>
+    <main className="grid min-h-screen place-items-center p-5 bg-background text-foreground">
+      <section className="w-full max-w-md rounded-2xl border border-input bg-card p-7 shadow-2xl">
+        <p className="text-sm font-semibold tracking-wider text-primary uppercase">RMS Careers</p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Set new password</h1>
-        <p className="mt-2 text-slate-300">Choose a secure password for your Student Portal account.</p>
+        <p className="mt-2 text-foreground/80">Choose a secure password for your Student Portal account.</p>
 
         <div className="mt-7">
           {validationResult.valid ? (
             <div className="space-y-4">
-              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-300">
-                <p className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Account</p>
-                <p className="font-medium text-slate-100 mt-0.5">{validationResult.email}</p>
+              <div className="rounded-lg border border-border bg-background/70 p-3 text-sm text-foreground/80">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Account</p>
+                <p className="font-medium text-foreground mt-0.5">{validationResult.email}</p>
               </div>
               <ResetPasswordForm token={token!} />
             </div>
           ) : (
             <div
               role="alert"
-              className="rounded-xl border border-red-800 bg-red-950/60 p-5 text-sm text-red-200 space-y-3"
+              className="rounded-xl border border-destructive/50 bg-destructive/10 p-5 text-sm text-foreground space-y-3"
             >
-              <p className="font-semibold text-red-100">
+              <p className="font-semibold text-foreground">
                 {validationResult.code === 'EXPIRED'
                   ? 'Password Reset Link Expired'
                   : validationResult.code === 'CONSUMED'
@@ -66,7 +66,7 @@ export default async function ResetPasswordPage({
               <div className="pt-2">
                 <Link
                   href="/forgot-password"
-                  className="inline-block rounded-lg bg-blue-500 px-4 py-2 font-semibold text-white hover:bg-blue-600 transition"
+                  className="inline-block rounded-lg bg-primary px-4 py-2 font-semibold text-primary-foreground hover:bg-primary/90 transition"
                 >
                   Request New Reset Link
                 </Link>
@@ -75,9 +75,9 @@ export default async function ResetPasswordPage({
           )}
         </div>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Remembered your password?{' '}
-          <Link className="text-blue-400 hover:underline font-medium" href="/login">
+          <Link className="text-primary hover:underline font-medium" href="/login">
             Sign in
           </Link>
         </p>

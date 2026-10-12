@@ -32,20 +32,20 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 left-0 flex w-72 flex-col bg-slate-950 border-r border-slate-800 p-4 text-slate-100 shadow-2xl">
+      <div className="fixed inset-y-0 left-0 flex w-72 flex-col bg-background border-r border-border p-4 text-foreground shadow-2xl">
         {/* Header with Close Button */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-blue-400" />
+            <GraduationCap className="h-5 w-5 text-primary" />
             <div>
-              <span className="text-[10px] font-bold tracking-wider text-blue-400 uppercase">RMS Careers</span>
-              <p className="text-xs font-semibold text-slate-200">Student Portal</p>
+              <span className="text-[10px] font-bold tracking-wider text-primary uppercase">RMS Careers</span>
+              <p className="text-xs font-semibold text-foreground">Student Portal</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-900 hover:text-slate-100"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-card hover:text-foreground"
             aria-label="Close navigation menu"
           >
             <X className="h-5 w-5" />
@@ -53,8 +53,8 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
         </div>
 
         {/* Current Cohort Switcher */}
-        <div className="mt-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Cohort</p>
+        <div className="mt-3 rounded-lg border border-border bg-card/60 p-3 text-xs">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Current Cohort</p>
           <CohortSwitcher
             activeBatches={context.activeBatches}
             activeCohort={activeCohort}
@@ -78,14 +78,14 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
               return (
                 <div
                   key={item.title}
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium text-slate-500 cursor-not-allowed select-none"
+                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium text-muted-foreground cursor-not-allowed select-none"
                 >
                   <div className="flex items-center gap-3">
                     <Icon className="h-4 w-4 shrink-0 opacity-60" />
                     <span>{item.title}</span>
                   </div>
                   {item.badge && (
-                    <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400 font-semibold">
+                    <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground font-semibold">
                       {item.badge}
                     </span>
                   )}
@@ -101,34 +101,34 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
                 className={cn(
                   'flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium transition',
                   isActive
-                    ? 'bg-blue-600/15 text-blue-400 font-semibold border-l-2 border-blue-500 pl-2.5'
-                    : 'text-slate-300 hover:bg-slate-900 hover:text-slate-100'
+                    ? 'bg-primary/15 text-primary font-semibold border-l-2 border-primary pl-2.5'
+                    : 'text-foreground/80 hover:bg-card hover:text-foreground'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-blue-400' : 'text-slate-400')} />
+                  <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
                   <span>{item.title}</span>
                 </div>
-                {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />}
+                {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
               </Link>
             );
           })}
         </nav>
 
         {/* User Footer */}
-        <div className="pt-3 border-t border-slate-800">
+        <div className="pt-3 border-t border-border">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 pr-2">
-              <p className="truncate text-xs font-semibold text-slate-200">{student?.fullName || 'Student'}</p>
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 truncate mt-0.5">
-                <Building2 className="h-3 w-3 shrink-0 text-slate-500" />
+              <p className="truncate text-xs font-semibold text-foreground">{student?.fullName || 'Student'}</p>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate mt-0.5">
+                <Building2 className="h-3 w-3 shrink-0 text-muted-foreground" />
                 <span className="truncate">{student?.collegeName || 'RMS Partner College'}</span>
               </div>
             </div>
             <form action={SIGN_OUT_PATH} method="post">
               <button
                 type="submit"
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-900 hover:text-slate-100 transition"
+                className="rounded-lg p-2 text-muted-foreground hover:bg-card hover:text-foreground transition"
                 title="Sign out"
                 aria-label="Sign out"
               >

@@ -27,6 +27,7 @@ import type {
 } from '@/lib/types/assessments';
 import { isFormalAnswerKeyVisible } from '@/lib/services/assessment-policy';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
+import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME } from '@/lib/db/queries/library';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -98,7 +99,9 @@ export async function getStudentPracticeQuizzes(
     })
     .from(quizzes)
     .innerJoin(contentItems, eq(contentItems.id, quizzes.contentItemId))
-    .innerJoin(programs, eq(programs.id, contentItems.programId))
+    // leftJoin: content_items.program_id is nullable (global content is placed via batch_curriculum).
+    // An innerJoin hid global quizzes here while the library still listed them.
+    .leftJoin(programs, eq(programs.id, contentItems.programId))
     .where(
       and(
         eq(quizzes.quizType, 'practice'),
@@ -186,8 +189,8 @@ export async function getStudentPracticeQuizzes(
       id: row.id,
       contentItemId: row.contentItemId,
       programId: row.programId,
-      programName: row.programName,
-      programCode: row.programCode,
+      programName: row.programName ?? DEFAULT_PROGRAM_NAME,
+      programCode: row.programCode ?? DEFAULT_PROGRAM_CODE,
       title: row.title,
       slug: row.slug,
       description: row.description,
@@ -383,8 +386,8 @@ export async function getPracticeQuizForRunner(
   return {
     id: row.id,
     contentItemId: row.contentItemId,
-    programName: row.programName || 'General',
-    programCode: row.programCode || 'GEN',
+    programName: row.programName || DEFAULT_PROGRAM_NAME,
+    programCode: row.programCode || DEFAULT_PROGRAM_CODE,
     title: row.title,
     description: row.description,
     passingScorePercent: row.passingScorePercent,
@@ -469,7 +472,8 @@ export async function getStudentFormalAssessments(
     .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
     .innerJoin(quizzes, eq(quizzes.contentItemId, contentItems.id))
     .innerJoin(batches, eq(batches.id, batchCurriculum.batchId))
-    .innerJoin(programs, eq(programs.id, contentItems.programId))
+    // leftJoin: global (program-less) formal assessments placed in a batch must still be listed.
+    .leftJoin(programs, eq(programs.id, contentItems.programId))
     .where(
       and(
         eq(quizzes.quizType, 'formal'),
@@ -587,8 +591,8 @@ export async function getStudentFormalAssessments(
       id: row.id,
       contentItemId: row.contentItemId,
       programId: row.programId,
-      programName: row.programName,
-      programCode: row.programCode,
+      programName: row.programName ?? DEFAULT_PROGRAM_NAME,
+      programCode: row.programCode ?? DEFAULT_PROGRAM_CODE,
       batchId: row.batchId,
       batchName: row.batchName,
       title: row.title,
@@ -850,8 +854,8 @@ export async function getFormalAssessmentForRunner(
   return {
     id: row.id,
     contentItemId: row.contentItemId,
-    programName: row.programName || 'General',
-    programCode: row.programCode || 'GEN',
+    programName: row.programName || DEFAULT_PROGRAM_NAME,
+    programCode: row.programCode || DEFAULT_PROGRAM_CODE,
     batchId: row.batchId,
     batchName: row.batchName,
     title: row.title,
