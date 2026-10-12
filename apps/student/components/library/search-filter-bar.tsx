@@ -91,19 +91,19 @@ export function SearchFilterBar({
         {/* Search Input */}
         <form onSubmit={handleSearchSubmit} className="relative flex-1">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               placeholder="Search lectures, practice sheets, quizzes, topics..."
-              className="w-full h-10 pl-10 pr-10 rounded-lg border border-slate-800 bg-slate-900/80 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition"
+              className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-card/80 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition"
             />
             {searchVal && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition"
                 aria-label="Clear search"
               >
                 <X className="h-3.5 w-3.5" />
@@ -115,11 +115,11 @@ export function SearchFilterBar({
         {/* Topic / Category Dropdown */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="relative min-w-[160px]">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <select
               value={currentTopic}
               onChange={(e) => updateFilters({ topic: e.target.value })}
-              className="w-full h-10 pl-9 pr-8 rounded-lg border border-slate-800 bg-slate-900/80 text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition appearance-none cursor-pointer"
+              className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-card/80 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition appearance-none cursor-pointer"
             >
               <option value="all">All Topics</option>
               {availableTopics.map((topic) => (
@@ -136,7 +136,7 @@ export function SearchFilterBar({
               variant="outline"
               size="sm"
               onClick={handleClearAll}
-              className="h-10 border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 text-xs px-3"
+              className="h-10 border-border bg-card/60 text-muted-foreground hover:text-foreground text-xs px-3"
             >
               Clear
             </Button>
@@ -155,8 +155,8 @@ export function SearchFilterBar({
               onClick={() => updateFilters({ type: opt.value })}
               className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
-                  : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800/80'
+                  ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                  : 'bg-card/80 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/80'
               }`}
             >
               {opt.label}
@@ -166,7 +166,7 @@ export function SearchFilterBar({
       </div>
 
       {isPending && (
-        <div className="text-[11px] text-blue-400 flex items-center gap-1.5 animate-pulse">
+        <div className="text-[11px] text-primary flex items-center gap-1.5 animate-pulse">
           <BookOpen className="h-3 w-3" />
           <span>Updating library results...</span>
         </div>

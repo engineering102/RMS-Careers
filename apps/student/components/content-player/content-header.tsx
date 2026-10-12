@@ -22,7 +22,7 @@ function getContentTypeMeta(type: ContentType) {
       return {
         label: 'Lecture',
         icon: Video,
-        badgeClass: 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+        badgeClass: 'border-primary/30 bg-primary/10 text-primary'
       };
     case 'notes':
       return {
@@ -34,7 +34,7 @@ function getContentTypeMeta(type: ContentType) {
       return {
         label: 'DSA Practice',
         icon: Code2,
-        badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+        badgeClass: 'border-success/30 bg-success/10 text-success'
       };
     case 'quiz':
       return {
@@ -46,14 +46,14 @@ function getContentTypeMeta(type: ContentType) {
       return {
         label: 'Project',
         icon: FolderGit2,
-        badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+        badgeClass: 'border-warning/30 bg-warning/10 text-warning'
       };
     case 'resource':
     default:
       return {
         label: 'Resource',
         icon: Bookmark,
-        badgeClass: 'border-slate-700 bg-slate-800 text-slate-300'
+        badgeClass: 'border-input bg-secondary text-foreground/80'
       };
   }
 }
@@ -88,7 +88,7 @@ export function ContentHeader({
           asChild
           variant="ghost"
           size="sm"
-          className="text-xs text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 -ml-2 gap-1.5"
+          className="text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/60 -ml-2 gap-1.5"
         >
           <Link href={backHref}>
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -104,26 +104,26 @@ export function ContentHeader({
           {meta.label}
         </Badge>
 
-        <span className="rounded bg-slate-800/80 px-2 py-0.5 text-xs font-semibold text-slate-300 border border-slate-700/60">
+        <span className="rounded bg-secondary/80 px-2 py-0.5 text-xs font-semibold text-foreground/80 border border-input/60">
           {programCode}
         </span>
 
         {topic && (
-          <span className="rounded bg-slate-800/50 px-2 py-0.5 text-xs font-medium text-slate-400 border border-slate-700/40">
+          <span className="rounded bg-secondary/50 px-2 py-0.5 text-xs font-medium text-muted-foreground border border-input/40">
             {topic}
           </span>
         )}
 
         {durationMinutes ? (
-          <span className="flex items-center gap-1 text-xs text-slate-400 ml-1">
-            <Clock className="h-3.5 w-3.5 text-slate-400" />
+          <span className="flex items-center gap-1 text-xs text-muted-foreground ml-1">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             {durationMinutes} min
           </span>
         ) : null}
       </div>
 
       {/* Main Title */}
-      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 leading-snug">
+      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground leading-snug">
         {title}
       </h1>
     </div>

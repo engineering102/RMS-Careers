@@ -23,7 +23,7 @@ export function ResourceViewer({
     <div className="space-y-6">
       {/* Resource Download / Access Card */}
       {documentUrl ? (
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
+        <Card className="border-border bg-card/60 backdrop-blur-sm overflow-hidden">
           <CardContent className="p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">
@@ -35,8 +35,8 @@ export function ResourceViewer({
                   )}
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <h3 className="text-base font-semibold text-foreground">{title}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {isPdf ? 'PDF Document / Slide Deck' : 'External Learning Resource'}
                   </p>
                 </div>
@@ -46,7 +46,7 @@ export function ResourceViewer({
                 <Button
                   asChild
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 shadow-sm"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 shadow-sm"
                 >
                   <a href={documentUrl} target="_blank" rel="noopener noreferrer">
                     <span>Open Resource</span>
@@ -58,7 +58,7 @@ export function ResourceViewer({
                     asChild
                     size="sm"
                     variant="outline"
-                    className="border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs gap-1.5"
+                    className="border-input bg-secondary/80 hover:bg-accent text-foreground text-xs gap-1.5"
                   >
                     <a href={documentUrl} download target="_blank" rel="noopener noreferrer">
                       <Download className="h-3.5 w-3.5" />
@@ -74,13 +74,13 @@ export function ResourceViewer({
 
       {/* Notes / Supplementary Reading Content */}
       {notes && (
-        <Card className="border-slate-800 bg-slate-900/40">
+        <Card className="border-border bg-card/40">
           <CardContent className="p-5 sm:p-6 space-y-3">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-400">
               <FileCode className="h-3.5 w-3.5" />
               <span>Study Notes & Reference</span>
             </div>
-            <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
+            <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap font-sans">
               {notes}
             </div>
           </CardContent>
@@ -89,11 +89,11 @@ export function ResourceViewer({
 
       {/* Empty State if neither documentUrl nor notes exist */}
       {!documentUrl && !notes && (
-        <Card className="border-slate-800 bg-slate-900/40">
+        <Card className="border-border bg-card/40">
           <CardContent className="p-8 text-center space-y-2">
-            <Bookmark className="h-8 w-8 text-slate-500 mx-auto" />
-            <h4 className="text-sm font-semibold text-slate-300">Resource Information</h4>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <Bookmark className="h-8 w-8 text-muted-foreground mx-auto" />
+            <h4 className="text-sm font-semibold text-foreground/80">Resource Information</h4>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
               {description || 'This resource contains learning materials aligned with your program syllabus.'}
             </p>
           </CardContent>
