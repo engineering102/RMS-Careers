@@ -55,18 +55,18 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
   return (
     <div className="space-y-8">
       {/* 1. Welcome Banner */}
-      <section className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950/30 p-6 md:p-8">
+      <section className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-bold tracking-widest text-blue-400 uppercase">
+            <span className="text-xs font-bold tracking-widest text-primary uppercase">
               RMS Careers · Student Workbench
             </span>
-            <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-slate-100">
+            <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
               Welcome back, {student.fullName}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-              <span className="flex items-center gap-1.5 text-slate-300 font-medium">
-                <Building2 className="h-3.5 w-3.5 text-blue-400" />
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-foreground/80 font-medium">
+                <Building2 className="h-3.5 w-3.5 text-primary" />
                 {student.collegeName || 'RMS Partner College'}
               </span>
               {student.branch && <span>· Branch: {student.branch}</span>}
@@ -76,20 +76,20 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
           {/* Active Cohort Pill */}
           {activeCohort && (
-            <div className="flex flex-col sm:items-end justify-center rounded-xl border border-blue-800/40 bg-blue-950/40 p-4 shrink-0">
+            <div className="flex flex-col sm:items-end justify-center rounded-xl border border-primary/30 bg-primary/10 p-4 shrink-0">
               <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                   Active Cohort
                 </span>
                 {context.activeBatches.length > 1 && (
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-muted-foreground font-medium">
                     ({context.activeBatches.length} Enrolled)
                   </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-slate-100 mt-0.5">{activeCohort.batchName}</p>
-              <p className="text-xs text-slate-400">{activeCohort.programName}</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">{activeCohort.batchName}</p>
+              <p className="text-xs text-muted-foreground">{activeCohort.programName}</p>
             </div>
           )}
         </div>
@@ -118,10 +118,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-blue-400" />
-            <h2 className="text-base font-semibold text-slate-200">Enrolled Batches & Programs</h2>
+            <BookOpen className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold text-foreground">Enrolled Batches & Programs</h2>
           </div>
-          <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs text-slate-300 font-medium">
+          <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-foreground/80 font-medium">
             {context.enrollments.length} Active {context.enrollments.length === 1 ? 'Cohort' : 'Cohorts'}
           </span>
         </div>
@@ -130,25 +130,25 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
           {context.enrollments.map((enr) => (
             <article
               key={enr.enrollmentId}
-              className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 space-y-3 hover:border-slate-700 transition"
+              className="rounded-xl border border-border bg-card/60 p-5 space-y-3 hover:border-input transition"
             >
               <div className="flex items-center justify-between">
-                <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20 uppercase tracking-wider">
+                <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary border border-primary/20 uppercase tracking-wider">
                   {enr.programCode}
                 </span>
-                <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="flex items-center gap-1.5 text-xs text-success font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   {enr.status}
                 </span>
               </div>
 
               <div>
-                <h3 className="font-semibold text-slate-100 text-sm">{enr.programName}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">{enr.batchName || 'General Program Track'}</p>
+                <h3 className="font-semibold text-foreground text-sm">{enr.programName}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">{enr.batchName || 'General Program Track'}</p>
               </div>
 
               {enr.batchStartDate && (
-                <div className="pt-2 flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80">
+                <div className="pt-2 flex items-center gap-2 text-xs text-muted-foreground border-t border-border/80">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Started {new Date(enr.batchStartDate).toLocaleDateString()}</span>
                 </div>

@@ -45,7 +45,7 @@ describe('Phase 4 — Slice 4: ResumeLearningCard Component', () => {
     const element = ResumeLearningCard({ target });
     expect(React.isValidElement(element)).toBe(true);
     expect(element?.props['data-testid']).toBe('resume-learning-card');
-    expect(element?.props.className).toContain('border-rose-800/50');
+    expect(element?.props.className).toContain('border-destructive/40');
   });
 
   it('renders All Caught Up celebratory card when unlocked weeks are completed', () => {
