@@ -39,7 +39,7 @@ export function WorkspaceSubnav({ batchId, activeTab = 'curriculum' }: Workspace
   ];
 
   return (
-    <nav className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-800 scrollbar-none">
+    <nav className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border scrollbar-none">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         return (
@@ -47,14 +47,14 @@ export function WorkspaceSubnav({ batchId, activeTab = 'curriculum' }: Workspace
             key={tab.id}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg text-xs font-medium shrink-0 transition-colors ${
               tab.isActive
-                ? 'border-b-2 border-blue-500 text-blue-400 bg-blue-500/10 font-semibold'
-                : 'text-slate-400 opacity-60 cursor-not-allowed'
+                ? 'border-b-2 border-primary text-primary bg-primary/10 font-semibold'
+                : 'text-muted-foreground opacity-60 cursor-not-allowed'
             }`}
           >
             <Icon className="h-3.5 w-3.5" />
             <span>{tab.label}</span>
             {tab.badge && (
-              <Badge variant="outline" className="text-[10px] py-0 px-1 border-slate-700 text-slate-400">
+              <Badge variant="outline" className="text-[10px] py-0 px-1 border-input text-muted-foreground">
                 {tab.badge}
               </Badge>
             )}

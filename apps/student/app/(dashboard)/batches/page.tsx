@@ -33,15 +33,15 @@ export default async function BatchesPage() {
   // If student is enrolled in multiple active batches, render the cohort workspace selector
   return (
     <div className="space-y-8">
-      <div className="border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-blue-400 uppercase">
+      <div className="border-b border-border pb-6">
+        <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
           <Layers className="h-4 w-4" />
           <span>Active Cohorts</span>
         </div>
-        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-slate-100">
+        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           Batch Workspaces
         </h1>
-        <p className="mt-1.5 text-xs md:text-sm text-slate-400 max-w-2xl leading-relaxed">
+        <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
           Select an enrolled cohort workspace to view its chronological milestone curriculum, weekly
           deadlines, and structured learning journey.
         </p>
@@ -51,32 +51,32 @@ export default async function BatchesPage() {
         {context.activeBatches.map((batch) => (
           <Card
             key={batch.batchId}
-            className="flex flex-col justify-between border-slate-800 bg-slate-900/60 hover:border-slate-700 transition"
+            className="flex flex-col justify-between border-border bg-card/60 hover:border-input transition"
           >
             <CardHeader className="space-y-3">
               <div className="flex items-center justify-between">
                 <Badge
                   variant="outline"
-                  className="border-blue-500/30 bg-blue-500/10 text-blue-300 font-semibold uppercase tracking-wider text-[10px]"
+                  className="border-primary/30 bg-primary/10 text-primary font-semibold uppercase tracking-wider text-[10px]"
                 >
                   {batch.programCode}
                 </Badge>
-                <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="flex items-center gap-1.5 text-xs text-success font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   Active Cohort
                 </span>
               </div>
 
               <div>
-                <CardTitle className="text-base text-slate-100">{batch.batchName}</CardTitle>
-                <p className="text-xs text-slate-400 mt-1">{batch.programName}</p>
+                <CardTitle className="text-base text-foreground">{batch.batchName}</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">{batch.programName}</p>
               </div>
             </CardHeader>
 
-            <CardContent className="space-y-4 pt-2 border-t border-slate-800/80">
+            <CardContent className="space-y-4 pt-2 border-t border-border/80">
               {batch.startDate && (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>
                     Started {formatDate(batch.startDate)}
                     {batch.endDate ? ` – ${formatDate(batch.endDate)}` : ''}

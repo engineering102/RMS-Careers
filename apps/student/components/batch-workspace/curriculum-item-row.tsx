@@ -35,7 +35,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
       return {
         label: 'Lecture',
         icon: Video,
-        badgeClass: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
+        badgeClass: 'border-primary/30 bg-primary/10 text-primary',
         actionLabel: 'Watch Lecture',
         defaultHref: contentHref
       };
@@ -51,7 +51,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
       return {
         label: 'DSA Practice',
         icon: Code2,
-        badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+        badgeClass: 'border-success/30 bg-success/10 text-success',
         actionLabel: 'Open DSA Sheet',
         defaultHref: slug
           ? batchId
@@ -71,7 +71,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
       return {
         label: 'Project',
         icon: FolderGit2,
-        badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+        badgeClass: 'border-warning/30 bg-warning/10 text-warning',
         actionLabel: 'View Project',
         defaultHref: contentHref
       };
@@ -80,7 +80,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
       return {
         label: 'Resource',
         icon: Bookmark,
-        badgeClass: 'border-slate-700 bg-slate-800 text-slate-300',
+        badgeClass: 'border-input bg-secondary text-foreground/80',
         actionLabel: 'Open Resource',
         defaultHref: contentHref
       };
@@ -125,16 +125,16 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
     <div
       className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4.5 transition-all ${
         item.isCompleted
-          ? 'border-emerald-900/40 bg-emerald-950/10 hover:border-emerald-800/60'
+          ? 'border-success/30 bg-success/5 hover:border-success/40'
           : item.status === 'needs_revision'
-          ? 'border-rose-900/50 bg-rose-950/20 hover:border-rose-800/70'
+          ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/40'
           : item.status === 'in_review'
-          ? 'border-amber-900/40 bg-amber-950/10 hover:border-amber-800/60'
+          ? 'border-warning/30 bg-warning/5 hover:border-warning/40'
           : item.isOverdue
-          ? 'border-rose-900/40 bg-rose-950/10 hover:border-rose-800/60'
+          ? 'border-destructive/30 bg-destructive/5 hover:border-destructive/40'
           : item.isLocked
-          ? 'border-slate-800/60 bg-slate-900/20 opacity-75'
-          : 'border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-900/80'
+          ? 'border-border/60 bg-card/20 opacity-75'
+          : 'border-border bg-card/50 hover:border-input hover:bg-card/80'
       }`}
     >
       {/* Left Column: Icon & Content Details */}
@@ -142,10 +142,10 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
         <div
           className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
             item.isCompleted
-              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              ? 'border-success/30 bg-success/10 text-success'
               : item.isLocked
-              ? 'border-slate-800 bg-slate-800/60 text-slate-500'
-              : 'border-slate-700/60 bg-slate-800/80 text-slate-300'
+              ? 'border-border bg-secondary/60 text-muted-foreground'
+              : 'border-input/60 bg-secondary/80 text-foreground/80'
           }`}
         >
           {item.isLocked ? (
@@ -160,8 +160,8 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             <h4
               className={`text-sm font-semibold transition-colors ${
                 item.isCompleted
-                  ? 'text-slate-200'
-                  : 'text-slate-100 group-hover:text-blue-400'
+                  ? 'text-foreground'
+                  : 'text-foreground group-hover:text-primary'
               }`}
             >
               {item.title}
@@ -172,14 +172,14 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             {item.isRequired ? (
               <Badge
                 variant="outline"
-                className="text-[10px] py-0 px-1.5 border-amber-500/30 bg-amber-500/10 text-amber-300 font-medium"
+                className="text-[10px] py-0 px-1.5 border-warning/30 bg-warning/10 text-warning font-medium"
               >
                 Required
               </Badge>
             ) : (
               <Badge
                 variant="outline"
-                className="text-[10px] py-0 px-1.5 border-slate-700 bg-slate-800 text-slate-400 font-medium"
+                className="text-[10px] py-0 px-1.5 border-input bg-secondary text-muted-foreground font-medium"
               >
                 Optional
               </Badge>
@@ -187,25 +187,25 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             {item.isArchived && (
               <Badge
                 variant="outline"
-                className="text-[10px] py-0 px-1.5 border-zinc-700 bg-zinc-800/80 text-zinc-400 font-medium"
+                className="text-[10px] py-0 px-1.5 border-input bg-secondary/80 text-muted-foreground font-medium"
               >
                 Archived
               </Badge>
             )}
             {item.metadata.topic && (
-              <span className="text-[11px] text-slate-400 font-medium">
+              <span className="text-[11px] text-muted-foreground font-medium">
                 · {item.metadata.topic}
               </span>
             )}
           </div>
 
           {item.description && (
-            <p className="text-xs text-slate-400 line-clamp-1 leading-relaxed">
+            <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
               {item.description}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             {duration ? (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
@@ -213,7 +213,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
               </span>
             ) : null}
             {item.availableFrom && item.isLocked && (
-              <span className="flex items-center gap-1 text-slate-400">
+              <span className="flex items-center gap-1 text-muted-foreground">
                 <Lock className="h-3 w-3" />
                 Unlocks {formatDate(item.availableFrom)}
               </span>
@@ -223,11 +223,11 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
       </div>
 
       {/* Right Column: Status & Action Button */}
-      <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+      <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/60">
         <div className="flex items-center gap-2">
           {item.isCompleted ? (
             <span
-              className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400"
+              className="flex items-center gap-1.5 rounded-full bg-success/10 border border-success/20 px-2.5 py-0.5 text-[11px] font-semibold text-success"
               aria-label="Completed"
             >
               <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
@@ -235,7 +235,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             </span>
           ) : item.status === 'needs_revision' ? (
             <span
-              className="flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-rose-400"
+              className="flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[11px] font-semibold text-destructive"
               aria-label="Needs Revision"
             >
               <AlertCircle className="h-3 w-3" aria-hidden="true" />
@@ -243,7 +243,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             </span>
           ) : item.status === 'in_review' ? (
             <span
-              className="flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-amber-400"
+              className="flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[11px] font-semibold text-warning"
               aria-label="In Review"
             >
               <Clock className="h-3 w-3" aria-hidden="true" />
@@ -251,7 +251,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             </span>
           ) : item.isLocked ? (
             <span
-              className="flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400"
+              className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
               aria-label={item.availableFrom ? `Locked until ${formatDate(item.availableFrom)}` : 'Locked'}
             >
               <Lock className="h-3 w-3" aria-hidden="true" />
@@ -261,10 +261,10 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             <span
               className={`flex items-center gap-1 text-xs font-semibold ${
                 dueInfo.isOverdue
-                  ? 'text-rose-400'
+                  ? 'text-destructive'
                   : dueInfo.isUrgent
-                  ? 'text-amber-400'
-                  : 'text-slate-400'
+                  ? 'text-warning'
+                  : 'text-muted-foreground'
               }`}
               aria-label={dueInfo.isOverdue ? `Overdue deadline: ${dueInfo.text}` : dueInfo.text}
             >
@@ -272,7 +272,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
               {dueInfo.text}
             </span>
           ) : (
-            <span className="text-[11px] text-slate-500">Scheduled</span>
+            <span className="text-[11px] text-muted-foreground">Scheduled</span>
           )}
         </div>
 
@@ -281,7 +281,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             asChild
             size="sm"
             variant="ghost"
-            className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 px-2.5 h-7 gap-1"
+            className="text-xs text-primary hover:text-primary hover:bg-primary/10 px-2.5 h-7 gap-1"
           >
             <Link href={meta.defaultHref}>
               <span>
