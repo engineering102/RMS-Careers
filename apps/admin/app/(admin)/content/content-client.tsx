@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Layers,
   Sparkles,
-  FileQuestion
+  FileQuestion,
+  PencilRuler
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -203,7 +204,7 @@ export function ContentClient({
         return;
       }
 
-      toast.success('Canonical content item created successfully.');
+      toast.success('Content item created. Finish it in the builder.');
       setIsCreateOpen(false);
       // Reset form
       setCreateTitle('');
@@ -216,7 +217,7 @@ export function ContentClient({
       setCreateVideoUrl('');
       setCreateDuration('');
       setCreateIsPublished(false);
-      router.refresh();
+      router.push(`/content/${res.item.id}`);
     } catch {
       toast.error('An unexpected error occurred.');
     } finally {
@@ -630,9 +631,12 @@ export function ContentClient({
                         {/* Title & Slug */}
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-foreground leading-snug">
+                            <Link
+                              href={`/content/${item.id}`}
+                              className="font-semibold text-foreground leading-snug hover:text-primary hover:underline underline-offset-4"
+                            >
                               {item.title}
-                            </span>
+                            </Link>
                             <span className="text-xs text-muted-foreground font-mono mt-0.5">
                               /{item.slug}
                             </span>
@@ -735,13 +739,27 @@ export function ContentClient({
                               </Button>
                             )}
 
-                            {/* Edit Button */}
+                            {/* Content builder */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              asChild
+                              className="h-8 w-8 p-0"
+                              title="Open content builder"
+                            >
+                              <Link href={`/content/${item.id}`} aria-label={`Open builder for ${item.title}`}>
+                                <PencilRuler className="h-4 w-4" />
+                              </Link>
+                            </Button>
+
+                            {/* Quick edit */}
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => openEditModal(item)}
                               className="h-8 w-8 p-0"
-                              title="Edit in-place"
+                              title="Quick edit"
+                              aria-label={`Quick edit ${item.title}`}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>

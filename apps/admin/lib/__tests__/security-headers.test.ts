@@ -20,6 +20,11 @@ describe('Admin security headers (audit F-10)', () => {
     expect(header(prod, 'X-Robots-Tag')).toBe('noindex, nofollow');
   });
 
+  it('embeds only the YouTube-nocookie and Vimeo players (content builder preview)', () => {
+    const frameSrc = csp.split('; ').find((d) => d.startsWith('frame-src '));
+    expect(frameSrc).toBe('frame-src https://www.youtube-nocookie.com https://player.vimeo.com');
+  });
+
   it('permits only the GitHub OAuth hand-off as an off-site form target', () => {
     expect(csp).toContain("form-action 'self' https://github.com");
   });

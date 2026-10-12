@@ -20,6 +20,7 @@ export * from './queries/batches';
 export * from './queries/tokens';
 export * from './queries/student-provisioning';
 export * from './queries/content';
+export * from './queries/content-assignments';
 export * from './queries/curriculum';
 export * from './queries/quiz-authoring';
 export * from './queries/batch-assessments';
