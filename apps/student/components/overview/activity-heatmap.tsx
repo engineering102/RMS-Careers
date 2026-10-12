@@ -15,6 +15,7 @@ import {
   type HeatmapIntensity,
   formatIstDateReadable
 } from '@/lib/types/overview';
+import { formatNumber } from '@/lib/format/datetime';
 
 interface ActivityHeatmapProps {
   heatmap: {
@@ -76,7 +77,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
             variant="outline"
             className="border-blue-500/30 bg-blue-500/10 text-blue-300 text-xs"
           >
-            {totalPeriodXp.toLocaleString()} Period XP
+            {formatNumber(totalPeriodXp)} Period XP
           </Badge>
         </div>
       </CardHeader>

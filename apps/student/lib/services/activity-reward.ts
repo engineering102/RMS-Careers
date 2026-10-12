@@ -13,6 +13,7 @@ import type {
   RecordActivityResult,
   StreakEvaluationResult
 } from '@/lib/types/activity';
+import { levelForXp } from '@/lib/types/activity';
 
 /**
  * Returns today's date formatted as YYYY-MM-DD in Asia/Kolkata timezone.
@@ -238,7 +239,7 @@ export async function recordLearningActivity(
       todayIst
     );
     const totalXp = params.xpAmount;
-    const currentLevel = Math.floor(totalXp / 100) + 1;
+    const currentLevel = levelForXp(totalXp);
     const dsaCount = params.activityType === 'dsa_solved' ? 1 : 0;
 
     await client.insert(studentStats).values({
@@ -275,7 +276,7 @@ export async function recordLearningActivity(
   );
 
   const newTotalXp = statsRecord.totalXp + params.xpAmount;
-  const newLevel = Math.floor(newTotalXp / 100) + 1;
+  const newLevel = levelForXp(newTotalXp);
   const newDsaCount =
     params.activityType === 'dsa_solved'
       ? statsRecord.dsaSolvedCount + 1

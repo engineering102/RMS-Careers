@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { ResumeLearningTarget } from '@/lib/types/progress';
 import type { ContentType } from '@/lib/types/library';
+import { formatDate } from '@/lib/format/datetime';
 
 interface ResumeLearningCardProps {
   target: ResumeLearningTarget;
@@ -171,7 +172,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 {target.nextUnlockDate ? (
-                  <>Next modules unlock on {new Date(target.nextUnlockDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}. Keep practicing DSA in the meantime!</>
+                  <>Next modules unlock on {formatDate(target.nextUnlockDate, { month: 'short', day: 'numeric', weekday: 'short' })}. Keep practicing DSA in the meantime!</>
                 ) : (
                   <>Next modules unlock soon. Stay sharp by practicing DSA problem patterns!</>
                 )}
@@ -283,7 +284,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
                 {target.dueAt && (
                   <span className="flex items-center gap-1 text-amber-300/90 font-medium">
                     <Clock className="h-3.5 w-3.5" />
-                    Due {new Date(target.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    Due {formatDate(target.dueAt, { month: 'short', day: 'numeric' })}
                   </span>
                 )}
                 {isRevision && (

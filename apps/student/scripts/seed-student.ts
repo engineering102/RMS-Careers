@@ -422,7 +422,7 @@ async function runStudentSeeder() {
         .set({
           collegeId: data.collegeId,
           totalXp: data.totalXp,
-          currentLevel: data.currentLevel,
+          currentLevel: Math.floor(data.totalXp / 100) + 1, // same rule as the server ledger (100 XP per level)
           currentStreak: data.currentStreak,
           longestStreak: data.longestStreak,
           dsaSolvedCount: data.dsaSolvedCount,
@@ -434,7 +434,7 @@ async function runStudentSeeder() {
         studentId,
         collegeId: data.collegeId,
         totalXp: data.totalXp,
-        currentLevel: data.currentLevel,
+        currentLevel: Math.floor(data.totalXp / 100) + 1, // same rule as the server ledger (100 XP per level)
         currentStreak: data.currentStreak,
         longestStreak: data.longestStreak,
         dsaSolvedCount: data.dsaSolvedCount,

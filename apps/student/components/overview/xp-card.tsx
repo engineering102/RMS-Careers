@@ -3,6 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Trophy, Zap } from 'lucide-react';
 import type { StudentStatsOverview } from '@/lib/db/queries/overview';
+import { formatNumber } from '@/lib/format/datetime';
+import { levelForXp, XP_PER_LEVEL } from '@/lib/types/activity';
 
 interface XpCardProps {
   stats: StudentStatsOverview;
@@ -10,16 +12,14 @@ interface XpCardProps {
 
 export function XpCard({ stats }: XpCardProps) {
   const totalXp = stats.totalXp ?? 0;
-  const currentLevel = stats.currentLevel ?? 1;
-
-  // Level progression heuristic (500 XP per level)
-  const xpPerLevel = 500;
-  const currentLevelBaseXp = (currentLevel - 1) * xpPerLevel;
-  const nextLevelTargetXp = currentLevel * xpPerLevel;
+  // Same rule as the server ledger (100 XP per level), derived from XP so the card can never disagree with it.
+  const currentLevel = levelForXp(totalXp);
+  const currentLevelBaseXp = (currentLevel - 1) * XP_PER_LEVEL;
+  const nextLevelTargetXp = currentLevel * XP_PER_LEVEL;
   const xpIntoCurrentLevel = Math.max(0, totalXp - currentLevelBaseXp);
   const levelProgressPercent = Math.min(
     100,
-    Math.round((xpIntoCurrentLevel / xpPerLevel) * 100)
+    Math.round((xpIntoCurrentLevel / XP_PER_LEVEL) * 100)
   );
   const xpRemainingToNextLevel = Math.max(0, nextLevelTargetXp - totalXp);
 
@@ -46,7 +46,7 @@ export function XpCard({ stats }: XpCardProps) {
         <div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold tracking-tight text-slate-100">
-              {totalXp.toLocaleString()}
+              {formatNumber(totalXp)}
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
               XP Earned
@@ -60,7 +60,7 @@ export function XpCard({ stats }: XpCardProps) {
           ) : (
             <p className="mt-1 text-xs text-slate-400">
               {xpRemainingToNextLevel > 0
-                ? `${xpRemainingToNextLevel.toLocaleString()} XP to Level ${currentLevel + 1}`
+                ? `${formatNumber(xpRemainingToNextLevel)} XP to Level ${currentLevel + 1}`
                 : `Max progress reached for Level ${currentLevel}`}
             </p>
           )}

@@ -13,6 +13,7 @@ import type {
   BatchWorkspaceBatch,
   EnrolledBatchSummary
 } from '@/lib/types/batch-workspace';
+import { formatDate } from '@/lib/format/datetime';
 
 interface BatchHeaderProps {
   batch: BatchWorkspaceBatch;
@@ -37,13 +38,13 @@ export function BatchHeader({
 
   const formatDateRange = () => {
     if (!batch.startDate) return null;
-    const start = new Date(batch.startDate).toLocaleDateString('en-US', {
+    const start = formatDate(batch.startDate, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
     const end = batch.endDate
-      ? new Date(batch.endDate).toLocaleDateString('en-US', {
+      ? formatDate(batch.endDate, {
           month: 'short',
           day: 'numeric',
           year: 'numeric'

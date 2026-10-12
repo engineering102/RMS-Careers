@@ -12,6 +12,7 @@ import {
   Award
 } from 'lucide-react';
 import type { PracticeQuizSummary } from '@/lib/types/assessments';
+import { formatDate } from '@/lib/format/datetime';
 
 interface PracticeQuizCardProps {
   quiz: PracticeQuizSummary;
@@ -83,7 +84,7 @@ export function PracticeQuizCard({ quiz }: PracticeQuizCardProps) {
             </span>
             {quiz.lastAttemptAt && (
               <span>
-                Last: {new Date(quiz.lastAttemptAt).toLocaleDateString('en-US', {
+                Last: {formatDate(quiz.lastAttemptAt, {
                   month: 'short',
                   day: 'numeric'
                 })}

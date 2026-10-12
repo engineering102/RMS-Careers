@@ -6,6 +6,7 @@ import { AcademicCard } from '@/components/profile/academic-card';
 import { CareerForm } from '@/components/profile/career-form';
 import { AnalyticsSection } from '@/components/profile/analytics-section';
 import { User, ShieldCheck } from 'lucide-react';
+import { formatNumber } from '@/lib/format/datetime';
 
 export const metadata = {
   title: 'Profile & Analytics — RMS Student Portal',
@@ -77,7 +78,7 @@ export default async function ProfilePage() {
               Cumulative Standing
             </span>
             <span className="text-xl font-bold text-amber-400">
-              {profileData.stats.totalXp.toLocaleString()} XP
+              {formatNumber(profileData.stats.totalXp)} XP
             </span>
             <span className="text-xs text-slate-500 block">
               Level {profileData.stats.currentLevel} · {profileData.stats.currentStreak}-day streak

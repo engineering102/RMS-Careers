@@ -19,6 +19,7 @@ import type {
   RelatedBatchContext
 } from '@/lib/types/content';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
+import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME } from '@/lib/db/queries/library';
 
 export type {
   ContentPlayerItem,
@@ -274,8 +275,8 @@ export async function getContentItem(
     return {
       id: row.id,
       programId: row.programId,
-      programName: row.programName || 'General',
-      programCode: row.programCode || 'GEN',
+      programName: row.programName || DEFAULT_PROGRAM_NAME,
+      programCode: row.programCode || DEFAULT_PROGRAM_CODE,
       title: row.title,
       slug: row.slug,
       contentType: row.contentType,

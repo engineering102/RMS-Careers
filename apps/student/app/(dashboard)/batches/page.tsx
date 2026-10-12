@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Calendar, ArrowRight, Layers } from 'lucide-react';
+import { formatDate } from '@/lib/format/datetime';
 
 export const metadata = {
   title: 'Batch Workspaces — RMS Student Portal',
@@ -77,8 +78,8 @@ export default async function BatchesPage() {
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <Calendar className="h-3.5 w-3.5 text-slate-500" />
                   <span>
-                    Started {new Date(batch.startDate).toLocaleDateString()}
-                    {batch.endDate ? ` – ${new Date(batch.endDate).toLocaleDateString()}` : ''}
+                    Started {formatDate(batch.startDate)}
+                    {batch.endDate ? ` – ${formatDate(batch.endDate)}` : ''}
                   </span>
                 </div>
               )}

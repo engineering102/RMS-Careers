@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import type { ProjectAssignmentCardData } from '@/lib/types/projects';
+import { formatDate } from '@/lib/format/datetime';
 
 interface ProjectAssignmentCardProps {
   project: ProjectAssignmentCardData;
@@ -90,7 +91,7 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
             {project.dueAt ? (
               <>
                 <Clock className="h-3.5 w-3.5 text-slate-500" />
-                <span>Due: {new Date(project.dueAt).toLocaleDateString()}</span>
+                <span>Due: {formatDate(project.dueAt)}</span>
               </>
             ) : (
               <span>Cohort Milestone</span>

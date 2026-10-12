@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Trophy, Flame, Zap, Medal } from 'lucide-react';
 import type { LeaderboardEntry } from '@/lib/types/leaderboards';
+import { formatNumber } from '@/lib/format/datetime';
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
@@ -121,7 +122,7 @@ export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) 
                 <td className="py-3.5 px-4 text-right font-mono">
                   <span className="inline-flex items-center gap-1 font-bold text-emerald-400 text-sm">
                     <Zap className="h-3.5 w-3.5" />
-                    +{entry.xp.toLocaleString()} XP
+                    +{formatNumber(entry.xp)} XP
                   </span>
                 </td>
               </tr>

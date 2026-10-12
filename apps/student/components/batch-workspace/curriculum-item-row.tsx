@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { CurriculumItem } from '@/lib/types/batch-workspace';
 import type { ContentType } from '@/lib/types/library';
+import { formatDate } from '@/lib/format/datetime';
 
 interface CurriculumItemRowProps {
   item: CurriculumItem;
@@ -107,7 +108,7 @@ function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
     return { text: `Due in ${diffDays} days`, isOverdue: false, isUrgent: true };
   } else {
     return {
-      text: `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      text: `Due ${formatDate(due, { month: 'short', day: 'numeric' })}`,
       isOverdue: false,
       isUrgent: false
     };
@@ -214,7 +215,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
             {item.availableFrom && item.isLocked && (
               <span className="flex items-center gap-1 text-slate-400">
                 <Lock className="h-3 w-3" />
-                Unlocks {new Date(item.availableFrom).toLocaleDateString()}
+                Unlocks {formatDate(item.availableFrom)}
               </span>
             )}
           </div>
@@ -251,7 +252,7 @@ export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
           ) : item.isLocked ? (
             <span
               className="flex items-center gap-1.5 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-slate-400"
-              aria-label={item.availableFrom ? `Locked until ${new Date(item.availableFrom).toLocaleDateString()}` : 'Locked'}
+              aria-label={item.availableFrom ? `Locked until ${formatDate(item.availableFrom)}` : 'Locked'}
             >
               <Lock className="h-3 w-3" aria-hidden="true" />
               Locked

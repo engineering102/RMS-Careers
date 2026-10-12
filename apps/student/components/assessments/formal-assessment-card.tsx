@@ -14,6 +14,7 @@ import {
   Lock
 } from 'lucide-react';
 import type { FormalAssessmentSummary } from '@/lib/types/assessments';
+import { formatDate } from '@/lib/format/datetime';
 
 interface FormalAssessmentCardProps {
   assessment: FormalAssessmentSummary;
@@ -115,7 +116,7 @@ export function FormalAssessmentCard({ assessment }: FormalAssessmentCardProps) 
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3 text-slate-500" />
               Due:{' '}
-              {new Date(assessment.dueAt).toLocaleDateString('en-US', {
+              {formatDate(assessment.dueAt, {
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
@@ -129,7 +130,7 @@ export function FormalAssessmentCard({ assessment }: FormalAssessmentCardProps) 
           {isUpcoming && assessment.availableFrom && (
             <span className="text-slate-500">
               Opens:{' '}
-              {new Date(assessment.availableFrom).toLocaleDateString('en-US', {
+              {formatDate(assessment.availableFrom, {
                 month: 'short',
                 day: 'numeric'
               })}
