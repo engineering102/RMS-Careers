@@ -30,7 +30,7 @@ function getContentTypeMeta(type?: ContentType) {
       return {
         label: 'Lecture',
         icon: Video,
-        badgeClass: 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+        badgeClass: 'border-primary/30 bg-primary/10 text-primary'
       };
     case 'notes':
       return {
@@ -42,7 +42,7 @@ function getContentTypeMeta(type?: ContentType) {
       return {
         label: 'DSA Practice',
         icon: Code2,
-        badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+        badgeClass: 'border-success/30 bg-success/10 text-success'
       };
     case 'quiz':
       return {
@@ -54,14 +54,14 @@ function getContentTypeMeta(type?: ContentType) {
       return {
         label: 'Project',
         icon: FolderGit2,
-        badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+        badgeClass: 'border-warning/30 bg-warning/10 text-warning'
       };
     case 'resource':
     default:
       return {
         label: 'Resource',
         icon: Bookmark,
-        badgeClass: 'border-slate-700 bg-slate-800 text-slate-300'
+        badgeClass: 'border-input bg-secondary text-foreground/80'
       };
   }
 }
@@ -72,18 +72,18 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
     return (
       <section
         data-testid="resume-learning-no-enrollment"
-        className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-blue-950/20 p-6 md:p-7 shadow-sm"
+        className="rounded-2xl border border-border bg-gradient-to-r from-card via-card/90 to-primary/5 p-6 md:p-7 shadow-sm"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">
+              <h3 className="text-base font-semibold text-foreground">
                 Explore the Self-Paced Library
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 You are not currently enrolled in an active cohort. Dive into curated learning tracks and documentation.
               </p>
             </div>
@@ -91,7 +91,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
           <Button
             asChild
             size="sm"
-            className="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 h-9 gap-1.5 shrink-0"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs px-4 h-9 gap-1.5 shrink-0"
           >
             <Link href="/library">
               <span>Explore Library</span>
@@ -108,24 +108,24 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
     return (
       <section
         data-testid="resume-learning-completed"
-        className="rounded-2xl border border-emerald-800/40 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900 p-6 md:p-7 shadow-sm"
+        className="rounded-2xl border border-success/30 bg-gradient-to-r from-card via-success/5 to-card p-6 md:p-7 shadow-sm"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-success/30 bg-success/10 text-success">
               <Trophy className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tracking-widest text-emerald-400 uppercase">
+                <span className="text-xs font-bold tracking-widest text-success uppercase">
                   Curriculum Completed
                 </span>
-                <span className="text-xs text-slate-500">· {target.batchName}</span>
+                <span className="text-xs text-muted-foreground">· {target.batchName}</span>
               </div>
-              <h3 className="text-base font-semibold text-slate-100 mt-1">
+              <h3 className="text-base font-semibold text-foreground mt-1">
                 Congratulations! You completed all scheduled milestones.
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Maintain your daily streak by solving DSA patterns or reviewing key concept notes.
               </p>
             </div>
@@ -134,7 +134,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
             <Button
               asChild
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-4 h-9 gap-1.5"
+              className="bg-success hover:bg-success/90 text-success-foreground font-medium text-xs px-4 h-9 gap-1.5"
             >
               <Link href="/dsa">
                 <span>Practice DSA</span>
@@ -152,24 +152,24 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
     return (
       <section
         data-testid="resume-learning-caught-up"
-        className="rounded-2xl border border-blue-800/40 bg-gradient-to-r from-slate-900 via-blue-950/20 to-slate-900 p-6 md:p-7 shadow-sm"
+        className="rounded-2xl border border-primary/30 bg-gradient-to-r from-card via-primary/5 to-card p-6 md:p-7 shadow-sm"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-500/10 text-blue-400">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tracking-widest text-blue-400 uppercase">
+                <span className="text-xs font-bold tracking-widest text-primary uppercase">
                   All Caught Up
                 </span>
-                <span className="text-xs text-slate-500">· {target.batchName}</span>
+                <span className="text-xs text-muted-foreground">· {target.batchName}</span>
               </div>
-              <h3 className="text-base font-semibold text-slate-100 mt-1">
+              <h3 className="text-base font-semibold text-foreground mt-1">
                 You are caught up with this week&apos;s modules.
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {target.nextUnlockDate ? (
                   <>Next modules unlock on {new Date(target.nextUnlockDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}. Keep practicing DSA in the meantime!</>
                 ) : (
@@ -182,7 +182,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
             <Button
               asChild
               size="sm"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-4 h-9 gap-1.5"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs px-4 h-9 gap-1.5"
             >
               <Link href="/dsa">
                 <span>Practice DSA</span>
@@ -226,8 +226,8 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
       data-testid="resume-learning-card"
       className={`rounded-2xl border p-6 md:p-7 shadow-sm transition-all ${
         isRevision
-          ? 'border-rose-800/50 bg-gradient-to-r from-slate-900 via-rose-950/20 to-slate-900'
-          : 'border-blue-800/40 bg-gradient-to-r from-slate-900 via-slate-900/90 to-blue-950/30'
+          ? 'border-destructive/40 bg-gradient-to-r from-card via-destructive/5 to-card'
+          : 'border-primary/30 bg-gradient-to-r from-card via-card/90 to-primary/5'
       }`}
     >
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -236,22 +236,22 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
           {/* Top Label & Cohort Info */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {isRevision ? (
-              <span className="flex items-center gap-1.5 font-bold tracking-wider text-rose-400 uppercase">
+              <span className="flex items-center gap-1.5 font-bold tracking-wider text-destructive uppercase">
                 <AlertCircle className="h-3.5 w-3.5" />
                 Revision Requested
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 font-bold tracking-wider text-blue-400 uppercase">
+              <span className="flex items-center gap-1.5 font-bold tracking-wider text-primary uppercase">
                 <Sparkles className="h-3.5 w-3.5" />
                 Resume Learning
               </span>
             )}
-            <span className="text-slate-600">·</span>
-            <span className="font-semibold text-slate-300">{target.batchName}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="font-semibold text-foreground/80">{target.batchName}</span>
             {target.weekNumber !== undefined && (
               <>
-                <span className="text-slate-600">·</span>
-                <span className="text-slate-400 font-medium">Week {target.weekNumber}</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground font-medium">Week {target.weekNumber}</span>
               </>
             )}
           </div>
@@ -261,8 +261,8 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
             <div
               className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
                 isRevision
-                  ? 'border-rose-500/30 bg-rose-500/10 text-rose-400'
-                  : 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                  ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                  : 'border-primary/30 bg-primary/10 text-primary'
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -270,7 +270,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
 
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg md:text-xl font-bold tracking-tight text-slate-100">
+                <h2 className="text-lg md:text-xl font-bold tracking-tight text-foreground">
                   {target.contentTitle}
                 </h2>
                 <Badge variant="outline" className={`text-[10px] py-0 px-2 ${meta.badgeClass}`}>
@@ -279,20 +279,20 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
               </div>
 
               {/* Status / Due info */}
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-0.5">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-0.5">
                 {target.dueAt && (
-                  <span className="flex items-center gap-1 text-amber-300/90 font-medium">
+                  <span className="flex items-center gap-1 text-warning/90 font-medium">
                     <Clock className="h-3.5 w-3.5" />
                     Due {new Date(target.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 )}
                 {isRevision && (
-                  <span className="text-rose-400 font-medium">
+                  <span className="text-destructive font-medium">
                     Tutor requested updates on your submission.
                   </span>
                 )}
                 {!isRevision && target.reason === 'due_soon' && (
-                  <span className="text-amber-400 font-medium">
+                  <span className="text-warning font-medium">
                     Upcoming milestone deadline
                   </span>
                 )}
@@ -302,11 +302,11 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
 
           {/* Progress bar */}
           <div className="space-y-1.5 pt-1 max-w-md">
-            <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
               <span>Cohort Progress</span>
-              <span className="text-slate-300 font-semibold">{percent}%</span>
+              <span className="text-foreground/80 font-semibold">{percent}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
                 style={{ width: `${percent}%` }}
@@ -322,8 +322,8 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
             size="default"
             className={`font-semibold text-xs px-6 h-11 gap-2 shadow-sm transition-all ${
               isRevision
-                ? 'bg-rose-600 hover:bg-rose-500 text-white'
-                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
             }`}
           >
             <Link href={targetHref}>

@@ -113,4 +113,10 @@ The student portal is migrated folder by folder from hardcoded Tailwind palette 
 | red / rose | `destructive` | Dark `--destructive` is red-500 with dark foreground text |
 | tinted-panel body text (`text-*-100/200`) | `text-foreground` | The tint and border carry the meaning |
 
-Left as-is on purpose: decorative gradients (avatar), categorical icon colours (notification types), and black modal overlays (`bg-black/70`).
+Left as-is on purpose: decorative gradients (avatar, progress bars: `from-blue-500 to-indigo-*`), categorical colours that distinguish kinds rather than status (purple/sky/cyan/orange notification icons, activity-type and content-type badges), and black modal overlays (`bg-black/70`).
+
+Additional rules:
+- Deep tints (`-900/-950`, e.g. `bg-blue-950/60`, `via-emerald-950/20`) become light token tints: `/10`, or `/5` when the original opacity was 30% or less.
+- Deep borders (`-700` to `-900`) become `border-<token>/40` (`/50` for destructive, `/30` when the original opacity was 40% or less).
+- Filled status buttons use the token's foreground: `bg-success text-success-foreground hover:bg-success/90`, likewise for primary and destructive.
+- Sequential scales (the activity heatmap) use one token with stepped opacity so the ramp stays readable: `bg-success/15` → `/35` → `/60` → `bg-success`. The legend uses the same steps.
