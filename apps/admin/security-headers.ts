@@ -6,6 +6,8 @@
  *  - img-src mirrors next.config `images.remotePatterns` (GitHub avatars, Vercel Blob).
  *  - form-action allows github.com for the GitHub OAuth sign-in hand-off.
  *  - The admin console must never be framed or indexed.
+ *  - frame-src allows only the YouTube (privacy-enhanced) and Vimeo players, for the content builder's
+ *    lecture preview. Custom embed URLs are not previewed in admin.
  *  - 'unsafe-eval' and ws: are added only in development (React refresh / HMR).
  */
 export function buildSecurityHeaders({ isDev }: { isDev: boolean }): Array<{ key: string; value: string }> {
@@ -16,7 +18,7 @@ export function buildSecurityHeaders({ isDev }: { isDev: boolean }): Array<{ key
     "img-src 'self' data: blob: https://avatars.githubusercontent.com https://*.public.blob.vercel-storage.com",
     "font-src 'self' data:",
     `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
-    "frame-src 'none'",
+    "frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

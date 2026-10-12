@@ -20,6 +20,7 @@ import type {
 } from '@/lib/types/content';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
 import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME } from '@/lib/db/queries/library';
+import { extractResourceMetadata, extractVideoMetadata } from '@/lib/content/metadata';
 
 export type {
   ContentPlayerItem,
@@ -32,81 +33,6 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 function isValidUuid(id: string): boolean {
   return UUID_REGEX.test(id);
-}
-
-/**
- * Extracts normalized VideoMetadata from content item metadata.
- */
-function extractVideoMetadata(metadata: ContentItemMetadata): VideoMetadata | null {
-  const providerRaw = typeof metadata.provider === 'string' ? metadata.provider.toLowerCase() : '';
-  const videoId = typeof metadata.videoId === 'string' ? metadata.videoId.trim() : '';
-
-  if (!videoId && !providerRaw) {
-    return null;
-  }
-
-  let provider: 'vimeo' | 'youtube' | 'custom' = 'custom';
-  if (providerRaw.includes('vimeo')) {
-    provider = 'vimeo';
-  } else if (providerRaw.includes('youtube')) {
-    provider = 'youtube';
-  }
-
-  const durationMinutes =
-    typeof metadata.durationMinutes === 'number'
-      ? metadata.durationMinutes
-      : typeof metadata.duration === 'number'
-        ? metadata.duration
-        : undefined;
-
-  const durationSeconds =
-    typeof metadata.durationSeconds === 'number'
-      ? metadata.durationSeconds
-      : durationMinutes !== undefined
-        ? durationMinutes * 60
-        : undefined;
-
-  const aspectRatio =
-    metadata.aspectRatio === '4:3' || metadata.aspectRatio === '16:9'
-      ? metadata.aspectRatio
-      : '16:9';
-
-  return {
-    provider,
-    videoId,
-    aspectRatio,
-    durationMinutes,
-    durationSeconds
-  };
-}
-
-/**
- * Extracts normalized ResourceMetadata from content item metadata.
- */
-function extractResourceMetadata(metadata: ContentItemMetadata): ResourceMetadata | null {
-  const documentUrl =
-    typeof metadata.documentUrl === 'string'
-      ? metadata.documentUrl
-      : typeof metadata.url === 'string'
-        ? metadata.url
-        : undefined;
-
-  const notes = typeof metadata.notes === 'string' ? metadata.notes : undefined;
-  const topic = typeof metadata.topic === 'string' ? metadata.topic : undefined;
-  const category = typeof metadata.category === 'string' ? metadata.category : undefined;
-  const fileType = typeof metadata.fileType === 'string' ? metadata.fileType : undefined;
-
-  if (!documentUrl && !notes && !topic && !category) {
-    return null;
-  }
-
-  return {
-    documentUrl,
-    notes,
-    topic,
-    category,
-    fileType
-  };
 }
 
 /**

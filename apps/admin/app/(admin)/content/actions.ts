@@ -18,6 +18,7 @@ import {
   type CreateContentInput,
   type UpdateContentInput
 } from './schema';
+import { buildStudentMetadataPatch, InvalidVideoUrlError } from '@/lib/content/student-metadata';
 
 export async function createContentAction(
   formDataOrInput: FormData | Record<string, unknown>
@@ -79,15 +80,22 @@ export async function createContentAction(
       }
     }
 
-    // 4. Construct metadata object
-    const metadata: Record<string, unknown> = {};
-    if (data.topic) metadata.topic = data.topic;
-    if (data.resourceLink) metadata.resourceLink = data.resourceLink;
-    if (data.videoUrl) metadata.videoUrl = data.videoUrl;
-    if (data.durationMinutes !== undefined && data.durationMinutes !== null) {
-      metadata.durationMinutes = data.durationMinutes;
+    // 4. Construct metadata object, using the keys the student portal reads
+    let metadata: Record<string, unknown>;
+    try {
+      metadata = buildStudentMetadataPatch({
+        topic: data.topic || undefined,
+        videoUrl: data.videoUrl || undefined,
+        resourceLink: data.resourceLink || undefined,
+        notes: data.notesMarkdown || undefined,
+        durationMinutes: data.durationMinutes ?? undefined
+      });
+    } catch (err) {
+      if (err instanceof InvalidVideoUrlError) {
+        return { success: false, error: err.message, fieldErrors: { videoUrl: [err.message] } };
+      }
+      throw err;
     }
-    if (data.notesMarkdown) metadata.notesMarkdown = data.notesMarkdown;
 
     // 5. Create canonical content item
     const newItem = await createContentItem({
@@ -199,13 +207,22 @@ export async function updateContentAction(
       }
     }
 
-    // 6. Construct metadata update
-    const metadataUpdate: Record<string, unknown> = {};
-    if (data.topic !== undefined) metadataUpdate.topic = data.topic;
-    if (data.resourceLink !== undefined) metadataUpdate.resourceLink = data.resourceLink;
-    if (data.videoUrl !== undefined) metadataUpdate.videoUrl = data.videoUrl;
-    if (data.durationMinutes !== undefined) metadataUpdate.durationMinutes = data.durationMinutes;
-    if (data.notesMarkdown !== undefined) metadataUpdate.notesMarkdown = data.notesMarkdown;
+    // 6. Construct metadata update, using the keys the student portal reads
+    let metadataUpdate: Record<string, unknown>;
+    try {
+      metadataUpdate = buildStudentMetadataPatch({
+        topic: data.topic,
+        videoUrl: data.videoUrl,
+        resourceLink: data.resourceLink,
+        notes: data.notesMarkdown,
+        durationMinutes: data.durationMinutes
+      });
+    } catch (err) {
+      if (err instanceof InvalidVideoUrlError) {
+        return { success: false, error: err.message, fieldErrors: { videoUrl: [err.message] } };
+      }
+      throw err;
+    }
 
     // 7. Update canonical content item in-place
     const updated = await updateContentItem(id, {

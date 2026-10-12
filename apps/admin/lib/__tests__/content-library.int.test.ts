@@ -162,7 +162,7 @@ describe('Phase 2 — Slice B1: Central Content Library Foundation', { timeout: 
       title,
       contentType: 'lecture',
       programId: testProgramId,
-      videoUrl: 'https://youtube.com/watch?v=rms_dist_sys',
+      videoUrl: 'https://youtube.com/watch?v=rmsDistSys1',
       durationMinutes: 60,
       isPublished: true
     });
@@ -176,7 +176,10 @@ describe('Phase 2 — Slice B1: Central Content Library Foundation', { timeout: 
     expect(res.item.programName).toContain('B1 System Design Program');
     expect(res.item.isPublished).toBe(true);
     expect(res.item.lifecycleStatus).toBe('published');
-    expect(res.item.metadata?.videoUrl).toBe('https://youtube.com/watch?v=rms_dist_sys');
+    expect(res.item.metadata?.videoUrl).toBe('https://youtube.com/watch?v=rmsDistSys1');
+    // Stored under the keys the student content player reads.
+    expect(res.item.metadata?.provider).toBe('youtube');
+    expect(res.item.metadata?.videoId).toBe('rmsDistSys1');
     expect(res.item.metadata?.durationMinutes).toBe(60);
   });
 
