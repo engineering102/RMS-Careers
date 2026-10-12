@@ -6,6 +6,7 @@ import {
   getFormalAssessmentForRunner,
   getAssessmentType
 } from '../db/queries/assessments';
+import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME } from '../db/queries/library';
 import {
   submitPracticeQuizAttempt,
   startFormalAssessmentAttempt,
@@ -418,6 +419,16 @@ describe('Slice 11: Practice Knowledge Checks & Assessments', () => {
       expect(result[0].totalPoints).toBe(5);
     });
 
+    it('lists global (program-less) practice quizzes with the library default program label', async () => {
+      // Global content has content_items.program_id = NULL and reaches the student via batch_curriculum.
+      mockQuizzes = [{ ...mockQuizzes[0], programId: null, programName: null, programCode: null }];
+      const result = await getStudentPracticeQuizzes(TEST_STUDENT_ID);
+      expect(result).toHaveLength(1);
+      expect(result[0].programId).toBeNull();
+      expect(result[0].programName).toBe(DEFAULT_PROGRAM_NAME);
+      expect(result[0].programCode).toBe(DEFAULT_PROGRAM_CODE);
+    });
+
     it('returns empty array when student has no active enrollments', async () => {
       mockEnrollments = [];
       const result = await getStudentPracticeQuizzes(TEST_STUDENT_ID);
@@ -695,6 +706,16 @@ describe('Slice 12: Formal Timed Assessments', () => {
       expect(assessments[0].title).toBe('Midterm Examination: Web Engineering');
       expect(assessments[0].timeLimitMinutes).toBe(45);
       expect(assessments[0].status).toBe('available');
+    });
+
+    it('lists global (program-less) formal assessments placed in the batch', async () => {
+      mockBatchCurriculumRows = [
+        { ...mockBatchCurriculumRows[0], programId: null, programName: null, programCode: null }
+      ];
+      const assessments = await getStudentFormalAssessments(TEST_STUDENT_ID);
+      expect(assessments).toHaveLength(1);
+      expect(assessments[0].programName).toBe(DEFAULT_PROGRAM_NAME);
+      expect(assessments[0].programCode).toBe(DEFAULT_PROGRAM_CODE);
     });
 
     it('identifies assessment types via getAssessmentType', async () => {
