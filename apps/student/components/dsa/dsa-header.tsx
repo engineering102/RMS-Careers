@@ -1,149 +1,97 @@
 import React from 'react';
-import { Code2, CheckCircle2, Flame, Award } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Clock, Code2, Layers, ListChecks } from 'lucide-react';
+import { percentOf } from '@/lib/dsa/sheet-view';
 import type { DsaProgressSummary } from '@/lib/types/dsa';
 
 interface DsaHeaderProps {
   summary: DsaProgressSummary;
+  topicCount: number;
+  patternCount: number;
+  estimatedHours: number;
 }
 
-export function DsaHeader({ summary }: DsaHeaderProps) {
-  const {
-    totalProblems,
-    totalSolved,
-    overallPercentage,
-    easyTotal,
-    easySolved,
-    mediumTotal,
-    mediumSolved,
-    hardTotal,
-    hardSolved
-  } = summary;
+const DIFFICULTY_TRACKS = [
+  { key: 'easy', label: 'Easy', bar: 'bg-success', text: 'text-success' },
+  { key: 'medium', label: 'Medium', bar: 'bg-warning', text: 'text-warning' },
+  { key: 'hard', label: 'Hard', bar: 'bg-destructive', text: 'text-destructive' }
+] as const;
+
+export function DsaHeader({ summary, topicCount, patternCount, estimatedHours }: DsaHeaderProps) {
+  const { totalProblems, totalSolved, overallPercentage } = summary;
+  const counts = {
+    easy: { solved: summary.easySolved, total: summary.easyTotal },
+    medium: { solved: summary.mediumSolved, total: summary.mediumTotal },
+    hard: { solved: summary.hardSolved, total: summary.hardTotal }
+  };
+
+  const meta = [
+    { icon: Layers, value: topicCount, label: topicCount === 1 ? 'Topic' : 'Topics' },
+    { icon: ListChecks, value: totalProblems, label: totalProblems === 1 ? 'Problem' : 'Problems' },
+    { icon: Code2, value: patternCount, label: patternCount === 1 ? 'Pattern' : 'Patterns' },
+    { icon: Clock, value: estimatedHours, label: 'Hrs' }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Title & Description */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <Code2 className="h-5 w-5" />
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-stretch">
+      {/* Title, description and sheet facts */}
+      <div className="flex flex-col justify-center">
+        <p className="text-xs font-medium text-muted-foreground">Practice / DSA Sheet</p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">DSA Practice Center</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Pattern-based problems in a clear sequence, from fundamentals to interview-level questions. Tick a problem
+          off when you solve it, and keep your solution link and revision notes alongside.
+        </p>
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap">
+          {meta.map(({ icon: Icon, value, label }) => (
+            <div key={label} className="flex items-center gap-2 text-sm">
+              <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <dt className="sr-only">{label}</dt>
+              <dd>
+                <span className="font-semibold text-foreground">{value}</span>{' '}
+                <span className="text-muted-foreground">{label}</span>
+              </dd>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-100">
-              DSA Practice Center
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-2xl leading-relaxed">
-            Master pattern-based problem solving for technical interviews. Log problem solutions, attach submission URLs, and maintain your personal revision notes.
-          </p>
+          ))}
+        </dl>
+      </div>
+
+      {/* Progress card */}
+      <section aria-label="Your progress" className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-medium text-muted-foreground">Your Progress</h2>
+          <span className="text-xs text-muted-foreground">
+            {totalSolved} / {totalProblems} solved
+          </span>
         </div>
-      </div>
+        <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">{overallPercentage}%</p>
+        <div
+          className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={overallPercentage}
+          aria-label="Overall progress"
+        >
+          <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${overallPercentage}%` }} />
+        </div>
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Progress */}
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
-              <span>Overall Progress</span>
-              <Award className="h-4 w-4 text-emerald-400" />
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-slate-100">{totalSolved}</span>
-              <span className="text-xs text-slate-500">/ {totalProblems} solved</span>
-            </div>
-            {/* Progress Bar */}
-            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                style={{ width: `${overallPercentage}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium">{overallPercentage}% completed</p>
-          </CardContent>
-        </Card>
-
-        {/* Easy */}
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-emerald-400 font-medium">
-              <span>Easy Problems</span>
-              <span className="text-[11px] bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-300">
-                10 XP
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-emerald-400">{easySolved}</span>
-              <span className="text-xs text-slate-500">/ {easyTotal}</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                style={{
-                  width: `${easyTotal > 0 ? Math.round((easySolved / easyTotal) * 100) : 0}%`
-                }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {easyTotal > 0 ? Math.round((easySolved / easyTotal) * 100) : 0}% completed
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Medium */}
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-amber-400 font-medium">
-              <span>Medium Problems</span>
-              <span className="text-[11px] bg-amber-500/10 px-1.5 py-0.5 rounded text-amber-300">
-                25 XP
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-amber-400">{mediumSolved}</span>
-              <span className="text-xs text-slate-500">/ {mediumTotal}</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-amber-500 transition-all duration-300"
-                style={{
-                  width: `${mediumTotal > 0 ? Math.round((mediumSolved / mediumTotal) * 100) : 0}%`
-                }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {mediumTotal > 0 ? Math.round((mediumSolved / mediumTotal) * 100) : 0}% completed
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Hard */}
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
-          <CardContent className="p-4 sm:p-5 space-y-2">
-            <div className="flex items-center justify-between text-xs text-rose-400 font-medium">
-              <span>Hard Problems</span>
-              <span className="text-[11px] bg-rose-500/10 px-1.5 py-0.5 rounded text-rose-300">
-                50 XP
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-bold text-rose-400">{hardSolved}</span>
-              <span className="text-xs text-slate-500">/ {hardTotal}</span>
-            </div>
-            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-rose-500 transition-all duration-300"
-                style={{
-                  width: `${hardTotal > 0 ? Math.round((hardSolved / hardTotal) * 100) : 0}%`
-                }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 font-medium">
-              {hardTotal > 0 ? Math.round((hardSolved / hardTotal) * 100) : 0}% completed
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-4">
+          {DIFFICULTY_TRACKS.map((track) => {
+            const { solved, total } = counts[track.key];
+            return (
+              <div key={track.key} className="min-w-0">
+                <p className={`text-xs font-medium ${track.text}`}>{track.label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">
+                  {solved} <span className="font-normal text-muted-foreground">/ {total}</span>
+                </p>
+                <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className={`h-full rounded-full ${track.bar}`} style={{ width: `${percentOf(solved, total)}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
