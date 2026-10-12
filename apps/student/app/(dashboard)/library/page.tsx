@@ -75,24 +75,24 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   return (
     <div className="space-y-8">
       {/* 1. Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-blue-400 uppercase">
+          <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
             <LibraryIcon className="h-4 w-4" />
             <span>Resource Catalog · Self-Paced</span>
           </div>
-          <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-slate-100">
+          <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             My Library
           </h1>
-          <p className="mt-1.5 text-xs md:text-sm text-slate-400 max-w-2xl leading-relaxed">
+          <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
             Searchable, non-chronological repository of recorded lectures, study notes, practice
             sheets, and learning resources across your enrolled programs.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-slate-800 bg-slate-900/60 px-3.5 py-2 text-xs text-slate-400">
+        <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card/60 px-3.5 py-2 text-xs text-muted-foreground">
           <span>Enrolled Programs:</span>
-          <span className="font-semibold text-slate-200">
+          <span className="font-semibold text-foreground">
             {context.enrollments.map((e) => e.programCode).join(', ') || 'Active'}
           </span>
         </div>
@@ -107,12 +107,12 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
       />
 
       {/* 3. Results Header & Count */}
-      <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
         <div>
           {result.totalCount > 0 ? (
             <span>
-              Showing <strong className="text-slate-200">{result.items.length}</strong> of{' '}
-              <strong className="text-slate-200">{result.totalCount}</strong>{' '}
+              Showing <strong className="text-foreground">{result.items.length}</strong> of{' '}
+              <strong className="text-foreground">{result.totalCount}</strong>{' '}
               {result.totalCount === 1 ? 'learning resource' : 'learning resources'}
             </span>
           ) : (
@@ -122,8 +122,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
         {result.totalPages > 1 && (
           <span>
-            Page <strong className="text-slate-200">{result.page}</strong> of{' '}
-            <strong className="text-slate-200">{result.totalPages}</strong>
+            Page <strong className="text-foreground">{result.page}</strong> of{' '}
+            <strong className="text-foreground">{result.totalPages}</strong>
           </span>
         )}
       </div>
@@ -141,13 +141,13 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
       {/* 5. Pagination Controls (if multiple pages) */}
       {result.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-6 border-t border-slate-800">
+        <div className="flex items-center justify-center gap-3 pt-6 border-t border-border">
           <Button
             asChild={result.page > 1}
             disabled={result.page <= 1}
             variant="outline"
             size="sm"
-            className="text-xs border-slate-800 bg-slate-900/80 text-slate-300 gap-1.5"
+            className="text-xs border-border bg-card/80 text-foreground/80 gap-1.5"
           >
             {result.page > 1 ? (
               <Link href={buildPageUrl(result.page - 1)}>
@@ -162,7 +162,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             )}
           </Button>
 
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-muted-foreground">
             {result.page} / {result.totalPages}
           </span>
 
@@ -171,7 +171,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             disabled={result.page >= result.totalPages}
             variant="outline"
             size="sm"
-            className="text-xs border-slate-800 bg-slate-900/80 text-slate-300 gap-1.5"
+            className="text-xs border-border bg-card/80 text-foreground/80 gap-1.5"
           >
             {result.page < result.totalPages ? (
               <Link href={buildPageUrl(result.page + 1)}>

@@ -15,12 +15,12 @@ export function LibraryEmptyState({ isFiltered }: LibraryEmptyStateProps) {
 
   if (isFiltered) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-12 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-800/80 text-slate-400 mb-4 border border-slate-700/60">
-          <SearchX className="h-7 w-7 text-slate-400" />
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/30 p-12 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary/80 text-muted-foreground mb-4 border border-input/60">
+          <SearchX className="h-7 w-7 text-muted-foreground" />
         </div>
-        <h3 className="text-base font-semibold text-slate-200">No matching resources</h3>
-        <p className="mt-1.5 text-xs text-slate-400 max-w-sm leading-relaxed">
+        <h3 className="text-base font-semibold text-foreground">No matching resources</h3>
+        <p className="mt-1.5 text-xs text-muted-foreground max-w-sm leading-relaxed">
           No learning materials match your current search query or topic filter. Try adjusting your
           terms or reset filters.
         </p>
@@ -28,7 +28,7 @@ export function LibraryEmptyState({ isFiltered }: LibraryEmptyStateProps) {
           variant="outline"
           size="sm"
           onClick={() => router.push(pathname)}
-          className="mt-5 gap-1.5 text-xs border-slate-700 bg-slate-800/80 text-slate-300 hover:text-white"
+          className="mt-5 gap-1.5 text-xs border-input bg-secondary/80 text-foreground/80 hover:text-foreground"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           <span>Reset all filters</span>
@@ -38,12 +38,12 @@ export function LibraryEmptyState({ isFiltered }: LibraryEmptyStateProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-500/10 text-blue-400 mb-4 border border-blue-500/20">
-        <Library className="h-7 w-7 text-blue-400" />
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/30 p-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary mb-4 border border-primary/20">
+        <Library className="h-7 w-7 text-primary" />
       </div>
-      <h3 className="text-base font-semibold text-slate-200">Library is being prepared</h3>
-      <p className="mt-1.5 text-xs text-slate-400 max-w-md leading-relaxed">
+      <h3 className="text-base font-semibold text-foreground">Library is being prepared</h3>
+      <p className="mt-1.5 text-xs text-muted-foreground max-w-md leading-relaxed">
         No learning materials are currently published for your enrolled programs. As curriculum
         milestones and resources are published, they will automatically appear in your self-paced library.
       </p>

@@ -21,7 +21,7 @@ export function UnsupportedContentView({
   let actionLabel = 'Go to Workspace';
   let actionHref = '/library';
   let Icon = HelpCircle;
-  let iconClass = 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+  let iconClass = 'text-primary bg-primary/10 border-primary/20';
 
   if (contentType === 'dsa_sheet') {
     titleText = 'DSA Practice Sheet';
@@ -30,7 +30,7 @@ export function UnsupportedContentView({
     actionLabel = 'Open DSA Practice Center';
     actionHref = '/dsa';
     Icon = Code2;
-    iconClass = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    iconClass = 'text-success bg-success/10 border-success/20';
   } else if (contentType === 'quiz') {
     titleText = 'Assessment Quiz';
     descriptionText =
@@ -46,24 +46,24 @@ export function UnsupportedContentView({
     actionLabel = 'Go to Projects & Assessments';
     actionHref = '/assessments';
     Icon = FolderGit2;
-    iconClass = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    iconClass = 'text-warning bg-warning/10 border-warning/20';
   }
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+    <Card className="border-border bg-card/60 backdrop-blur-sm">
       <CardContent className="p-8 sm:p-10 flex flex-col items-center text-center space-y-4 max-w-xl mx-auto">
         <div className={`p-3.5 rounded-xl border ${iconClass}`}>
           <Icon className="h-8 w-8" />
         </div>
 
         <div className="space-y-1.5">
-          <h3 className="text-lg font-semibold text-slate-100">{titleText}</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h3 className="text-lg font-semibold text-foreground">{titleText}</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             {description || descriptionText}
           </p>
         </div>
 
-        <Button asChild className="bg-blue-600 hover:bg-blue-500 text-white text-xs gap-1.5 mt-2">
+        <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 mt-2">
           <Link href={actionHref}>
             <span>{actionLabel}</span>
             <ArrowRight className="h-3.5 w-3.5" />
