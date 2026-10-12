@@ -1,10 +1,20 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Search, Filter, BookOpen, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronsDownUp, ChevronsUpDown, SearchX, Search, Shuffle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ProblemRow } from './problem-row';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { recordDsaProblemSolved } from '@/lib/actions/dsa';
+import {
+  buildSheetViews,
+  hasActiveFilters,
+  initialOpenSheets,
+  pickRandomUnsolved,
+  type SheetFilters,
+  type StatusFilter
+} from '@/lib/dsa/sheet-view';
+import { SheetSection } from './sheet-section';
 import { ProblemDetailModal } from './problem-detail-modal';
 import type { StudentDsaData, DSAQuestion, Difficulty, StudentProblemProgress } from '@/lib/types/dsa';
 
@@ -14,236 +24,240 @@ interface DsaPracticeCenterProps {
   batchId?: string;
 }
 
-export function DsaPracticeCenter({
-  initialData,
-  initialSheetSlug,
-  batchId
-}: DsaPracticeCenterProps) {
-  const [selectedSheetSlug, setSelectedSheetSlug] = useState<string>(initialSheetSlug || 'all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState<Difficulty | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'solved' | 'unsolved'>('all');
-  const [selectedQuestion, setSelectedQuestion] = useState<DSAQuestion | null>(null);
-  const [progressMap, setProgressMap] = useState<Record<string, StudentProblemProgress>>(
-    initialData.progressMap
-  );
+const DEFAULT_FILTERS: SheetFilters = { query: '', difficulty: 'all', status: 'all' };
 
+const DIFFICULTY_LABELS: Record<Difficulty | 'all', string> = { all: 'All levels', easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+const STATUS_LABELS: Record<StatusFilter, string> = { all: 'Any status', unsolved: 'Unsolved', solved: 'Solved' };
+
+export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: DsaPracticeCenterProps) {
   const sheets = initialData.sheets;
+  const [filters, setFilters] = useState<SheetFilters>(DEFAULT_FILTERS);
+  const [progressMap, setProgressMap] = useState<Record<string, StudentProblemProgress>>(initialData.progressMap);
+  const [openSlugs, setOpenSlugs] = useState<Set<string>>(
+    () => new Set(initialOpenSheets(sheets, initialData.progressMap, initialSheetSlug))
+  );
+  const [selectedQuestion, setSelectedQuestion] = useState<DSAQuestion | null>(null);
+  const [savingSlug, setSavingSlug] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
 
-  // Filter questions based on selected tab, search query, difficulty, and solved status
-  const filteredSheets = useMemo(() => {
-    return sheets
-      .filter((sheet) => selectedSheetSlug === 'all' || sheet.slug === selectedSheetSlug)
-      .map((sheet) => {
-        const filteredQuestions = sheet.questions.filter((q) => {
-          // Search query
-          if (searchQuery.trim()) {
-            const query = searchQuery.trim().toLowerCase();
-            const matchTitle = q.title.toLowerCase().includes(query);
-            const matchPattern = q.pattern.toLowerCase().includes(query);
-            const matchStatement = q.problemStatement.toLowerCase().includes(query);
-            if (!matchTitle && !matchPattern && !matchStatement) return false;
-          }
+  const filtering = hasActiveFilters(filters);
+  const views = useMemo(() => buildSheetViews(sheets, filters, progressMap), [sheets, filters, progressMap]);
+  // While searching or filtering, every matching topic is shown expanded.
+  const isOpen = (slug: string) => filtering || openSlugs.has(slug);
+  const allOpen = views.length > 0 && views.every((v) => isOpen(v.sheet.slug));
 
-          // Difficulty
-          if (difficultyFilter !== 'all' && q.difficulty !== difficultyFilter) {
-            return false;
-          }
-
-          // Solved status
-          const isSolved = Boolean(progressMap[q.slug]?.isCompleted);
-          if (statusFilter === 'solved' && !isSolved) return false;
-          if (statusFilter === 'unsolved' && isSolved) return false;
-
-          return true;
-        });
-
-        return {
-          ...sheet,
-          questions: filteredQuestions
-        };
-      })
-      .filter((sheet) => sheet.questions.length > 0);
-  }, [sheets, selectedSheetSlug, searchQuery, difficultyFilter, statusFilter, progressMap]);
-
-  const handleSolveSuccess = (
-    problemSlug: string,
-    isNewlySolved: boolean,
-    xpAwarded: number
-  ) => {
-    setProgressMap((prev) => ({
-      ...prev,
-      [problemSlug]: {
-        problemSlug,
-        isCompleted: true,
-        submissionUrl: prev[problemSlug]?.submissionUrl || null,
-        notes: prev[problemSlug]?.notes || null,
-        completedAt: prev[problemSlug]?.completedAt || new Date(),
-        updatedAt: new Date()
-      }
-    }));
+  const markSolved = (slug: string) => {
+    setProgressMap((prev) => {
+      const now = new Date();
+      return {
+        ...prev,
+        [slug]: {
+          problemSlug: slug,
+          isCompleted: true,
+          submissionUrl: prev[slug]?.submissionUrl ?? null,
+          notes: prev[slug]?.notes ?? null,
+          completedAt: prev[slug]?.completedAt ?? now,
+          updatedAt: now
+        }
+      };
+    });
   };
 
-  const totalFilteredProblems = useMemo(() => {
-    return filteredSheets.reduce((acc, sheet) => acc + sheet.questions.length, 0);
-  }, [filteredSheets]);
+  const handleModalSuccess = (
+    problemSlug: string,
+    _isNewlySolved: boolean,
+    _xpAwarded: number,
+    details?: { submissionUrl: string | null; notes: string | null }
+  ) => {
+    markSolved(problemSlug);
+    if (details) {
+      setProgressMap((prev) => ({ ...prev, [problemSlug]: { ...prev[problemSlug], ...details } }));
+    }
+    // The progress card is server-rendered; refresh it so the totals match the sheet.
+    router.refresh();
+  };
+
+  const handleQuickSolve = (question: DSAQuestion) => {
+    if (savingSlug) return;
+    setSavingSlug(question.slug);
+    setStatus(null);
+    startTransition(async () => {
+      try {
+        const result = await recordDsaProblemSolved({ problemSlug: question.slug, batchId });
+        if (result.success) {
+          markSolved(question.slug);
+          router.refresh();
+          const xp = result.data.xpAwarded;
+          setStatus({ text: `${question.title} marked as solved${xp > 0 ? ` · +${xp} XP` : ''}`, isError: false });
+        } else {
+          setStatus({ text: result.error || 'Could not record progress. Please try again.', isError: true });
+        }
+      } catch {
+        setStatus({ text: 'Could not reach the server. Please try again.', isError: true });
+      } finally {
+        setSavingSlug(null);
+      }
+    });
+  };
+
+  const toggleSheet = (slug: string) => {
+    if (filtering) return;
+    setOpenSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setOpenSlugs(allOpen ? new Set() : new Set(sheets.map((s) => s.slug)));
+  };
+
+  const pickRandom = () => {
+    const question = pickRandomUnsolved(views, progressMap);
+    if (question) {
+      setSelectedQuestion(question);
+    } else {
+      setStatus({ text: 'Everything in view is solved. Nice work!', isError: false });
+    }
+  };
+
+  const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
   return (
-    <div className="space-y-6">
-      {/* 1. Sheet Topic Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-        <Button
-          variant={selectedSheetSlug === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedSheetSlug('all')}
-          className={`text-xs h-8 px-3 rounded-lg font-medium shrink-0 ${
-            selectedSheetSlug === 'all'
-              ? 'bg-blue-600 text-white hover:bg-blue-500'
-              : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
-          }`}
-        >
-          All Topics
-        </Button>
-        {sheets.map((sheet) => {
-          const isSelected = selectedSheetSlug === sheet.slug;
-          return (
-            <Button
-              key={sheet.slug}
-              variant={isSelected ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedSheetSlug(sheet.slug)}
-              className={`text-xs h-8 px-3 rounded-lg font-medium shrink-0 ${
-                isSelected
-                  ? 'bg-blue-600 text-white hover:bg-blue-500'
-                  : 'border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              {sheet.title}
-            </Button>
-          );
-        })}
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            type="search"
+            aria-label="Search problems"
+            placeholder="Search by problem, pattern or keyword"
+            value={filters.query}
+            onChange={(e) => setFilters((f) => ({ ...f, query: e.target.value }))}
+            className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={filters.difficulty}
+            onValueChange={(value) => setFilters((f) => ({ ...f, difficulty: value as Difficulty | 'all' }))}
+          >
+            <SelectTrigger className="h-9 w-full text-sm sm:w-[8.5rem]" aria-label="Filter by difficulty">
+              <SelectValue>{DIFFICULTY_LABELS[filters.difficulty]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All levels</SelectItem>
+              <SelectItem value="easy">Easy</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="hard">Hard</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.status}
+            onValueChange={(value) => setFilters((f) => ({ ...f, status: value as StatusFilter }))}
+          >
+            <SelectTrigger className="h-9 w-full text-sm sm:w-[8.5rem]" aria-label="Filter by status">
+              <SelectValue>{STATUS_LABELS[filters.status]}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any status</SelectItem>
+              <SelectItem value="unsolved">Unsolved</SelectItem>
+              <SelectItem value="solved">Solved</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={pickRandom}
+            className="h-9 w-9 shrink-0"
+            aria-label="Pick a random unsolved problem"
+            title="Pick a random unsolved problem"
+          >
+            <Shuffle className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={toggleAll}
+            disabled={filtering}
+            className="h-9 w-9 shrink-0"
+            aria-label={allOpen ? 'Collapse all topics' : 'Expand all topics'}
+            title={allOpen ? 'Collapse all' : 'Expand all'}
+          >
+            {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
 
-      {/* 2. Search & Filters Bar */}
-      <Card className="border-slate-800 bg-slate-900/40 backdrop-blur-sm">
-        <CardContent className="p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search problems by title, pattern, or keyword..."
-              value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 h-9 text-xs bg-slate-950/60 border border-slate-700/80 rounded-md text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Difficulty & Status Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Difficulty Toggle */}
-            <div className="flex items-center rounded-lg border border-slate-800 bg-slate-950/60 p-0.5 text-xs">
-              {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
-                <button
-                  key={diff}
-                  type="button"
-                  onClick={() => setDifficultyFilter(diff)}
-                  className={`px-2.5 py-1 rounded-md capitalize font-medium transition-colors ${
-                    difficultyFilter === diff
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {diff}
-                </button>
-              ))}
-            </div>
-
-            {/* Status Toggle */}
-            <div className="flex items-center rounded-lg border border-slate-800 bg-slate-950/60 p-0.5 text-xs">
-              {(['all', 'solved', 'unsolved'] as const).map((status) => (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setStatusFilter(status)}
-                  className={`px-2.5 py-1 rounded-md capitalize font-medium transition-colors ${
-                    statusFilter === status
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 3. Problem Checklist by Sheet */}
-      {filteredSheets.length === 0 ? (
-        <Card className="border-slate-800 bg-slate-900/30">
-          <CardContent className="p-12 text-center space-y-3">
-            <AlertCircle className="h-8 w-8 text-slate-500 mx-auto" />
-            <h3 className="text-sm font-semibold text-slate-200">No Problems Found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              No problems match your current search and filter criteria. Try resetting your filters.
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearchQuery('');
-                setDifficultyFilter('all');
-                setStatusFilter('all');
-                setSelectedSheetSlug('all');
-              }}
-              className="text-xs border-slate-700 text-slate-300"
+      {/* Quick-solve feedback */}
+      <div aria-live="polite" className="min-h-0">
+        {status && (
+          <div
+            className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
+              status.isError
+                ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                : 'border-success/40 bg-success/10 text-success'
+            }`}
+          >
+            <span>{status.text}</span>
+            <button
+              type="button"
+              onClick={() => setStatus(null)}
+              className="rounded p-0.5 opacity-80 hover:opacity-100"
+              aria-label="Dismiss"
             >
-              Reset Filters
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {filteredSheets.map((sheet) => (
-            <div key={sheet.slug} className="space-y-3">
-              {/* Sheet Section Header */}
-              <div className="flex items-baseline justify-between border-b border-slate-800/80 pb-2">
-                <div>
-                  <h2 className="text-base font-bold text-slate-100">{sheet.title}</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">{sheet.shortDescription}</p>
-                </div>
-                <span className="text-xs text-slate-400 font-medium">
-                  {sheet.questions.filter((q) => progressMap[q.slug]?.isCompleted).length} /{' '}
-                  {sheet.questions.length} solved
-                </span>
-              </div>
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
 
-              {/* Problem Rows */}
-              <div className="space-y-2">
-                {sheet.questions.map((q) => (
-                  <ProblemRow
-                    key={q.slug}
-                    question={q}
-                    progress={progressMap[q.slug]}
-                    onSelect={(question) => setSelectedQuestion(question)}
-                  />
-                ))}
-              </div>
-            </div>
+      {/* Topics */}
+      {views.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card px-6 py-12 text-center">
+          <SearchX className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
+          <h3 className="mt-3 text-sm font-semibold text-foreground">No problems found</h3>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+            Nothing matches your search and filters.
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={resetFilters} className="mt-4">
+            Clear filters
+          </Button>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          {views.map((view) => (
+            <SheetSection
+              key={view.sheet.slug}
+              view={view}
+              isOpen={isOpen(view.sheet.slug)}
+              progressMap={progressMap}
+              savingSlug={savingSlug}
+              onToggle={toggleSheet}
+              onSelect={setSelectedQuestion}
+              onQuickSolve={handleQuickSolve}
+            />
           ))}
         </div>
       )}
 
-      {/* 4. Problem Detail & Submission Modal */}
       {selectedQuestion && (
         <ProblemDetailModal
           question={selectedQuestion}
           progress={progressMap[selectedQuestion.slug]}
           batchId={batchId}
           onClose={() => setSelectedQuestion(null)}
-          onSuccess={handleSolveSuccess}
+          onSuccess={handleModalSuccess}
         />
       )}
     </div>

@@ -28,12 +28,20 @@ export default async function DsaPage({ searchParams }: DsaPageProps) {
   // Server-authoritative query (retrieves student's database progress ledger)
   const dsaData = await getStudentDsaData(context.student.id);
 
-  return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      {/* 1. Header with progress metrics and difficulty breakdowns */}
-      <DsaHeader summary={dsaData.summary} />
+  const patternCount = new Set(dsaData.sheets.flatMap((s) => s.questions.map((q) => q.pattern))).size;
+  const estimatedHours = dsaData.sheets.reduce((sum, s) => sum + s.estimatedHours, 0);
 
-      {/* 2. Main Interactive Practice Center with Checklist & Filters */}
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      {/* 1. Sheet overview with progress by difficulty */}
+      <DsaHeader
+        summary={dsaData.summary}
+        topicCount={dsaData.sheets.length}
+        patternCount={patternCount}
+        estimatedHours={estimatedHours}
+      />
+
+      {/* 2. Topic-by-topic problem sheet with search and filters */}
       <DsaPracticeCenter
         initialData={dsaData}
         initialSheetSlug={sheet}

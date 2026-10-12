@@ -22,7 +22,12 @@ interface ProblemDetailModalProps {
   progress: StudentProblemProgress | undefined;
   batchId?: string;
   onClose: () => void;
-  onSuccess?: (problemSlug: string, isNewlySolved: boolean, xpAwarded: number) => void;
+  onSuccess?: (
+    problemSlug: string,
+    isNewlySolved: boolean,
+    xpAwarded: number,
+    details?: { submissionUrl: string | null; notes: string | null }
+  ) => void;
 }
 
 export function ProblemDetailModal({
@@ -40,14 +45,27 @@ export function ProblemDetailModal({
 
   const isSolved = Boolean(progress?.isCompleted);
 
+  // Reset the form only when a different problem opens; a progress update after saving must not wipe the
+  // confirmation message or the fields the student just saved.
+  const questionSlug = question?.slug;
   useEffect(() => {
-    if (question) {
+    if (questionSlug) {
       setSubmissionUrl(progress?.submissionUrl || '');
       setNotes(progress?.notes || '');
       setFeedback(null);
       setShowHints(false);
     }
-  }, [question, progress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionSlug]);
+
+  // Escape closes the dialog, like the other dialogs in the portal.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   if (!question) return null;
 
@@ -72,7 +90,10 @@ export function ProblemDetailModal({
             isError: false
           });
           if (onSuccess && result.data) {
-            onSuccess(question.slug, result.data.isNewlySolved, result.data.xpAwarded);
+            onSuccess(question.slug, result.data.isNewlySolved, result.data.xpAwarded, {
+              submissionUrl: submissionUrl.trim() || null,
+              notes: notes.trim() || null
+            });
           }
         } else {
           setFeedback({
@@ -92,43 +113,43 @@ export function ProblemDetailModal({
   const getDifficultyBadge = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
-        return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300';
+        return 'border-success/30 bg-success/10 text-success';
       case 'medium':
-        return 'border-amber-500/30 bg-amber-500/10 text-amber-300';
+        return 'border-warning/30 bg-warning/10 text-warning';
       case 'hard':
-        return 'border-rose-500/30 bg-rose-500/10 text-rose-300';
+        return 'border-destructive/30 bg-destructive/10 text-destructive';
       default:
-        return 'border-slate-700 bg-slate-800 text-slate-300';
+        return 'border-input bg-secondary text-foreground/80';
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden my-auto">
+      <div role="dialog" aria-modal="true" aria-labelledby="dsa-problem-title" className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto">
         {/* Modal Header */}
-        <div className="flex items-start justify-between p-5 sm:p-6 border-b border-slate-800/80 bg-slate-900/80 sticky top-0 z-10">
+        <div className="flex items-start justify-between p-5 sm:p-6 border-b border-border/80 bg-card sticky top-0 z-10">
           <div className="space-y-2 pr-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className={`text-xs py-0.5 px-2 font-medium capitalize ${getDifficultyBadge(question.difficulty)}`}>
                 {question.difficulty}
               </Badge>
-              <span className="rounded bg-slate-800/80 px-2 py-0.5 text-xs font-medium text-slate-300 border border-slate-700/60">
+              <span className="rounded bg-secondary/80 px-2 py-0.5 text-xs font-medium text-foreground/80 border border-input/60">
                 {question.pattern}
               </span>
               {isSolved && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                <span className="flex items-center gap-1 text-xs font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded">
                   <CheckCircle2 className="h-3 w-3" />
                   Solved
                 </span>
               )}
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-100">{question.title}</h2>
+            <h2 id="dsa-problem-title" className="text-lg sm:text-xl font-bold text-foreground">{question.title}</h2>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             aria-label="Close dialog"
           >
             <X className="h-5 w-5" />
@@ -139,10 +160,10 @@ export function ProblemDetailModal({
         <div className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
           {/* Problem Statement */}
           <div className="space-y-2">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Problem Statement
             </h4>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed">
               {question.problemStatement}
             </p>
           </div>
@@ -150,19 +171,19 @@ export function ProblemDetailModal({
           {/* Examples */}
           {question.examples && question.examples.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Examples
               </h4>
               <div className="space-y-2.5">
                 {question.examples.map((ex, idx) => (
                   <div
                     key={idx}
-                    className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-xs font-mono space-y-1"
+                    className="p-3 rounded-lg bg-background/60 border border-border text-xs font-mono space-y-1"
                   >
-                    <p className="text-slate-300"><span className="text-slate-500">Input:</span> {ex.input}</p>
-                    <p className="text-emerald-400"><span className="text-slate-500">Output:</span> {ex.output}</p>
+                    <p className="text-foreground/80"><span className="text-muted-foreground">Input:</span> {ex.input}</p>
+                    <p className="text-success"><span className="text-muted-foreground">Output:</span> {ex.output}</p>
                     {ex.explanation && (
-                      <p className="text-slate-400 font-sans text-[11px] pt-1 border-t border-slate-800/60">
+                      <p className="text-muted-foreground font-sans text-[11px] pt-1 border-t border-border/60">
                         {ex.explanation}
                       </p>
                     )}
@@ -176,10 +197,10 @@ export function ProblemDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {question.constraints && question.constraints.length > 0 && (
               <div className="space-y-1.5">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Constraints
                 </h4>
-                <ul className="list-disc list-inside text-xs text-slate-400 space-y-0.5">
+                <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
                   {question.constraints.map((c, i) => (
                     <li key={i}>{c}</li>
                   ))}
@@ -188,15 +209,15 @@ export function ProblemDetailModal({
             )}
 
             <div className="space-y-1.5">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Target Complexity
               </h4>
               <div className="flex flex-col gap-1 text-xs">
-                <span className="flex items-center gap-1.5 text-slate-300">
-                  <Clock className="h-3.5 w-3.5 text-blue-400" />
-                  Time: <code className="text-blue-300">{question.timeComplexity}</code>
+                <span className="flex items-center gap-1.5 text-foreground/80">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
+                  Time: <code className="text-primary">{question.timeComplexity}</code>
                 </span>
-                <span className="flex items-center gap-1.5 text-slate-300">
+                <span className="flex items-center gap-1.5 text-foreground/80">
                   <Database className="h-3.5 w-3.5 text-cyan-400" />
                   Space: <code className="text-cyan-300">{question.spaceComplexity}</code>
                 </span>
@@ -211,7 +232,7 @@ export function ProblemDetailModal({
                 asChild
                 variant="outline"
                 size="sm"
-                className="text-xs border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 gap-1.5"
+                className="text-xs border-input bg-secondary/80 hover:bg-accent text-foreground gap-1.5"
               >
                 <a href={question.externalUrl} target="_blank" rel="noopener noreferrer">
                   <span>Open on LeetCode</span>
@@ -223,27 +244,27 @@ export function ProblemDetailModal({
 
           {/* Hints Toggle */}
           {question.hints && question.hints.length > 0 && (
-            <div className="border border-slate-800 rounded-lg p-3 bg-slate-950/40">
+            <div className="border border-border rounded-lg p-3 bg-background/40">
               <button
                 type="button"
                 onClick={() => setShowHints(!showHints)}
-                className="flex items-center justify-between w-full text-xs font-medium text-amber-300 hover:text-amber-200"
+                className="flex items-center justify-between w-full text-xs font-medium text-warning hover:text-foreground"
               >
                 <span className="flex items-center gap-1.5">
                   <Lightbulb className="h-3.5 w-3.5" />
                   {showHints ? 'Hide Hints & Approach' : 'Show Hints & Approach'}
                 </span>
-                <span className="text-[11px] text-slate-500">{showHints ? '▲' : '▼'}</span>
+                <span className="text-[11px] text-muted-foreground">{showHints ? '▲' : '▼'}</span>
               </button>
               {showHints && (
-                <div className="mt-3 pt-2 border-t border-slate-800 space-y-2 text-xs text-slate-300">
+                <div className="mt-3 pt-2 border-t border-border space-y-2 text-xs text-foreground/80">
                   {question.hints.map((hint, i) => (
-                    <p key={i} className="text-slate-400">💡 {hint}</p>
+                    <p key={i} className="text-muted-foreground">💡 {hint}</p>
                   ))}
                   {question.approach && (
                     <div className="pt-1">
-                      <p className="font-semibold text-slate-200">Recommended Approach:</p>
-                      <p className="text-slate-400 mt-0.5">{question.approach}</p>
+                      <p className="font-semibold text-foreground">Recommended Approach:</p>
+                      <p className="text-muted-foreground mt-0.5">{question.approach}</p>
                     </div>
                   )}
                 </div>
@@ -252,15 +273,15 @@ export function ProblemDetailModal({
           )}
 
           {/* Submission Form */}
-          <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t border-slate-800">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-emerald-400" />
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t border-border">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-success" />
               <span>Record Solution & Notes</span>
             </h4>
 
             <div className="space-y-1.5">
-              <label htmlFor="submissionUrl" className="text-xs font-medium text-slate-300">
-                Submission URL <span className="text-slate-500 font-normal">(optional — LeetCode, GitHub, or GFG link)</span>
+              <label htmlFor="submissionUrl" className="text-xs font-medium text-foreground/80">
+                Submission URL <span className="text-muted-foreground font-normal">(optional — LeetCode, GitHub, or GFG link)</span>
               </label>
               <input
                 id="submissionUrl"
@@ -268,13 +289,13 @@ export function ProblemDetailModal({
                 value={submissionUrl}
                 onChange={(e) => setSubmissionUrl(e.target.value)}
                 placeholder="https://leetcode.com/submissions/detail/..."
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full rounded-lg border border-input bg-background/80 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-success"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="notes" className="text-xs font-medium text-slate-300">
-                Revision Notes <span className="text-slate-500 font-normal">(optional — key pattern, edge cases, learnings)</span>
+              <label htmlFor="notes" className="text-xs font-medium text-foreground/80">
+                Revision Notes <span className="text-muted-foreground font-normal">(optional — key pattern, edge cases, learnings)</span>
               </label>
               <textarea
                 id="notes"
@@ -282,7 +303,7 @@ export function ProblemDetailModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="E.g. Used two pointers. Remember to check for array length <= 1 before loop..."
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none font-sans"
+                className="w-full rounded-lg border border-input bg-background/80 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-success resize-none font-sans"
               />
             </div>
 
@@ -290,8 +311,8 @@ export function ProblemDetailModal({
               <div
                 className={`p-2.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
                   feedback.isError
-                    ? 'border border-rose-500/30 bg-rose-500/10 text-rose-300'
-                    : 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                    ? 'border border-destructive/30 bg-destructive/10 text-destructive'
+                    : 'border border-success/30 bg-success/10 text-success'
                 }`}
               >
                 {!feedback.isError && <Sparkles className="h-3.5 w-3.5" />}
@@ -305,7 +326,7 @@ export function ProblemDetailModal({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="text-xs text-slate-400 hover:text-slate-100"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Cancel
               </Button>
@@ -313,7 +334,7 @@ export function ProblemDetailModal({
                 type="submit"
                 disabled={isPending}
                 size="sm"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-4 h-9 gap-1.5"
+                className="bg-success hover:bg-success/90 text-success-foreground text-xs px-4 h-9 gap-1.5"
               >
                 {isPending ? (
                   <>
