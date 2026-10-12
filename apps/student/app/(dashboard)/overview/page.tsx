@@ -12,6 +12,7 @@ import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
 import { ActivityLedger } from '@/components/overview/activity-ledger';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { Building2, Calendar, BookOpen } from 'lucide-react';
+import { formatDate } from '@/lib/format/datetime';
 
 export const metadata = {
   title: 'Overview — RMS Student Portal',
@@ -150,7 +151,7 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
               {enr.batchStartDate && (
                 <div className="pt-2 flex items-center gap-2 text-xs text-muted-foreground border-t border-border/80">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span>Started {new Date(enr.batchStartDate).toLocaleDateString()}</span>
+                  <span>Started {formatDate(enr.batchStartDate)}</span>
                 </div>
               )}
             </article>

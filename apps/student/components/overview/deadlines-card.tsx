@@ -15,6 +15,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import type { StudentDeadlineItem, DeadlineContentType } from '@/lib/db/queries/overview';
+import { formatDate, formatTime } from '@/lib/format/datetime';
 
 interface DeadlinesCardProps {
   deadlines: StudentDeadlineItem[];
@@ -71,7 +72,7 @@ export function formatRelativeDeadline(dueAtDate: Date) {
     return { text: `Due in ${diffDays} days`, isUrgent: true, isOverdue: false };
   } else {
     return {
-      text: `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      text: `Due ${formatDate(due, { month: 'short', day: 'numeric' })}`,
       isUrgent: false,
       isOverdue: false
     };
@@ -194,7 +195,7 @@ export function DeadlinesCard({ deadlines }: DeadlinesCardProps) {
                         </span>
                       ) : (
                         <span className="text-[11px] text-muted-foreground">
-                          {new Date(item.dueAt).toLocaleTimeString('en-US', {
+                          {formatTime(item.dueAt, {
                             hour: 'numeric',
                             minute: '2-digit'
                           })}

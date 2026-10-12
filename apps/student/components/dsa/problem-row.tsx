@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, ExternalLink, FileText, ChevronRight } from 'luci
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { DSAQuestion, StudentProblemProgress } from '@/lib/types/dsa';
+import { formatDate } from '@/lib/format/datetime';
 
 interface ProblemRowProps {
   question: DSAQuestion;
@@ -91,7 +92,7 @@ export function ProblemRow({ question, progress, onSelect }: ProblemRowProps) {
             {isSolved && progress?.completedAt && (
               <span>
                 Solved{' '}
-                {new Date(progress.completedAt).toLocaleDateString('en-US', {
+                {formatDate(progress.completedAt, {
                   month: 'short',
                   day: 'numeric'
                 })}

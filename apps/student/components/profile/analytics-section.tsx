@@ -15,6 +15,7 @@ import type {
   StudentStatsSummary
 } from '@/lib/types/profile';
 import type { HeatmapDay } from '@/lib/types/overview';
+import { formatNumber } from '@/lib/format/datetime';
 
 interface AnalyticsSectionProps {
   stats: StudentStatsSummary;
@@ -95,7 +96,7 @@ export function AnalyticsSection({
             <Zap className="h-4 w-4 text-amber-400" />
             <span>Total XP</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.totalXp.toLocaleString()}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{formatNumber(stats.totalXp)}</p>
           <p className="mt-0.5 text-[11px] text-amber-400/80">Level {stats.currentLevel}</p>
         </div>
 
@@ -287,7 +288,7 @@ export function AnalyticsSection({
 
             <div className="rounded-xl bg-slate-950/60 border border-slate-800/60 p-3 flex items-center justify-between text-xs">
               <span className="text-slate-400">Total Gamification Ledger</span>
-              <span className="font-bold text-amber-400">{stats.totalXp.toLocaleString()} XP</span>
+              <span className="font-bold text-amber-400">{formatNumber(stats.totalXp)} XP</span>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useTransition, useCallback } from 'react';
+import React, { useState, useEffect, useTransition, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,14 @@ import type {
   FormalAssessmentSubmissionResult,
   ClientQuizQuestion
 } from '@/lib/types/assessments';
+import { formatDate } from '@/lib/format/datetime';
+import {
+  clearAttemptDraft,
+  getDraftStorage,
+  loadAttemptDraft,
+  mergeResponses,
+  saveAttemptDraft
+} from '@/lib/client/attempt-draft';
 
 interface FormalAssessmentRunnerProps {
   initialData: FormalAssessmentRunnerData;
@@ -69,8 +77,9 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
       if (diffSec <= 0) {
         clearInterval(interval);
         setConfirmSubmitOpen(false);
-        // Authoritative time has reached zero: trigger automatic submission
-        handleAutoSubmit();
+        // Authoritative time has reached zero: trigger automatic submission with the latest answers.
+        // (Calling handleAutoSubmit directly here captured the responses from when the timer started.)
+        autoSubmitRef.current();
       }
     }, 1000);
 
@@ -192,6 +201,39 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
   const handleAutoSubmit = () => {
     executeSubmission(true);
   };
+
+  // Always points at the newest executeSubmission (current responses and tab-blur count) for the timer.
+  const autoSubmitRef = useRef(handleAutoSubmit);
+  useEffect(() => {
+    autoSubmitRef.current = handleAutoSubmit;
+  });
+
+  // Device-local draft: restore answers after a refresh/crash, keep it updated, drop it once submitted.
+  const activeAttemptId = activeAttempt?.id ?? null;
+  // Set when a draft is restored, so the save effect in the same commit does not overwrite the draft
+  // with the not-yet-merged responses.
+  const skipNextDraftSaveRef = useRef(false);
+  useEffect(() => {
+    if (!activeAttemptId) return;
+    const draft = loadAttemptDraft(getDraftStorage(), activeAttemptId, initialData.questions);
+    if (Object.keys(draft).length > 0) {
+      skipNextDraftSaveRef.current = true;
+      setResponses((current) => mergeResponses(current, draft));
+    }
+  }, [activeAttemptId, initialData.questions]);
+
+  useEffect(() => {
+    if (!activeAttemptId || !isExamActive) return;
+    if (skipNextDraftSaveRef.current) {
+      skipNextDraftSaveRef.current = false;
+      return;
+    }
+    saveAttemptDraft(getDraftStorage(), activeAttemptId, responses);
+  }, [activeAttemptId, isExamActive, responses]);
+
+  useEffect(() => {
+    if (completedAttempt?.id) clearAttemptDraft(getDraftStorage(), completedAttempt.id);
+  }, [completedAttempt?.id]);
 
   const handleManualSubmit = () => {
     executeSubmission(false);
@@ -625,7 +667,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                 <div className="flex items-center gap-4">
                   <span>
                     Submitted:{' '}
-                    {new Date(completedAttempt.submittedAt).toLocaleDateString('en-US', {
+                    {formatDate(completedAttempt.submittedAt, {
                       month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
@@ -667,7 +709,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   In accordance with formal examination integrity protocols, question explanations and authoritative answer keys remain confidential until the cohort deadline{' '}
                   {completedAttempt.publishDate && (
                     <strong className="text-foreground/80">
-                      ({new Date(completedAttempt.publishDate).toLocaleDateString('en-US', {
+                      ({formatDate(completedAttempt.publishDate, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',

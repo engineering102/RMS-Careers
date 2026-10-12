@@ -5,6 +5,7 @@ import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { markLectureWatched } from '@/lib/actions/content';
 import type { ContentType } from '@/lib/types/library';
+import { formatDate } from '@/lib/format/datetime';
 
 interface CompletionButtonProps {
   contentItemId: string;
@@ -53,7 +54,7 @@ export function CompletionButton({
           <span>Completed</span>
           {completedAt && (
             <span className="text-[11px] font-normal text-success/80 border-l border-success/30 pl-2 ml-0.5">
-              {new Date(completedAt).toLocaleDateString('en-US', {
+              {formatDate(completedAt, {
                 month: 'short',
                 day: 'numeric'
               })}

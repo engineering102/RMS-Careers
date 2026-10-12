@@ -25,6 +25,7 @@ import type {
   ProjectAssignmentDetail,
   ProjectSubmissionStatus
 } from '@/lib/types/projects';
+import { formatDate, formatTime } from '@/lib/format/datetime';
 
 interface ProjectSubmissionWorkspaceProps {
   assignment: ProjectAssignmentDetail;
@@ -143,7 +144,7 @@ export function ProjectSubmissionWorkspace({
             <p className="text-xs text-slate-400 leading-relaxed">
               This project assignment is not yet open for submission. It unlocks on{' '}
               {assignment.availableFrom
-                ? new Date(assignment.availableFrom).toLocaleDateString()
+                ? formatDate(assignment.availableFrom)
                 : 'a scheduled date'}
               .
             </p>
@@ -208,7 +209,7 @@ export function ProjectSubmissionWorkspace({
             <h4 className="text-sm font-bold text-blue-200">Submission Received</h4>
             <p className="text-xs text-blue-300/90 leading-relaxed">
               Your repository was submitted on{' '}
-              {submission ? new Date(submission.submittedAt).toLocaleDateString() : 'recently'}. You may push updates and resubmit anytime until a tutor begins review.
+              {submission ? formatDate(submission.submittedAt) : 'recently'}. You may push updates and resubmit anytime until a tutor begins review.
             </p>
           </div>
         </div>
@@ -239,8 +240,8 @@ export function ProjectSubmissionWorkspace({
                 <div className="flex items-center gap-2 pt-2 text-xs text-slate-400 font-mono">
                   <Clock className="h-3.5 w-3.5 text-slate-500" />
                   <span>
-                    Deadline: {new Date(assignment.dueAt).toLocaleDateString()} at{' '}
-                    {new Date(assignment.dueAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    Deadline: {formatDate(assignment.dueAt)} at{' '}
+                    {formatTime(assignment.dueAt, { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               )}

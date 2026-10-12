@@ -19,6 +19,7 @@ import {
   markAllNotificationsAsReadAction
 } from '@/lib/actions/notifications';
 import type { NotificationItem, NotificationFilter } from '@/lib/types/notifications';
+import { formatDate } from '@/lib/format/datetime';
 
 interface NotificationsViewProps {
   initialNotifications: NotificationItem[];
@@ -104,8 +105,7 @@ export function NotificationsView({
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return d.toLocaleDateString('en-IN', {
-      timeZone: 'Asia/Kolkata',
+    return formatDate(d, {
       month: 'short',
       day: 'numeric',
       year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined

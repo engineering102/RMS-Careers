@@ -16,6 +16,16 @@ export const XP_VALUES = {
   EXTERNAL_ASSESSMENT: 50
 } as const;
 
+/**
+ * Level rule, identical to the server ledger (`packages/db/src/xp-ledger.ts`:
+ * current_level = total_xp / 100 + 1). Display code must use this, not its own heuristic.
+ */
+export const XP_PER_LEVEL = 100;
+
+export function levelForXp(totalXp: number): number {
+  return Math.floor(Math.max(0, totalXp) / XP_PER_LEVEL) + 1;
+}
+
 export interface StreakEvaluationResult {
   currentStreak: number;
   longestStreak: number;
