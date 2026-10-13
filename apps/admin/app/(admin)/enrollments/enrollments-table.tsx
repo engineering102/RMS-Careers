@@ -51,12 +51,12 @@ import {
   MoreVertical,
   Check,
   XCircle,
-  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Download
 } from 'lucide-react';
 import { EmptyState } from '@/components/admin/empty-state';
+import { ConfirmDialog, type ConfirmDialogVariant } from '@/components/ui/confirm-dialog';
 import type { DetailedEnrollment } from '@/lib/db/queries';
 import {
   updateEnrollmentStatusAction,
@@ -86,11 +86,16 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
     isOpen: boolean;
     title: string;
     description: string;
+    confirmLabel: string;
+    cancelLabel?: string;
+    variant: ConfirmDialogVariant;
     onConfirm: () => Promise<void>;
   }>({
     isOpen: false,
     title: '',
     description: '',
+    confirmLabel: 'Confirm',
+    variant: 'default',
     onConfirm: async () => {}
   });
 
@@ -138,6 +143,9 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
         isOpen: true,
         title: 'Cancel Enrollment?',
         description: 'Are you sure you want to cancel this student enrollment? This action can be modified later.',
+        confirmLabel: 'Cancel enrollment',
+        cancelLabel: 'Keep enrollment',
+        variant: 'destructive',
         onConfirm: async () => {
           setIsUpdatingStatus(true);
           const res = await updateEnrollmentStatusAction(id, 'cancelled');
@@ -173,8 +181,22 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
     }
   };
 
-  // Single Resend Email
-  const handleResendSingleEmail = async (id: number) => {
+  // Single Resend Email (asks first: it sends a real email, like the bulk resend)
+  const handleResendSingleEmail = (item: DetailedEnrollment) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Resend Confirmation Email?',
+      description: `The enrollment confirmation email will be sent again to ${item.student.fullName} (${item.student.email}).`,
+      confirmLabel: 'Send email',
+      variant: 'default',
+      onConfirm: async () => {
+        await executeResendSingleEmail(item.id);
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+  const executeResendSingleEmail = async (id: number) => {
     setIsSendingEmail(true);
     toast.info('Sending confirmation email...');
     const res = await resendEnrollmentEmailAction(id);
@@ -198,6 +220,8 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
       isOpen: true,
       title: `Confirm ${selectedIds.length} Selected Enrollment(s)?`,
       description: `This will update the status of ${selectedIds.length} student registration(s) to Confirmed.`,
+      confirmLabel: 'Confirm enrollments',
+      variant: 'default',
       onConfirm: async () => {
         setIsUpdatingStatus(true);
         const res = await bulkUpdateEnrollmentStatusAction(selectedIds, 'confirmed');
@@ -219,6 +243,8 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
       isOpen: true,
       title: `Resend Emails for ${selectedIds.length} Enrollment(s)?`,
       description: `Attempting acknowledgement email dispatch for ${selectedIds.length} selected enrollment(s). Successful deliveries will update confirmationSentAt timestamp.`,
+      confirmLabel: 'Send emails',
+      variant: 'default',
       onConfirm: async () => {
         setIsSendingEmail(true);
         toast.info(`Sending ${selectedIds.length} email(s)...`);
@@ -459,7 +485,12 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                aria-label={`Actions for ${item.student.fullName}`}
+                              >
                                 <MoreVertical className="h-3.5 w-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -474,7 +505,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                                 <Eye className="h-3.5 w-3.5 text-muted-foreground" /> View Details
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleResendSingleEmail(item.id)}
+                                onClick={() => handleResendSingleEmail(item)}
                                 disabled={isSendingEmail}
                                 className="text-xs gap-2 text-blue-600"
                               >
@@ -574,7 +605,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                       size="sm"
                       variant="outline"
                       className="h-8 text-xs gap-1 text-blue-600 border-blue-200"
-                      onClick={() => handleResendSingleEmail(item.id)}
+                      onClick={() => handleResendSingleEmail(item)}
                       disabled={isSendingEmail}
                     >
                       <Send className="h-3.5 w-3.5" /> Resend Email
@@ -733,7 +764,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                 size="sm"
                 variant="outline"
                 className="h-8 gap-1.5 text-xs text-blue-600 border-blue-200 hover:bg-blue-50"
-                onClick={() => handleResendSingleEmail(selectedEnrollment.id)}
+                onClick={() => handleResendSingleEmail(selectedEnrollment)}
                 disabled={isSendingEmail}
               >
                 <Send className="h-3.5 w-3.5" />
@@ -787,38 +818,19 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
       </Dialog>
 
       {/* Confirmation Dialog */}
-      <Dialog
+      <ConfirmDialog
         open={confirmDialog.isOpen}
         onOpenChange={(open) => {
           if (!open) setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
         }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" /> {confirmDialog.title}
-            </DialogTitle>
-            <DialogDescription className="pt-2">{confirmDialog.description}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={confirmDialog.onConfirm}
-              disabled={isUpdatingStatus || isSendingEmail}
-            >
-              Confirm Action
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        confirmLabel={confirmDialog.confirmLabel}
+        cancelLabel={confirmDialog.cancelLabel}
+        pendingLabel={isSendingEmail ? 'Sending…' : 'Updating…'}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+      />
     </>
   );
 }
