@@ -86,18 +86,22 @@ export async function getStudentDsaData(studentId: number): Promise<StudentDsaDa
     let hardSolved = 0;
 
     const sheetSummaries: SheetProgressSummary[] = [];
+    // A problem can appear in more than one sheet (same slug, one progress row). Sheet summaries count it in
+    // each sheet; the overall and per-difficulty totals count it once.
+    const countedSlugs = new Set<string>();
 
     for (const sheet of STUDENT_DSA_SHEETS) {
       let sheetSolved = 0;
       const sheetTotal = sheet.questions.length;
-      totalProblems += sheetTotal;
 
       for (const q of sheet.questions) {
         const isSolved = Boolean(progressMap[q.slug]?.isCompleted);
-        if (isSolved) {
-          totalSolved++;
-          sheetSolved++;
-        }
+        if (isSolved) sheetSolved++;
+
+        if (countedSlugs.has(q.slug)) continue;
+        countedSlugs.add(q.slug);
+        totalProblems++;
+        if (isSolved) totalSolved++;
 
         if (q.difficulty === 'easy') {
           easyTotal++;

@@ -265,11 +265,14 @@ describe('Slice 10: DSA Practice Center', () => {
   });
 
   describe('1. getStudentDsaData Query & Ledger', () => {
+    // A problem can sit in more than one sheet under the same slug; overall totals count it once.
+    const uniqueProblems = new Set(STUDENT_DSA_SHEETS.flatMap((s) => s.questions.map((q) => q.slug))).size;
+
     it('returns all curated sheets and 0 solved problems for a fresh student', async () => {
       const data = await getStudentDsaData(101);
 
       expect(data.sheets.length).toBe(STUDENT_DSA_SHEETS.length);
-      expect(data.summary.totalProblems).toBe(10);
+      expect(data.summary.totalProblems).toBe(uniqueProblems);
       expect(data.summary.totalSolved).toBe(0);
       expect(data.summary.overallPercentage).toBe(0);
       expect(Object.keys(data.progressMap).length).toBe(0);
@@ -302,13 +305,41 @@ describe('Slice 10: DSA Practice Center', () => {
       const data = await getStudentDsaData(101);
 
       expect(data.summary.totalSolved).toBe(2);
-      expect(data.summary.overallPercentage).toBe(20);
+      expect(data.summary.overallPercentage).toBe(Math.round((2 / uniqueProblems) * 100));
       expect(data.summary.easySolved).toBe(1);
       expect(data.summary.mediumSolved).toBe(1);
       expect(data.progressMap['two-sum']?.isCompleted).toBe(true);
       expect(data.progressMap['two-sum']?.notes).toBe('Single-pass hash map');
       expect(data.progressMap['maximum-subarray']?.isCompleted).toBe(true);
       expect(data.progressMap['valid-palindrome']?.isCompleted).toBeFalsy();
+    });
+
+    it('counts a problem shared by two sheets once overall, but in each sheet summary', async () => {
+      const sharing = STUDENT_DSA_SHEETS.filter((s) => s.questions.some((q) => q.slug === 'two-sum'));
+      expect(sharing.length).toBeGreaterThan(1);
+
+      mockDsaProgress = [
+        {
+          id: 1,
+          studentId: 101,
+          problemSlug: 'two-sum',
+          isCompleted: true,
+          submissionUrl: null,
+          notes: null,
+          completedAt: new Date('2026-10-05T12:00:00Z'),
+          updatedAt: new Date('2026-10-05T12:00:00Z')
+        }
+      ];
+
+      const data = await getStudentDsaData(101);
+
+      expect(data.summary.totalProblems).toBe(uniqueProblems);
+      expect(data.summary.totalSolved).toBe(1);
+      expect(data.summary.easySolved).toBe(1);
+      expect(data.summary.easyTotal + data.summary.mediumTotal + data.summary.hardTotal).toBe(uniqueProblems);
+      for (const sheet of sharing) {
+        expect(data.sheetSummaries.find((s) => s.sheetSlug === sheet.slug)?.solvedCount).toBe(1);
+      }
     });
   });
 

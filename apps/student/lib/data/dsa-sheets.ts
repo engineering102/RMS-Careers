@@ -1,4 +1,5 @@
 import type { DSASheet, DSAQuestion, Difficulty } from '@/lib/types/dsa';
+import { LEETCODE_150_SHEET } from './leetcode-150';
 
 export const STUDENT_DSA_SHEETS: DSASheet[] = [
   {
@@ -346,7 +347,9 @@ export const STUDENT_DSA_SHEETS: DSASheet[] = [
         externalUrl: 'https://leetcode.com/problems/linked-list-cycle/'
       }
     ]
-  }
+  },
+  // Shares some problems (same slugs) with the sheets above: solving one counts once for progress and XP.
+  LEETCODE_150_SHEET
 ];
 
 export function getAllDsaSheets(): DSASheet[] {
