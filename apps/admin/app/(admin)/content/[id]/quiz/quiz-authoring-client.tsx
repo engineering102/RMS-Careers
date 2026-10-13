@@ -50,6 +50,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { EmptyState } from '@/components/admin/empty-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 import {
   saveQuizConfigAction,
@@ -110,6 +111,7 @@ export function QuizAuthoringClient({
   const [editingQuestionId, setEditingQuestionId] = React.useState<number | null>(null);
   const [isSubmittingQuestion, setIsSubmittingQuestion] = React.useState(false);
   const [isReordering, setIsReordering] = React.useState(false);
+  const [deletingQuestion, setDeletingQuestion] = React.useState<{ id: number; number: number } | null>(null);
 
   // Question Form State
   const [questionForm, setQuestionForm] = React.useState<QuestionFormState>({
@@ -318,19 +320,21 @@ export function QuizAuthoringClient({
     }
   };
 
-  // Delete Question
-  const handleDeleteQuestion = async (questionId: number) => {
+  // Delete Question (asks first; the confirmation dialog runs confirmDeleteQuestion)
+  const handleDeleteQuestion = (questionId: number, questionNumber: number) => {
     if (hasAttempts) {
       toast.error(
         'Cannot delete question: Student attempts exist for this assessment. Modifying questions would invalidate historical evaluation records.'
       );
       return;
     }
+    setDeletingQuestion({ id: questionId, number: questionNumber });
+  };
 
-    if (!confirm('Are you sure you want to delete this question?')) {
-      return;
-    }
-
+  // Failures keep the dialog open so the admin can retry or cancel.
+  const confirmDeleteQuestion = async () => {
+    if (!deletingQuestion) return;
+    const questionId = deletingQuestion.id;
     try {
       const res = await deleteQuestionAction(contentItem.id, questionId);
       if (!res.success) {
@@ -338,6 +342,7 @@ export function QuizAuthoringClient({
         return;
       }
       setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setDeletingQuestion(null);
       toast.success('Question removed.');
       router.refresh();
     } catch (err: any) {
@@ -746,13 +751,14 @@ export function QuizAuthoringClient({
                           variant="ghost"
                           size="sm"
                           disabled={hasAttempts}
-                          onClick={() => handleDeleteQuestion(question.id)}
+                          onClick={() => handleDeleteQuestion(question.id, index + 1)}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-40"
                           title={
                             hasAttempts
                               ? 'Deletion locked (attempts exist)'
                               : 'Delete question'
                           }
+                          aria-label={`Delete question ${index + 1}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -954,6 +960,19 @@ export function QuizAuthoringClient({
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={deletingQuestion !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingQuestion(null);
+        }}
+        title={deletingQuestion ? `Delete question ${deletingQuestion.number}?` : 'Delete question?'}
+        description="The question and its options are permanently removed from this quiz. This cannot be undone."
+        confirmLabel="Delete question"
+        pendingLabel="Deleting…"
+        variant="destructive"
+        onConfirm={confirmDeleteQuestion}
+      />
     </div>
   );
 }
