@@ -23,6 +23,8 @@ export const createContentSchema = z.object({
     .optional()
     .or(z.literal('')),
   contentType: contentTypeSchema,
+  /** Quizzes only: whether the new quiz starts as practice or formal. */
+  quizType: z.enum(['practice', 'formal']).optional(),
   description: z.string().trim().max(2000, 'Description must not exceed 2000 characters.').optional().or(z.literal('')),
   programId: z
     .preprocess((val) => {

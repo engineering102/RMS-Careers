@@ -5,11 +5,12 @@ import {
   contentItems,
   programs,
   batchCurriculum,
+  batches,
   type ContentItem,
   type ContentTypeEnum,
   type DbClient
 } from '@rms/db';
-import { eq, and, or, desc, count, ilike, isNull, sql } from 'drizzle-orm';
+import { eq, and, or, asc, desc, count, ilike, isNull, sql } from 'drizzle-orm';
 
 export type { ContentTypeEnum };
 
@@ -435,4 +436,30 @@ export async function updateContentLifecycle(
     throw new Error('Failed to retrieve updated content item.');
   }
   return updated;
+}
+
+export interface ContentPlacement {
+  batchId: string;
+  batchName: string;
+  weekNumber: number;
+  isRequired: boolean;
+}
+
+/** The batch curriculums an item is placed in, for the builder's read-only placement list. */
+export async function getContentPlacements(
+  contentItemId: string,
+  client: DbClient = db
+): Promise<ContentPlacement[]> {
+  if (!process.env.POSTGRES_URL) return [];
+  return client
+    .select({
+      batchId: batchCurriculum.batchId,
+      batchName: batches.name,
+      weekNumber: batchCurriculum.weekNumber,
+      isRequired: batchCurriculum.isRequired
+    })
+    .from(batchCurriculum)
+    .innerJoin(batches, eq(batches.id, batchCurriculum.batchId))
+    .where(eq(batchCurriculum.contentItemId, contentItemId))
+    .orderBy(asc(batches.name));
 }

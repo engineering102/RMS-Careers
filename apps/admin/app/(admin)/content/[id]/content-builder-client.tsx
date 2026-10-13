@@ -3,106 +3,52 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
-  ExternalLink,
-  FileQuestion,
-  Loader2,
-  Plus,
-  Save,
-  Trash2,
-  ArrowUp,
-  ArrowDown
-} from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader } from '@/components/ui/page-header';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { ContentItemWithDetails, ProjectAssignmentConfig } from '@/lib/db/queries';
-import type { Program, ContentTypeEnum } from '@rms/db';
-import { readAuthoringFields } from '@/lib/content/student-metadata';
+import type {
+  ContentItemWithDetails,
+  ContentPlacement,
+  ProjectAssignmentConfig,
+  QuizWithDetails
+} from '@/lib/db/queries';
+import type { Program } from '@rms/db';
 import { describeAudience } from '@/lib/content/audience';
-import { DEFAULT_PROJECT_RUBRIC, rubricMaxScore } from '@/lib/content/project-rubric';
+import { CONTENT_TYPE_DEFS } from '@/lib/content/types/registry';
+import { publishWarnings } from '@/lib/content/types/readiness';
 import { updateContentLifecycleAction } from '../actions';
 import { saveContentBuilderAction } from './actions';
+import { initialForm, snapshot, toBuilderInput, type BuilderForm } from './builder-form';
+import { TYPE_EDITORS } from './editors';
+import { Field } from './editors/field';
 import { StudentPreview } from './student-preview';
 
-const TYPE_LABELS: Record<ContentTypeEnum, string> = {
-  lecture: 'Lecture',
-  notes: 'Notes / Reading',
-  dsa_sheet: 'DSA Sheet',
-  quiz: 'Quiz',
-  project: 'Project',
-  resource: 'Resource'
-};
-
-export interface RubricRow {
-  key: string;
-  title: string;
-  maxPoints: string;
-  description: string;
-}
-
-export interface BuilderForm {
-  title: string;
-  slug: string;
-  description: string;
-  programId: string;
-  topic: string;
-  videoUrl: string;
-  resourceLink: string;
-  notes: string;
-  durationMinutes: string;
-  rubric: RubricRow[];
-}
+export type { BuilderForm, RubricRow } from './builder-form';
 
 interface ContentBuilderClientProps {
   item: ContentItemWithDetails;
   programs: Program[];
   projectConfig: ProjectAssignmentConfig | null;
+  quiz: QuizWithDetails | null;
+  placements: ContentPlacement[];
 }
 
-let rubricKeySeed = 0;
-const rubricKey = () => `criterion-${++rubricKeySeed}`;
+const LEAVE_MESSAGE = 'You have unsaved changes. Leave without saving?';
 
-function initialForm(item: ContentItemWithDetails, projectConfig: ProjectAssignmentConfig | null): BuilderForm {
-  const fields = readAuthoringFields(item.metadata);
-  const rubricSource =
-    projectConfig && projectConfig.rubricCriteria.length > 0 ? projectConfig.rubricCriteria : DEFAULT_PROJECT_RUBRIC;
-  return {
-    title: item.title,
-    slug: item.slug,
-    description: item.description ?? '',
-    programId: item.programId === null ? 'global' : String(item.programId),
-    topic: fields.topic,
-    videoUrl: fields.videoUrl,
-    resourceLink: fields.resourceLink,
-    notes: fields.notes,
-    durationMinutes: fields.durationMinutes === null ? '' : String(fields.durationMinutes),
-    rubric:
-      item.contentType === 'project'
-        ? rubricSource.map((c) => ({
-            key: rubricKey(),
-            title: c.title,
-            maxPoints: String(c.maxPoints),
-            description: c.description ?? ''
-          }))
-        : []
-  };
-}
-
-/** Comparable snapshot without React keys, for unsaved-change detection. */
-const snapshot = (form: BuilderForm) =>
-  JSON.stringify({ ...form, rubric: form.rubric.map(({ key: _key, ...rest }) => rest) });
-
-export function ContentBuilderClient({ item: initialItem, programs, projectConfig }: ContentBuilderClientProps) {
+export function ContentBuilderClient({
+  item: initialItem,
+  programs,
+  projectConfig,
+  quiz,
+  placements
+}: ContentBuilderClientProps) {
   const router = useRouter();
   const [item, setItem] = React.useState(initialItem);
   const [form, setForm] = React.useState<BuilderForm>(() => initialForm(initialItem, projectConfig));
@@ -110,11 +56,13 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
   const [isSaving, setIsSaving] = React.useState(false);
   const [isChangingStatus, setIsChangingStatus] = React.useState(false);
+  const [pendingWarnings, setPendingWarnings] = React.useState<string[] | null>(null);
 
   const type = item.contentType;
+  const def = CONTENT_TYPE_DEFS[type];
+  const TypeEditor = TYPE_EDITORS[type];
   const isDirty = snapshot(form) !== savedSnapshot;
   const status = item.lifecycleStatus;
-  const usesDefaultRubric = type === 'project' && (!projectConfig || projectConfig.rubricCriteria.length === 0);
 
   const set = <K extends keyof BuilderForm>(key: K, value: BuilderForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -127,7 +75,7 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
     });
   };
 
-  // Warn before leaving with unsaved edits.
+  // Warn before leaving with unsaved edits: reloads and closing the tab...
   React.useEffect(() => {
     if (!isDirty) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -138,40 +86,46 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [isDirty]);
 
+  // ...and in-app links (sidebar, breadcrumbs, the workbench link), which never fire beforeunload.
+  // Capture phase on document runs before React's handlers, so a cancelled click never reaches next/link.
+  React.useEffect(() => {
+    if (!isDirty) return;
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      const anchor = (event.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      if (!window.confirm(LEAVE_MESSAGE)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [isDirty]);
+
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
     setFieldErrors({});
     try {
-      const duration = form.durationMinutes.trim();
-      const res = await saveContentBuilderAction({
-        id: item.id,
-        title: form.title,
-        slug: form.slug,
-        description: form.description,
-        programId: form.programId === 'global' ? null : Number(form.programId),
-        topic: form.topic,
-        videoUrl: form.videoUrl,
-        resourceLink: form.resourceLink,
-        notes: form.notes,
-        durationMinutes: duration === '' ? null : Number(duration),
-        rubric:
-          type === 'project'
-            ? form.rubric.map((r) => ({
-                title: r.title,
-                maxPoints: Number(r.maxPoints),
-                description: r.description
-              }))
-            : undefined
-      });
+      const res = await saveContentBuilderAction(toBuilderInput(item.id, type, form));
       if (!res.success) {
         setFieldErrors(res.fieldErrors ?? {});
+        // The details were saved even though a later step failed; keep the form dirty so a retry saves the rest.
+        if (res.savedItem) setItem(res.savedItem);
         toast.error(res.error);
         return;
       }
       setItem(res.item);
       setSavedSnapshot(snapshot(form));
-      toast.success('Saved. Students see these changes now.');
+      toast.success(
+        res.item.lifecycleStatus === 'published' ? 'Saved. Students see these changes now.' : 'Saved as draft.'
+      );
       router.refresh();
     } catch {
       toast.error('Could not save. Please try again.');
@@ -194,11 +148,7 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  const handleLifecycle = async (action: 'publish' | 'unpublish') => {
-    if (action === 'publish' && isDirty) {
-      toast.error('Save your changes before publishing.');
-      return;
-    }
+  const changeStatus = async (action: 'publish' | 'unpublish') => {
     setIsChangingStatus(true);
     try {
       const res = await updateContentLifecycleAction(item.id, action);
@@ -207,6 +157,7 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
         return;
       }
       setItem(res.item);
+      setPendingWarnings(null);
       toast.success(action === 'publish' ? 'Published. Students can now open it.' : 'Moved back to draft.');
       router.refresh();
     } finally {
@@ -214,23 +165,28 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
     }
   };
 
-  const updateRubric = (key: string, patch: Partial<RubricRow>) => {
-    set(
-      'rubric',
-      form.rubric.map((r) => (r.key === key ? { ...r, ...patch } : r))
-    );
-  };
-  const moveRubric = (index: number, delta: -1 | 1) => {
-    const next = [...form.rubric];
-    const target = index + delta;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
-    set('rubric', next);
+  const handlePublish = () => {
+    if (isDirty) {
+      toast.error('Save your changes before publishing.');
+      return;
+    }
+    // The form equals the saved item here, so these checks describe what students will get.
+    const warnings = publishWarnings({
+      type,
+      description: form.description,
+      videoUrl: form.videoUrl,
+      resourceLink: form.resourceLink,
+      notes: form.notes,
+      quizQuestionCount: quiz?.questionCount ?? 0,
+      usesDefaultRubric: type === 'project' && (!projectConfig || projectConfig.rubricCriteria.length === 0)
+    });
+    if (warnings.length > 0) {
+      setPendingWarnings(warnings);
+      return;
+    }
+    void changeStatus('publish');
   };
 
-  const rubricTotal = rubricMaxScore(
-    form.rubric.map((r) => ({ maxPoints: Number.isFinite(Number(r.maxPoints)) ? Number(r.maxPoints) : 0 }))
-  );
   const errorFor = (key: string) => fieldErrors[key]?.[0];
 
   return (
@@ -245,18 +201,18 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
             Content Library
           </Link>
         }
-        eyebrow={`${TYPE_LABELS[type]} builder`}
+        eyebrow={`${def.label} builder`}
         title={form.title || 'Untitled'}
         actions={
           <>
             {status === 'draft' && (
-              <Button variant="outline" onClick={() => handleLifecycle('publish')} disabled={isChangingStatus}>
+              <Button variant="outline" onClick={handlePublish} disabled={isChangingStatus}>
                 {isChangingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 Publish
               </Button>
             )}
             {status === 'published' && (
-              <Button variant="outline" onClick={() => handleLifecycle('unpublish')} disabled={isChangingStatus}>
+              <Button variant="outline" onClick={() => changeStatus('unpublish')} disabled={isChangingStatus}>
                 Unpublish
               </Button>
             )}
@@ -275,7 +231,7 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start">
-        {/* Editor */}
+        {/* Editor: shared fields, then the type's own section */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -288,12 +244,8 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
               </Field>
               <Field
                 id="description"
-                label={type === 'project' ? 'Project brief' : 'Description'}
-                hint={
-                  type === 'project'
-                    ? 'What to build, the requirements, and what to submit. Shown at the top of the project page.'
-                    : 'A short summary shown under the title.'
-                }
+                label={def.descriptionLabel}
+                hint={def.descriptionHint}
                 error={errorFor('description')}
                 counter={`${form.description.length}/2000`}
               >
@@ -315,12 +267,8 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
                     maxLength={100}
                   />
                 </Field>
-                {(type === 'lecture' || type === 'notes' || type === 'resource') && (
-                  <Field
-                    id="duration"
-                    label={type === 'lecture' ? 'Duration (minutes)' : 'Reading time (minutes)'}
-                    error={errorFor('durationMinutes')}
-                  >
+                {def.hasDuration && (
+                  <Field id="duration" label={def.durationLabel ?? 'Duration (minutes)'} error={errorFor('durationMinutes')}>
                     <Input
                       id="duration"
                       type="number"
@@ -358,8 +306,8 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
                   id="slug"
                   label="Slug"
                   hint={
-                    type === 'dsa_sheet'
-                      ? 'Must match the DSA topic slug; students are sent to that topic.'
+                    def.workflow === 'dsa-catalogue'
+                      ? 'Must match the DSA sheet slug; students are sent to that sheet.'
                       : 'Lowercase letters, numbers and hyphens.'
                   }
                   error={errorFor('slug')}
@@ -376,234 +324,30 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
             </CardContent>
           </Card>
 
-          {type === 'lecture' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Video</CardTitle>
-                <CardDescription>
-                  Paste a YouTube or Vimeo link (any format: watch, share, shorts, embed). Other players need an
-                  https embed URL.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Field id="videoUrl" label="Video link" error={errorFor('videoUrl')}>
-                  <Input
-                    id="videoUrl"
-                    value={form.videoUrl}
-                    onChange={(e) => set('videoUrl', e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=…"
-                  />
-                </Field>
-              </CardContent>
-            </Card>
-          )}
+          <TypeEditor
+            item={item}
+            form={form}
+            set={set}
+            errorFor={errorFor}
+            projectConfig={projectConfig}
+            quiz={quiz}
+          />
 
-          {(type === 'notes' || type === 'resource') && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Reading material</CardTitle>
-                <CardDescription>Add a link to a document, written notes, or both.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Field
-                  id="resourceLink"
-                  label="Document link"
-                  hint="Google Docs, Drive, Notion, GitHub, slides… Students get an “Open Resource” button."
-                  error={errorFor('resourceLink')}
-                >
-                  <Input
-                    id="resourceLink"
-                    value={form.resourceLink}
-                    onChange={(e) => set('resourceLink', e.target.value)}
-                    placeholder="https://"
-                  />
-                </Field>
-                <Field
-                  id="notes"
-                  label="Notes"
-                  hint="Shown as plain text. Line breaks and indentation are kept as you type them."
-                  error={errorFor('notes')}
-                  counter={`${form.notes.length.toLocaleString('en-IN')} characters`}
-                >
-                  <Textarea
-                    id="notes"
-                    value={form.notes}
-                    onChange={(e) => set('notes', e.target.value)}
-                    rows={16}
-                    className="font-mono text-sm leading-relaxed"
-                    placeholder={'Key ideas\n- …\n\nWorked example\n…'}
-                  />
-                </Field>
-              </CardContent>
-            </Card>
-          )}
-
-          {type === 'project' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Grading rubric</CardTitle>
-                <CardDescription>
-                  Students see these criteria while they work; reviewers score against them. The project is out of{' '}
-                  <span className="font-semibold text-foreground">{rubricTotal} points</span>.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {usesDefaultRubric && (
-                  <p className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                    This project has no rubric of its own yet, so students see the default below. Edit it and save to
-                    make it this project&apos;s rubric.
-                  </p>
-                )}
-                {projectConfig && projectConfig.submissionCount > 0 && (
-                  <p className="flex gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                    {projectConfig.submissionCount} submission{projectConfig.submissionCount === 1 ? ' has' : 's have'}{' '}
-                    already been made. Changing the rubric does not change scores already given.
-                  </p>
-                )}
-                {errorFor('rubric') && <p className="text-sm text-destructive">{errorFor('rubric')}</p>}
-                <ol className="space-y-3">
-                  {form.rubric.map((row, index) => (
-                    <li key={row.key} className="rounded-lg border border-border p-3">
-                      <div className="flex items-start gap-2">
-                        <span className="mt-2 w-5 shrink-0 text-xs font-semibold text-muted-foreground">
-                          {index + 1}.
-                        </span>
-                        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem]">
-                          <Input
-                            aria-label={`Criterion ${index + 1} title`}
-                            value={row.title}
-                            onChange={(e) => updateRubric(row.key, { title: e.target.value })}
-                            placeholder="Criterion, e.g. Feature completeness"
-                            maxLength={120}
-                          />
-                          <div className="relative">
-                            <Input
-                              aria-label={`Criterion ${index + 1} points`}
-                              type="number"
-                              inputMode="numeric"
-                              min={1}
-                              max={1000}
-                              value={row.maxPoints}
-                              onChange={(e) => updateRubric(row.key, { maxPoints: e.target.value })}
-                              className="pr-9"
-                            />
-                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                              pts
-                            </span>
-                          </div>
-                          <Textarea
-                            aria-label={`Criterion ${index + 1} description`}
-                            value={row.description}
-                            onChange={(e) => updateRubric(row.key, { description: e.target.value })}
-                            placeholder="What earns full marks (optional)"
-                            rows={2}
-                            maxLength={500}
-                            className="sm:col-span-2"
-                          />
-                          {(['title', 'maxPoints', 'description'] as const).map((field) => {
-                            const message = errorFor(`rubric.${index}.${field}`);
-                            return message ? (
-                              <p key={field} className="text-xs text-destructive sm:col-span-2" role="alert">
-                                {message}
-                              </p>
-                            ) : null;
-                          })}
-                        </div>
-                        <div className="flex shrink-0 flex-col gap-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => moveRubric(index, -1)}
-                            disabled={index === 0}
-                            aria-label={`Move criterion ${index + 1} up`}
-                          >
-                            <ArrowUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => moveRubric(index, 1)}
-                            disabled={index === form.rubric.length - 1}
-                            aria-label={`Move criterion ${index + 1} down`}
-                          >
-                            <ArrowDown className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => set('rubric', form.rubric.filter((r) => r.key !== row.key))}
-                            disabled={form.rubric.length === 1}
-                            aria-label={`Remove criterion ${index + 1}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    set('rubric', [...form.rubric, { key: rubricKey(), title: '', maxPoints: '10', description: '' }])
-                  }
-                  disabled={form.rubric.length >= 12}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add criterion
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {type === 'quiz' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Questions</CardTitle>
-                <CardDescription>
-                  Questions, timing, pass mark and explanations are managed in the quiz workbench.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="outline">
-                  <Link href={`/content/${item.id}/quiz`}>
-                    <FileQuestion className="h-4 w-4" />
-                    Open quiz workbench
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {type === 'dsa_sheet' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">DSA topic</CardTitle>
-                <CardDescription>
-                  Problems for DSA topics live in the student portal&apos;s DSA catalogue. This item links students to
-                  the topic whose slug is <span className="font-mono text-foreground">{form.slug || '…'}</span>.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
+          <PlacementCard placements={placements} />
         </div>
 
         {/* Preview */}
         <aside className="space-y-2 lg:sticky lg:top-6" aria-label="Student preview">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">Student preview</h2>
-            <span className="text-xs text-muted-foreground">Updates as you type</span>
+            <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground">
+              Preview · nothing here is recorded
+            </Badge>
           </div>
-          <StudentPreview type={type} form={form} programs={programs} />
+          <StudentPreview type={type} form={form} programs={programs} quiz={quiz} />
+          <p className="text-xs text-muted-foreground">
+            {type === 'quiz' ? 'Shows saved questions from the workbench.' : 'Updates as you type, before saving.'}
+          </p>
           {type === 'lecture' && (
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <ExternalLink className="h-3.5 w-3.5" />
@@ -612,7 +356,57 @@ export function ContentBuilderClient({ item: initialItem, programs, projectConfi
           )}
         </aside>
       </div>
+
+      <ConfirmDialog
+        open={pendingWarnings !== null}
+        onOpenChange={(open) => !open && setPendingWarnings(null)}
+        title="Publish anyway?"
+        description="Students will be able to open this item, but it may not be ready yet:"
+        confirmLabel="Publish anyway"
+        pending={isChangingStatus}
+        onConfirm={() => changeStatus('publish')}
+      >
+        <ul className="space-y-1.5 text-sm">
+          {(pendingWarnings ?? []).map((w) => (
+            <li key={w} className="flex gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              {w}
+            </li>
+          ))}
+        </ul>
+      </ConfirmDialog>
     </div>
+  );
+}
+
+function PlacementCard({ placements }: { placements: ContentPlacement[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Batch placement</CardTitle>
+        <CardDescription>
+          Week, order and dates are set per batch in its curriculum. Only published items can be placed.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {placements.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Not placed in any batch curriculum yet.</p>
+        ) : (
+          <ul className="divide-y divide-border rounded-md border border-border">
+            {placements.map((p) => (
+              <li key={p.batchId} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <Link href={`/batches/${p.batchId}/curriculum`} className="font-medium text-foreground hover:underline">
+                  {p.batchName}
+                </Link>
+                <span className="text-xs text-muted-foreground">
+                  Week {p.weekNumber} · {p.isRequired ? 'Required' : 'Optional'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -635,38 +429,5 @@ function StatusBadge({ status }: { status: ContentItemWithDetails['lifecycleStat
     <Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
       Draft · hidden from students
     </Badge>
-  );
-}
-
-function Field({
-  id,
-  label,
-  hint,
-  error,
-  counter,
-  children
-}: {
-  id: string;
-  label: string;
-  hint?: string;
-  error?: string;
-  counter?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <Label htmlFor={id}>{label}</Label>
-        {counter && <span className="text-xs text-muted-foreground">{counter}</span>}
-      </div>
-      {children}
-      {error ? (
-        <p className="text-xs text-destructive" role="alert">
-          {error}
-        </p>
-      ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      ) : null}
-    </div>
   );
 }

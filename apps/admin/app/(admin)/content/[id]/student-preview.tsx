@@ -1,32 +1,42 @@
 'use client';
 
+// A mirror of the student content page, built from the unsaved form (quizzes: from saved questions).
+// It must stay inert: no server actions, no completion, submission or attempt calls (see content-preview test).
 import * as React from 'react';
-import { Clock, ExternalLink, FileQuestion, FileText, Code2, PlayCircle, VideoOff } from 'lucide-react';
+import { CheckCircle2, Clock, Code2, ExternalLink, FileText, PlayCircle, VideoOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import type { Program, ContentTypeEnum } from '@rms/db';
+import type { QuizWithDetails } from '@/lib/db/queries';
 import { embedUrlFor, parseVideoUrl } from '@/lib/content/video-url';
-import type { BuilderForm } from './content-builder-client';
+import { contentTypeLabel } from '@/lib/content/types/registry';
+import type { BuilderForm } from './builder-form';
 
-const TYPE_LABELS: Record<ContentTypeEnum, string> = {
-  lecture: 'Lecture',
-  notes: 'Reading',
-  dsa_sheet: 'DSA Sheet',
-  quiz: 'Quiz',
-  project: 'Project',
-  resource: 'Resource'
+interface PreviewProps {
+  form: BuilderForm;
+  quiz: QuizWithDetails | null;
+}
+
+const TYPE_PREVIEWS: Record<ContentTypeEnum, React.ComponentType<PreviewProps>> = {
+  lecture: LecturePreview,
+  notes: ReadingPreview,
+  resource: ReadingPreview,
+  project: ProjectPreview,
+  quiz: QuizPreview,
+  dsa_sheet: DsaSheetPreview
 };
 
 interface StudentPreviewProps {
   type: ContentTypeEnum;
   form: BuilderForm;
   programs: Program[];
+  quiz: QuizWithDetails | null;
 }
 
-/** An approximation of the student content page, built from the unsaved form values. */
-export function StudentPreview({ type, form, programs }: StudentPreviewProps) {
+export function StudentPreview({ type, form, programs, quiz }: StudentPreviewProps) {
   const program = programs.find((p) => String(p.id) === form.programId);
-  const programCode = program?.code ?? 'RMS';
   const duration = Number(form.durationMinutes);
+  const Body = TYPE_PREVIEWS[type];
 
   return (
     <Card className="overflow-hidden">
@@ -34,8 +44,8 @@ export function StudentPreview({ type, form, programs }: StudentPreviewProps) {
         {/* Header, as on the student content page */}
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-            <span className="rounded border border-border px-1.5 py-0.5">{TYPE_LABELS[type]}</span>
-            <span>{programCode}</span>
+            <span className="rounded border border-border px-1.5 py-0.5">{contentTypeLabel(type)}</span>
+            {program ? <span>{program.code ?? program.name}</span> : <Placeholder>RMS</Placeholder>}
             {form.topic.trim() && <span>· {form.topic.trim()}</span>}
             {form.durationMinutes.trim() !== '' && Number.isFinite(duration) && duration > 0 && (
               <span className="inline-flex items-center gap-1">
@@ -43,31 +53,41 @@ export function StudentPreview({ type, form, programs }: StudentPreviewProps) {
               </span>
             )}
           </div>
-          <h3 className="text-lg font-bold leading-snug text-foreground">{form.title.trim() || 'Untitled'}</h3>
+          <h3 className="text-lg font-bold leading-snug text-foreground">
+            {form.title.trim() || <Placeholder>Untitled</Placeholder>}
+          </h3>
         </div>
 
-        {type === 'lecture' && <LecturePreview videoUrl={form.videoUrl} description={form.description} />}
-        {(type === 'notes' || type === 'resource') && (
-          <ReadingPreview resourceLink={form.resourceLink} notes={form.notes} description={form.description} />
-        )}
-        {type === 'project' && <ProjectPreview form={form} />}
-        {type === 'quiz' && (
-          <PreviewNote icon={FileQuestion}>
-            Students see the quiz start screen with its time limit and pass mark from the quiz workbench.
-          </PreviewNote>
-        )}
-        {type === 'dsa_sheet' && (
-          <PreviewNote icon={Code2}>
-            Opening this item takes students to the DSA Practice Center topic
-            <span className="font-mono"> {form.slug || '…'}</span>.
-          </PreviewNote>
-        )}
+        <Body form={form} quiz={quiz} />
       </CardContent>
     </Card>
   );
 }
 
-function LecturePreview({ videoUrl, description }: { videoUrl: string; description: string }) {
+/** Marks text that is a stand-in, not the item's real value. */
+function Placeholder({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="italic text-muted-foreground">
+      {children} <span className="text-[10px] not-italic">(placeholder)</span>
+    </span>
+  );
+}
+
+/** A student control shown for context only; clicking it does nothing in the preview. */
+function InertButton({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Button type="button" size="sm" variant="outline" disabled tabIndex={-1}>
+        <Icon className="h-4 w-4" />
+        {children}
+      </Button>
+      <span className="text-[11px] text-muted-foreground">Preview: not recorded</span>
+    </div>
+  );
+}
+
+function LecturePreview({ form }: PreviewProps) {
+  const { videoUrl, description } = form;
   const parsed = parseVideoUrl(videoUrl);
   const canFrame = parsed && parsed.provider !== 'custom';
 
@@ -95,6 +115,7 @@ function LecturePreview({ videoUrl, description }: { videoUrl: string; descripti
           </div>
         )}
       </div>
+      <InertButton icon={CheckCircle2}>Mark as complete</InertButton>
       {description.trim() && (
         <section className="rounded-lg border border-border p-3">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">About this lecture</h4>
@@ -105,21 +126,29 @@ function LecturePreview({ videoUrl, description }: { videoUrl: string; descripti
   );
 }
 
-function ReadingPreview({ resourceLink, notes, description }: { resourceLink: string; notes: string; description: string }) {
-  const hasLink = /^https?:\/\/\S+$/i.test(resourceLink.trim());
+function ReadingPreview({ form }: PreviewProps) {
+  const { resourceLink, notes, description } = form;
+  const link = resourceLink.trim();
+  const hasLink = /^https?:\/\/\S+$/i.test(link);
+  const isPdf = hasLink && link.toLowerCase().endsWith('.pdf');
   return (
     <div className="space-y-3">
       {description.trim() && <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>}
       {hasLink && (
-        <a
-          href={resourceLink.trim()}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Open Resource
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open Resource
+          </a>
+          <span className="text-xs text-muted-foreground">
+            {isPdf ? 'PDF Document / Slide Deck' : 'External Learning Resource'}
+          </span>
+        </div>
       )}
       {notes.trim() ? (
         <div className="max-h-96 overflow-y-auto rounded-lg border border-border p-3">
@@ -130,11 +159,12 @@ function ReadingPreview({ resourceLink, notes, description }: { resourceLink: st
           <PreviewNote icon={FileText}>No document or notes yet. Students see an empty reading page.</PreviewNote>
         )
       )}
+      <InertButton icon={CheckCircle2}>Mark as complete</InertButton>
     </div>
   );
 }
 
-function ProjectPreview({ form }: { form: BuilderForm }) {
+function ProjectPreview({ form }: PreviewProps) {
   const criteria = form.rubric.filter((r) => r.title.trim());
   const total = criteria.reduce((sum, r) => sum + (Number(r.maxPoints) || 0), 0);
   return (
@@ -161,8 +191,90 @@ function ProjectPreview({ form }: { form: BuilderForm }) {
           ))}
         </ul>
       </section>
-      <p className="text-xs text-muted-foreground">Students submit a GitHub link, an optional live URL and notes.</p>
+      <fieldset disabled className="space-y-2 rounded-lg border border-dashed border-border p-3 opacity-70">
+        <legend className="px-1 text-[11px] text-muted-foreground">Submission form (preview: disabled)</legend>
+        <input className="w-full rounded border border-input bg-background px-2 py-1 text-xs" placeholder="GitHub repository URL *" />
+        <input className="w-full rounded border border-input bg-background px-2 py-1 text-xs" placeholder="Live URL (optional)" />
+        <textarea className="w-full rounded border border-input bg-background px-2 py-1 text-xs" rows={2} placeholder="Notes (optional)" />
+      </fieldset>
     </div>
+  );
+}
+
+function QuizPreview({ quiz }: PreviewProps) {
+  const [showAnswers, setShowAnswers] = React.useState(false);
+  if (!quiz) {
+    return <PreviewNote icon={FileText}>The quiz has not been set up yet.</PreviewNote>;
+  }
+  const isFormal = quiz.quizType === 'formal';
+
+  return (
+    <div className="space-y-3">
+      <section className="rounded-lg border border-border p-3 text-sm">
+        <p className="font-medium text-foreground">{isFormal ? 'Formal assessment' : 'Practice quiz'}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'} · {quiz.totalPoints} pts · pass at{' '}
+          {quiz.passingScorePercent}% ·{' '}
+          {isFormal
+            ? `${quiz.timeLimitMinutes ?? 30} min, one attempt, auto-submits at the deadline`
+            : 'untimed, unlimited retakes'}
+        </p>
+      </section>
+      {quiz.questions.length === 0 ? (
+        <PreviewNote icon={FileText}>No questions yet. Add them in the quiz workbench.</PreviewNote>
+      ) : (
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-muted-foreground">Showing saved questions; nothing is submitted.</span>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setShowAnswers((v) => !v)}>
+              {showAnswers ? 'Hide answers' : 'Show answers'}
+            </Button>
+          </div>
+          <ol className="max-h-[28rem] space-y-3 overflow-y-auto">
+            {quiz.questions.map((q, index) => (
+              <li key={q.id} className="rounded-lg border border-border p-3">
+                <p className="text-sm font-medium text-foreground">
+                  {index + 1}. {q.questionText}
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    ({q.points} pt{q.points === 1 ? '' : 's'}
+                    {q.questionType === 'multiple_choice' ? ', select all that apply' : ''})
+                  </span>
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {q.options.map((o) => {
+                    const correct = showAnswers && q.correctOptionIds.includes(o.id);
+                    return (
+                      <li
+                        key={o.id}
+                        className={
+                          correct
+                            ? 'rounded border border-success/40 bg-success/10 px-2 py-1 text-xs text-foreground'
+                            : 'rounded border border-border px-2 py-1 text-xs text-foreground/80'
+                        }
+                      >
+                        {o.text}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {showAnswers && q.explanationText && (
+                  <p className="mt-2 text-xs text-muted-foreground">{q.explanationText}</p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DsaSheetPreview({ form }: PreviewProps) {
+  return (
+    <PreviewNote icon={Code2}>
+      Opening this item takes students to the DSA Practice Center sheet
+      <span className="font-mono"> {form.slug || '…'}</span>.
+    </PreviewNote>
   );
 }
 

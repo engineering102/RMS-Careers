@@ -123,6 +123,7 @@ describe('project rubric', () => {
 describe('content builder schema', () => {
   const base = {
     id: '11111111-1111-4111-8111-111111111111',
+    contentType: 'notes' as const,
     title: 'Two pointers',
     slug: 'two-pointers',
     programId: null,
@@ -138,6 +139,22 @@ describe('content builder schema', () => {
     expect(contentBuilderSchema.safeParse({ ...base, slug: 'Two Pointers' }).success).toBe(false);
     expect(contentBuilderSchema.safeParse({ ...base, resourceLink: 'ftp://x' }).success).toBe(false);
     expect(contentBuilderSchema.safeParse({ ...base, durationMinutes: -5 }).success).toBe(false);
+  });
+
+  it('keeps only the fields that belong to the item type', () => {
+    const parsed = contentBuilderSchema.safeParse({ ...base, contentType: 'quiz', notes: 'stray', videoUrl: 'x' });
+    expect(parsed.success && parsed.data).not.toHaveProperty('notes');
+    expect(parsed.success && parsed.data).not.toHaveProperty('videoUrl');
+  });
+
+  it('requires a rubric for projects, keyed so the builder can mark the field', () => {
+    const parsed = contentBuilderSchema.safeParse({ ...base, contentType: 'project' });
+    expect(parsed.success).toBe(false);
+    expect(!parsed.success && parsed.error.issues[0].path).toEqual(['rubric']);
+  });
+
+  it('rejects unknown content types', () => {
+    expect(contentBuilderSchema.safeParse({ ...base, contentType: 'webinar' }).success).toBe(false);
   });
 });
 

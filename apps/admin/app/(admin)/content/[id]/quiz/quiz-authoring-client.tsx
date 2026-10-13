@@ -388,9 +388,13 @@ export function QuizAuthoringClient({
             </Link>
           </Button>
           <span className="text-muted-foreground/40">/</span>
-          <span className="font-semibold text-foreground text-sm truncate max-w-[280px]">
+          <Link
+            href={`/content/${contentItem.id}`}
+            className="font-semibold text-foreground text-sm truncate max-w-[280px] hover:underline"
+            title="Back to the content builder"
+          >
             {contentItem.title}
-          </span>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">

@@ -64,6 +64,8 @@ import {
 } from './actions';
 import type { ContentItemWithDetails } from '@/lib/db/queries';
 import type { Program, ContentTypeEnum } from '@rms/db';
+import { CONTENT_TYPE_DEFS, CREATE_CHOICES, type CreateChoiceId } from '@/lib/content/types/registry';
+import { ContentTypePicker } from './content-type-picker';
 
 interface ContentClientProps {
   initialContentItems: ContentItemWithDetails[];
@@ -74,14 +76,9 @@ interface ContentClientProps {
   searchQuery?: string;
 }
 
-const CONTENT_TYPE_LABELS: Record<ContentTypeEnum, string> = {
-  lecture: 'Lecture',
-  notes: 'Notes / Reading',
-  dsa_sheet: 'DSA Sheet',
-  quiz: 'Assessment Quiz',
-  project: 'Project Milestone',
-  resource: 'External Resource'
-};
+const CONTENT_TYPE_LABELS = Object.fromEntries(
+  Object.entries(CONTENT_TYPE_DEFS).map(([type, def]) => [type, def.label])
+) as Record<ContentTypeEnum, string>;
 
 export function ContentClient({
   initialContentItems,
@@ -110,7 +107,9 @@ export function ContentClient({
   // Create Form State
   const [createTitle, setCreateTitle] = React.useState('');
   const [createSlug, setCreateSlug] = React.useState('');
-  const [createType, setCreateType] = React.useState<ContentTypeEnum>('lecture');
+  const [createChoiceId, setCreateChoiceId] = React.useState<CreateChoiceId>('lecture');
+  const createChoice = CREATE_CHOICES.find((c) => c.id === createChoiceId) ?? CREATE_CHOICES[0];
+  const createType = createChoice.contentType;
   const [createProgramId, setCreateProgramId] = React.useState<string>('global');
   const [createDescription, setCreateDescription] = React.useState('');
   const [createTopic, setCreateTopic] = React.useState('');
@@ -190,13 +189,15 @@ export function ContentClient({
         title: createTitle.trim(),
         slug: createSlug.trim() || undefined,
         contentType: createType,
+        quizType: createChoice.quizType,
         description: createDescription.trim() || undefined,
         programId: createProgramId === 'global' ? null : parseInt(createProgramId, 10),
         isPublished: createIsPublished,
         topic: createTopic.trim() || undefined,
-        resourceLink: createResourceLink.trim() || undefined,
-        videoUrl: createVideoUrl.trim() || undefined,
-        durationMinutes: createDuration ? parseInt(createDuration, 10) : undefined
+        // Only the fields the chosen type uses are sent.
+        resourceLink: (createType === 'notes' || createType === 'resource') && createResourceLink.trim() ? createResourceLink.trim() : undefined,
+        videoUrl: createType === 'lecture' && createVideoUrl.trim() ? createVideoUrl.trim() : undefined,
+        durationMinutes: CONTENT_TYPE_DEFS[createType].hasDuration && createDuration ? parseInt(createDuration, 10) : undefined
       });
 
       if (!res.success) {
@@ -209,7 +210,7 @@ export function ContentClient({
       // Reset form
       setCreateTitle('');
       setCreateSlug('');
-      setCreateType('lecture');
+      setCreateChoiceId('lecture');
       setCreateProgramId('global');
       setCreateDescription('');
       setCreateTopic('');
@@ -326,6 +327,11 @@ export function ContentClient({
 
             <form onSubmit={handleCreateSubmit} className="space-y-4 py-2">
               <div className="space-y-2">
+                <span className="text-sm font-medium">What are you creating? *</span>
+                <ContentTypePicker value={createChoiceId} onChange={setCreateChoiceId} />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Title *</label>
                 <Input
                   required
@@ -336,25 +342,6 @@ export function ContentClient({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Content Type *</label>
-                  <Select
-                    value={createType}
-                    onValueChange={(val) => setCreateType(val as ContentTypeEnum)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(CONTENT_TYPE_LABELS).map(([k, label]) => (
-                        <SelectItem key={k} value={k}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Scope / Program *</label>
                   <Select
@@ -405,37 +392,49 @@ export function ContentClient({
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Estimated Duration (mins)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="e.g. 45"
-                    value={createDuration}
-                    onChange={(e) => setCreateDuration(e.target.value)}
-                  />
-                </div>
+                {CONTENT_TYPE_DEFS[createType].hasDuration && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Estimated Duration (mins)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 45"
+                      value={createDuration}
+                      onChange={(e) => setCreateDuration(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {createType === 'lecture' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Video / Stream URL</label>
+                  <label className="text-sm font-medium">Video link</label>
                   <Input
-                    placeholder="https://..."
+                    placeholder="https://www.youtube.com/watch?v=…"
                     value={createVideoUrl}
                     onChange={(e) => setCreateVideoUrl(e.target.value)}
                   />
                 </div>
+              )}
 
+              {(createType === 'notes' || createType === 'resource') && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Resource / External Link</label>
+                  <label className="text-sm font-medium">Document link</label>
                   <Input
-                    placeholder="https://github.com/... or slides link"
+                    placeholder="https://docs.google.com/… or a PDF / slides link"
                     value={createResourceLink}
                     onChange={(e) => setCreateResourceLink(e.target.value)}
                   />
                 </div>
-              </div>
+              )}
+
+              {createType === 'quiz' && (
+                <p className="text-xs text-muted-foreground">
+                  {createChoice.quizType === 'formal'
+                    ? 'Starts with a 30-minute limit and explanations shown after the deadline. Add questions in the quiz workbench after creating.'
+                    : 'Add questions in the quiz workbench after creating.'}
+                </p>
+              )}
 
               <div className="flex items-center gap-2 pt-2">
                 <input
