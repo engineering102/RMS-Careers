@@ -10,7 +10,7 @@ export default defineConfig({
     // parallel load (final review). Assertions are unchanged.
     testTimeout: 15_000,
     globals: false,
-    include: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
+    include: ['**/__tests__/**/*.test.ts', '**/*.test.ts', 'lib/__tests__/**/*.test.tsx'],
     exclude: ['node_modules', '.next', 'app', 'components', '**/*.int.test.ts'],
     setupFiles: ['../../packages/db/src/testing/setup-unit.ts'],
     coverage: {
@@ -19,6 +19,8 @@ export default defineConfig({
       exclude: ['node_modules', '.next']
     }
   },
+  // Components rely on the automatic JSX runtime (no `import React`), as Next compiles them.
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.')

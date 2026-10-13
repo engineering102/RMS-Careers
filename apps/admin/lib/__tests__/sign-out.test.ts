@@ -106,8 +106,15 @@ describe('admin sign-out', () => {
   });
 
   it('the user menu posts to the route instead of calling signOut() in a Server Action', () => {
-    const src = readFileSync(path.resolve(__dirname, '../../app/(admin)/user.tsx'), 'utf8');
-    expect(src).toMatch(/<form action=\{SIGN_OUT_PATH\} method="post">/);
-    expect(src).not.toMatch(/signOut\(/);
+    const root = path.resolve(__dirname, '../..');
+    const read = (file: string) => readFileSync(path.join(root, file), 'utf8');
+    const confirm = read('components/sign-out-confirm.tsx');
+    const menu = read('app/(admin)/user-menu.tsx');
+    const user = read('app/(admin)/user.tsx');
+    // The native POST form lives behind the confirmation dialog the user menu opens.
+    expect(confirm).toMatch(/<form ref=\{formRef\} action=\{SIGN_OUT_PATH\} method="post"/);
+    expect(menu).toMatch(/<SignOutConfirm\b/);
+    expect(user).toMatch(/<UserMenu\b/);
+    for (const src of [confirm, menu, user]) expect(src).not.toMatch(/signOut\(/);
   });
 });
