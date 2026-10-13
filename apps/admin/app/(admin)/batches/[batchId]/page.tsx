@@ -1,7 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Users } from 'lucide-react';
-import { getBatchById, getCollegeById, getProgramById, getBatchRoster } from '@/lib/db/queries';
+import {
+  getBatchById,
+  getCollegeById,
+  getProgramById,
+  getBatchRoster,
+  getProgramEnrollmentCount
+} from '@/lib/db/queries';
+import { enrollmentLinkAvailability } from '@/lib/enrollment/link-availability';
+import { AddStudentsMenu } from './add-students-menu';
 import { requireAdminSession } from '@/lib/authz';
 import { summarizeRoster, type BatchRosterEntry } from '@/lib/batches/roster';
 import { formatDate } from '@/lib/utils/format-date';
@@ -34,10 +42,11 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
   const batch = await getBatchById(batchId);
   if (!batch) notFound();
 
-  const [college, program, roster] = await Promise.all([
+  const [college, program, roster, programEnrolledCount] = await Promise.all([
     getCollegeById(batch.collegeId),
     getProgramById(batch.programId),
-    getBatchRoster(batch.id)
+    getBatchRoster(batch.id),
+    getProgramEnrollmentCount(batch.programId)
   ]);
   const summary = summarizeRoster(roster);
 
@@ -69,6 +78,17 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
         }
         eyebrow={program ? `${program.name} (${program.code})` : 'Batch'}
         title={batch.name}
+        actions={
+          program ? (
+            <AddStudentsMenu
+              batchId={batch.id}
+              batchName={batch.name}
+              program={{ name: program.name, code: program.code }}
+              collegeLabel={college ? `${college.name} (${college.code})` : 'Unknown college'}
+              linkAvailability={enrollmentLinkAvailability(program, programEnrolledCount)}
+            />
+          ) : null
+        }
         description={
           <>
             {college ? `${college.name} (${college.code})` : 'Unknown college'} · {timeline} · Status:{' '}
@@ -116,7 +136,7 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
           <EmptyState
             icon={Users}
             title="No students in this batch yet"
-            description="Students appear here once they are enrolled into this batch, for example through Import Students on the Enrollments page."
+            description="Use Add students to import a CSV or Excel file into this batch, or to share the program's enrollment link."
           />
         ) : (
           <Card className="overflow-x-auto shadow-sm">
