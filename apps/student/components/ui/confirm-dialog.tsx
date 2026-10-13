@@ -35,6 +35,28 @@ export function initialFocusTarget(variant: ConfirmDialogVariant): 'cancel' | 'c
   return variant === 'destructive' ? 'cancel' : 'confirm';
 }
 
+/** How long after opening a keyboard click with no key press inside the dialog is treated as carried over. */
+export const CARRY_OVER_WINDOW_MS = 250;
+
+/**
+ * True for a click the dialog must ignore: the browser's default action for the key press that opened
+ * it. Radix Select and DropdownMenu act on keydown, so the dialog mounts and takes focus while that
+ * keydown is still being handled; the Enter key's activation then lands on the newly focused dialog
+ * button and would confirm (or cancel) with no second key press. Such a click is keyboard-generated
+ * (`detail === 0`), and no fresh key press happened inside the dialog; it arrives right after opening, or
+ * while that key is still held down (auto-repeat). Mouse clicks (`detail >= 1`), real key presses on the
+ * buttons, and later assistive-technology clicks still work.
+ */
+export function isCarriedOverActivation(click: {
+  detail: number;
+  keyPressedInside: boolean;
+  openingKeyHeld: boolean;
+  msSinceOpen: number;
+}): boolean {
+  if (click.detail !== 0 || click.keyPressedInside) return false;
+  return click.openingKeyHeld || click.msSinceOpen < CARRY_OVER_WINDOW_MS;
+}
+
 /**
  * Accessible confirmation (role="alertdialog") built on the Radix dialog already used by the app:
  * focus is trapped, Escape and Cancel return focus to where it was, and nothing can dismiss it while pending.
@@ -59,6 +81,17 @@ export function ConfirmDialog({
   // Element focused before the dialog opened. The dialog has no Radix Trigger, so Radix's own
   // close handling has nothing to return focus to; this does it instead.
   const returnFocusRef = React.useRef<HTMLElement | null>(null);
+  const openedAtRef = React.useRef(0);
+  const keyPressedInsideRef = React.useRef(false);
+  const openingKeyHeldRef = React.useRef(false);
+
+  const ignoreClick = (event: React.MouseEvent) =>
+    isCarriedOverActivation({
+      detail: event.detail,
+      keyPressedInside: keyPressedInsideRef.current,
+      openingKeyHeld: openingKeyHeldRef.current,
+      msSinceOpen: performance.now() - openedAtRef.current
+    });
 
   const handleOpenChange = (next: boolean) => {
     if (isPending && !next) return;
@@ -85,6 +118,9 @@ export function ConfirmDialog({
           role="alertdialog"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
+            openedAtRef.current = performance.now();
+            keyPressedInsideRef.current = false;
+            openingKeyHeldRef.current = false;
             returnFocusRef.current =
               document.activeElement instanceof HTMLElement ? document.activeElement : null;
             (initialFocusTarget(variant) === 'cancel' ? cancelRef : confirmRef).current?.focus();
@@ -94,6 +130,14 @@ export function ConfirmDialog({
             const target = returnFocusRef.current;
             returnFocusRef.current = null;
             if (target?.isConnected) target.focus();
+          }}
+          onKeyDown={(event) => {
+            // An auto-repeating key was pressed before the dialog opened; only a fresh press counts.
+            if (event.repeat && !keyPressedInsideRef.current) openingKeyHeldRef.current = true;
+            else keyPressedInsideRef.current = true;
+          }}
+          onKeyUp={() => {
+            openingKeyHeldRef.current = false;
           }}
           onPointerDownOutside={(event) => {
             if (isPending) event.preventDefault();
@@ -121,7 +165,10 @@ export function ConfirmDialog({
               type="button"
               variant="outline"
               disabled={isPending}
-              onClick={() => handleOpenChange(false)}
+              onClick={(event) => {
+                if (ignoreClick(event)) return;
+                handleOpenChange(false);
+              }}
             >
               {cancelLabel}
             </Button>
@@ -131,7 +178,10 @@ export function ConfirmDialog({
               variant={variant === 'destructive' ? 'destructive' : 'default'}
               disabled={isPending}
               aria-busy={isPending || undefined}
-              onClick={handleConfirm}
+              onClick={(event) => {
+                if (ignoreClick(event)) return;
+                void handleConfirm();
+              }}
             >
               {isPending ? (
                 <>
