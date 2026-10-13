@@ -57,6 +57,48 @@ export function isCarriedOverActivation(click: {
   return click.openingKeyHeld || click.msSinceOpen < CARRY_OVER_WINDOW_MS;
 }
 
+const POPUP_SELECTOR = '[role="listbox"], [role="menu"]';
+
+// Last element focused outside any listbox/menu popup: the trigger of a Select or DropdownMenu
+// holds focus right before its popup opens. Tracked by one shared listener (see useFocusHistory).
+let lastFocusOutsidePopup: HTMLElement | null = null;
+let focusHistoryInstalled = false;
+
+function useFocusHistory() {
+  React.useEffect(() => {
+    if (focusHistoryInstalled) return;
+    focusHistoryInstalled = true;
+    document.addEventListener(
+      'focusin',
+      (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && !target.closest(POPUP_SELECTOR)) lastFocusOutsidePopup = target;
+      },
+      true
+    );
+  }, []);
+}
+
+/**
+ * Where focus should return when the dialog closes. Usually the element focused when it opened; but
+ * when that is an option or item inside a listbox/menu popup (a Radix Select or DropdownMenu that
+ * opened this dialog), the popup is about to unmount, so return to the trigger instead: the element
+ * that controls the popup (`aria-controls`, while it is still set), else the element focused just
+ * before the popup took focus.
+ */
+export function returnFocusTarget(
+  active: Element | null,
+  focusedBeforePopup: HTMLElement | null = lastFocusOutsidePopup
+): HTMLElement | null {
+  if (!(active instanceof HTMLElement)) return null;
+  const popup = active.closest(POPUP_SELECTOR);
+  if (!popup) return active;
+  const controller = popup.id ? document.querySelector<HTMLElement>(`[aria-controls="${popup.id}"]`) : null;
+  if (controller) return controller;
+  if (focusedBeforePopup?.isConnected) return focusedBeforePopup;
+  return active;
+}
+
 /**
  * Accessible confirmation (role="alertdialog") built on the Radix dialog already used by the app:
  * focus is trapped, Escape and Cancel return focus to where it was, and nothing can dismiss it while pending.
@@ -74,12 +116,13 @@ export function ConfirmDialog({
   onConfirm,
   pending
 }: ConfirmDialogProps) {
+  useFocusHistory();
   const [internalPending, setInternalPending] = React.useState(false);
   const isPending = pending ?? internalPending;
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const confirmRef = React.useRef<HTMLButtonElement>(null);
-  // Element focused before the dialog opened. The dialog has no Radix Trigger, so Radix's own
-  // close handling has nothing to return focus to; this does it instead.
+  // Where focus returns on close (see returnFocusTarget). The dialog has no Radix Trigger, so Radix's
+  // own close handling has nothing to return focus to; this does it instead.
   const returnFocusRef = React.useRef<HTMLElement | null>(null);
   const openedAtRef = React.useRef(0);
   const keyPressedInsideRef = React.useRef(false);
@@ -121,8 +164,7 @@ export function ConfirmDialog({
             openedAtRef.current = performance.now();
             keyPressedInsideRef.current = false;
             openingKeyHeldRef.current = false;
-            returnFocusRef.current =
-              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            returnFocusRef.current = returnFocusTarget(document.activeElement);
             (initialFocusTarget(variant) === 'cancel' ? cancelRef : confirmRef).current?.focus();
           }}
           onCloseAutoFocus={(event) => {
