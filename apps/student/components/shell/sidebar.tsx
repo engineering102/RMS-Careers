@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { LogOut, GraduationCap, Building2, CheckCircle2 } from 'lucide-react';
 import { STUDENT_NAV_ITEMS } from './nav-items';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
-import { SIGN_OUT_PATH } from '@/lib/constants/session';
 import { CohortSwitcher } from './cohort-switcher';
+import { SignOutButton } from './sign-out-button';
 import { cn } from '@/lib/utils';
 
 export function Sidebar({
@@ -103,16 +103,12 @@ export function Sidebar({
               <span className="truncate">{student?.collegeName || 'RMS Partner College'}</span>
             </div>
           </div>
-          <form action={SIGN_OUT_PATH} method="post">
-            <button
-              type="submit"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-              title="Sign out"
-              aria-label="Sign out"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </form>
+          <SignOutButton
+            label="Sign out"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+          >
+            <LogOut className="h-4 w-4" />
+          </SignOutButton>
         </div>
       </div>
     </aside>

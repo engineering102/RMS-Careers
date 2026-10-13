@@ -37,7 +37,7 @@ export function initialFocusTarget(variant: ConfirmDialogVariant): 'cancel' | 'c
 
 /**
  * Accessible confirmation (role="alertdialog") built on the Radix dialog already used by the app:
- * focus is trapped, Escape and Cancel return to the page, and nothing can dismiss it while pending.
+ * focus is trapped, Escape and Cancel return focus to where it was, and nothing can dismiss it while pending.
  */
 export function ConfirmDialog({
   open,
@@ -56,6 +56,9 @@ export function ConfirmDialog({
   const isPending = pending ?? internalPending;
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const confirmRef = React.useRef<HTMLButtonElement>(null);
+  // Element focused before the dialog opened. The dialog has no Radix Trigger, so Radix's own
+  // close handling has nothing to return focus to; this does it instead.
+  const returnFocusRef = React.useRef<HTMLElement | null>(null);
 
   const handleOpenChange = (next: boolean) => {
     if (isPending && !next) return;
@@ -82,7 +85,15 @@ export function ConfirmDialog({
           role="alertdialog"
           onOpenAutoFocus={(event) => {
             event.preventDefault();
+            returnFocusRef.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
             (initialFocusTarget(variant) === 'cancel' ? cancelRef : confirmRef).current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            const target = returnFocusRef.current;
+            returnFocusRef.current = null;
+            if (target?.isConnected) target.focus();
           }}
           onPointerDownOutside={(event) => {
             if (isPending) event.preventDefault();

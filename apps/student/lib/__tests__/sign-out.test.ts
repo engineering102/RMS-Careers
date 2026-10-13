@@ -144,11 +144,18 @@ describe('student sign-out', () => {
     const root = path.resolve(__dirname, '../..');
     expect(existsSync(path.join(root, 'lib/actions/auth.ts'))).toBe(false);
     const dir = path.join(root, 'components/shell');
-    const forms = readdirSync(dir)
-      .filter((f) => f.endsWith('.tsx'))
-      .map((f) => readFileSync(path.join(dir, f), 'utf8'))
-      .join('\n');
-    expect(forms).not.toMatch(/signOutAction|signOut\(/);
-    expect((forms.match(/action=\{SIGN_OUT_PATH\} method="post"/g) ?? []).length).toBe(4);
+    const files = readdirSync(dir).filter((f) => f.endsWith('.tsx'));
+    const sources = new Map(files.map((f) => [f, readFileSync(path.join(dir, f), 'utf8')]));
+    const all = [...sources.values()].join('\n');
+    expect(all).not.toMatch(/signOutAction|signOut\(/);
+
+    // The one native POST form lives in SignOutButton (behind a confirmation dialog)...
+    const formPattern = /action=\{SIGN_OUT_PATH\} method="post"/g;
+    expect((sources.get('sign-out-button.tsx')!.match(formPattern) ?? []).length).toBe(1);
+    expect((all.match(formPattern) ?? []).length).toBe(1);
+    // ...and every place that offers sign-out renders it.
+    for (const site of ['header.tsx', 'sidebar.tsx', 'mobile-nav.tsx', 'empty-enrollment.tsx']) {
+      expect(sources.get(site), site).toMatch(/<SignOutButton\b/);
+    }
   });
 });

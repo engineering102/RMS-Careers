@@ -12,5 +12,7 @@ export default defineConfig({
     exclude: ['node_modules', '.next', '**/*.int.test.*'],
     setupFiles: ['../../packages/db/src/testing/setup-unit.ts']
   },
+  // Components rely on the automatic JSX runtime (no `import React`), as Next compiles them.
+  esbuild: { jsx: 'automatic' },
   resolve: { alias: { '@': path.resolve(__dirname, '.') } }
 });
