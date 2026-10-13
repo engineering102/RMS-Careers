@@ -55,16 +55,26 @@ import { toast } from 'sonner';
 import type { Program, Batch, College } from '@/lib/db';
 import { Layers } from 'lucide-react';
 
+/** Target pre-selected from /enrollments/import?batch=<id> (resolved server-side by the page). */
+export interface ImportInitialSelection {
+  collegeId: string | null;
+  programId: number;
+  batchId: string;
+  batchName: string;
+}
+
 interface BulkImportClientProps {
   programs: Program[];
   colleges?: College[];
   batches?: Batch[];
+  initialSelection?: ImportInitialSelection | null;
 }
 
 export function BulkImportClient({
   programs,
   colleges = [],
-  batches = []
+  batches = [],
+  initialSelection = null
 }: BulkImportClientProps) {
   const router = useRouter();
 
@@ -72,9 +82,16 @@ export function BulkImportClient({
   const [step, setStep] = React.useState<1 | 2 | 3 | 4>(1);
 
   // Form states
-  const [selectedCollegeId, setSelectedCollegeId] = React.useState<string>('all');
-  const [selectedProgramId, setSelectedProgramId] = React.useState<string>('');
-  const [selectedBatchId, setSelectedBatchId] = React.useState<string>('');
+  const [selectedCollegeId, setSelectedCollegeId] = React.useState<string>(() =>
+    initialSelection?.collegeId && colleges.some((c) => c.id === initialSelection.collegeId)
+      ? initialSelection.collegeId
+      : 'all'
+  );
+  const [selectedProgramId, setSelectedProgramId] = React.useState<string>(
+    initialSelection ? String(initialSelection.programId) : ''
+  );
+  const [selectedBatchId, setSelectedBatchId] = React.useState<string>(initialSelection?.batchId ?? '');
+  const backHref = initialSelection ? `/batches/${initialSelection.batchId}` : '/enrollments';
   const [file, setFile] = React.useState<File | null>(null);
   const [sendEmails, setSendEmails] = React.useState<boolean>(false);
 
@@ -317,7 +334,12 @@ export function BulkImportClient({
             </div>
           )}
         </CardContent>
-        <CardFooter className="pt-2 flex justify-center">
+        <CardFooter className="pt-2 flex flex-wrap justify-center gap-2">
+          {previewData ? (
+            <Button variant="outline" onClick={() => router.push(`/batches/${previewData.batch.id}`)}>
+              Back to {previewData.batch.name}
+            </Button>
+          ) : null}
           <Button onClick={() => router.push('/enrollments')} className="gap-2">
             Back to Enrollments
           </Button>
@@ -535,10 +557,23 @@ export function BulkImportClient({
             Import student enrollment lists from CSV or Excel spreadsheets.
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => router.push('/enrollments')} className="gap-1.5 text-xs">
+        <Button variant="ghost" size="sm" onClick={() => router.push(backHref)} className="gap-1.5 text-xs">
           <ArrowLeft className="h-4 w-4" /> Cancel
         </Button>
       </div>
+
+      {initialSelection ? (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"
+        >
+          <Layers className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span>
+            Importing into batch <strong className="font-semibold">{initialSelection.batchName}</strong>. You can
+            change the program or batch below.
+          </span>
+        </div>
+      ) : null}
 
       <Card className="shadow-md">
         <form onSubmit={handleValidateFile}>

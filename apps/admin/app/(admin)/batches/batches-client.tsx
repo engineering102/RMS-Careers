@@ -12,10 +12,7 @@ import {
   BookOpen,
   FilterX,
   Search,
-  FileQuestion,
-  FolderGit2,
-  Award,
-  BarChart3
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -540,7 +537,12 @@ export function BatchesClient({
                         <Layers className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-semibold text-foreground">{batch.name}</div>
+                        <Link
+                          href={`/batches/${batch.id}`}
+                          className="font-semibold text-foreground underline-offset-4 hover:underline"
+                        >
+                          {batch.name}
+                        </Link>
                         <div className="text-xs text-muted-foreground font-mono">
                           ID: {batch.id.slice(0, 8)}...
                         </div>
@@ -604,38 +606,12 @@ export function BatchesClient({
 
                   {/* Actions */}
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-primary/30 hover:bg-primary/5">
-                        <Link href={`/batches/${batch.id}/analytics`}>
-                          <BarChart3 className="h-3 w-3 text-primary" />
-                          Analytics
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-                        <Link href={`/batches/${batch.id}/assessments`}>
-                          <FileQuestion className="h-3 w-3 text-violet-600" />
-                          Assessments
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-                        <Link href={`/batches/${batch.id}/projects`}>
-                          <FolderGit2 className="h-3 w-3 text-amber-600" />
-                          Projects
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-                        <Link href={`/batches/${batch.id}/curriculum`}>
-                          <BookOpen className="h-3 w-3" />
-                          Curriculum
-                        </Link>
-                      </Button>
-                      <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
-                        <Link href={`/batches/${batch.id}/external-assessments`}>
-                          <Award className="h-3 w-3 text-emerald-600" />
-                          External
-                        </Link>
-                      </Button>
-                    </div>
+                    <Button asChild size="sm" variant="outline" className="h-7 text-xs gap-1.5">
+                      <Link href={`/batches/${batch.id}`} aria-label={`Open ${batch.name}`}>
+                        Open
+                        <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

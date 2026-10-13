@@ -6,12 +6,14 @@ import {
   colleges,
   programs,
   enrollments,
+  students,
   tutors,
   tutorBatchAssignments,
   type Batch,
   type TutorBatchAssignment
 } from '@rms/db';
 import { eq, and, desc, count, ilike, ne } from 'drizzle-orm';
+import type { BatchRosterEntry } from '@/lib/batches/roster';
 
 export interface BatchWithDetails {
   id: string;
@@ -175,6 +177,52 @@ export async function getBatchEnrollmentCount(batchId: string): Promise<number> 
   } catch (error) {
     console.error(`Error fetching enrollment count for batch ${batchId}:`, error);
     return 0;
+  }
+}
+
+/**
+ * Every enrollment in a batch with its student, newest first. Includes all statuses (the page shows
+ * them); returns an empty list when the database is not configured.
+ */
+export async function getBatchRoster(batchId: string): Promise<BatchRosterEntry[]> {
+  if (!batchId) return [];
+  try {
+    if (!process.env.POSTGRES_URL) return [];
+    const rows = await db
+      .select({
+        enrollmentId: enrollments.id,
+        status: enrollments.status,
+        enrolledAt: enrollments.createdAt,
+        confirmationSentAt: enrollments.confirmationSentAt,
+        studentId: students.id,
+        fullName: students.fullName,
+        email: students.email,
+        collegeRollNumber: students.collegeRollNumber,
+        branch: students.branch,
+        year: students.year
+      })
+      .from(enrollments)
+      .innerJoin(students, eq(students.id, enrollments.studentId))
+      .where(eq(enrollments.batchId, batchId))
+      .orderBy(desc(enrollments.createdAt));
+
+    return rows.map((r) => ({
+      enrollmentId: r.enrollmentId,
+      status: r.status,
+      enrolledAt: r.enrolledAt,
+      confirmationSentAt: r.confirmationSentAt,
+      student: {
+        id: r.studentId,
+        fullName: r.fullName,
+        email: r.email,
+        collegeRollNumber: r.collegeRollNumber,
+        branch: r.branch,
+        year: r.year
+      }
+    }));
+  } catch (error) {
+    console.error(`Error fetching roster for batch ${batchId}:`, error);
+    return [];
   }
 }
 
