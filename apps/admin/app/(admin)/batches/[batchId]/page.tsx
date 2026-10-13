@@ -84,6 +84,7 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
               batchId={batch.id}
               batchName={batch.name}
               program={{ name: program.name, code: program.code }}
+              collegeLabel={college ? `${college.name} (${college.code})` : 'Unknown college'}
               linkAvailability={enrollmentLinkAvailability(program, programEnrolledCount)}
             />
           ) : null

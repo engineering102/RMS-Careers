@@ -19,6 +19,7 @@ vi.mock('sonner', () => ({ toast }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('../../app/(admin)/enrollments/import/actions', () => importActions);
 vi.mock('@/lib/db', () => db);
+vi.mock('../../app/(admin)/batches/[batchId]/students/actions', () => ({ addStudentToBatchAction: vi.fn() }));
 vi.mock('@/lib/authz', () => ({ requireAdminSession: vi.fn().mockResolvedValue({ user: { id: 'a1' } }) }));
 
 import { AddStudentsMenu, copyText } from '../../app/(admin)/batches/[batchId]/add-students-menu';
@@ -77,6 +78,7 @@ function renderMenu(accepting = true) {
       batchId="b-1"
       batchName="CSE Alpha"
       program={{ name: 'Full Stack', code: 'FS 1' }}
+      collegeLabel="JNTUH (JNT)"
       linkAvailability={
         accepting ? { accepting: true, reason: null } : { accepting: false, reason: 'The program is draft, so the form says registration is not currently open.' }
       }
@@ -89,7 +91,8 @@ describe('AddStudentsMenu', () => {
   it('offers import into this batch and sharing the link', async () => {
     const { user, trigger } = renderMenu();
     await user.click(trigger);
-    const importItem = await screen.findByRole('menuitem', { name: /Import from CSV or Excel/ });
+    expect(await screen.findByRole('menuitem', { name: /Add a student/ })).toBeTruthy();
+    const importItem = screen.getByRole('menuitem', { name: /Import from CSV or Excel/ });
     expect(importItem.getAttribute('href')).toBe('/enrollments/import?batch=b-1');
     expect(screen.getByRole('menuitem', { name: /Share enrollment link/ })).toBeTruthy();
   });

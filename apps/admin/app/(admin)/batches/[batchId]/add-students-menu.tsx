@@ -23,11 +23,13 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { enrollmentLinkPath, type EnrollmentLinkAvailability } from '@/lib/enrollment/link-availability';
+import { AddStudentDialog } from './add-student-dialog';
 
 export interface AddStudentsMenuProps {
   batchId: string;
   batchName: string;
   program: { name: string; code: string };
+  collegeLabel: string;
   linkAvailability: EnrollmentLinkAvailability;
 }
 
@@ -51,13 +53,17 @@ export async function copyText(text: string, input: HTMLInputElement | null): Pr
   }
 }
 
-/** Single "Add students" entry point on a batch: bulk import into this batch, or share the enrollment link. */
-export function AddStudentsMenu({ batchId, batchName, program, linkAvailability }: AddStudentsMenuProps) {
+/**
+ * Single "Add students" entry point on a batch: add one student, bulk import into this batch, or share
+ * the enrollment link.
+ */
+export function AddStudentsMenu({ batchId, batchName, program, collegeLabel, linkAvailability }: AddStudentsMenuProps) {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const linkInputRef = React.useRef<HTMLInputElement>(null);
-  // The dialog opens once the menu has closed, so the two focus scopes do not fight (see user-menu.tsx).
-  const shareAfterClose = React.useRef(false);
+  // Dialogs open once the menu has closed, so the two focus scopes do not fight (see user-menu.tsx).
+  const dialogAfterClose = React.useRef<'add' | 'share' | null>(null);
   const [shareOpen, setShareOpen] = React.useState(false);
+  const [addOpen, setAddOpen] = React.useState(false);
   const [origin, setOrigin] = React.useState('');
 
   React.useEffect(() => {
@@ -89,13 +95,24 @@ export function AddStudentsMenu({ batchId, batchName, program, linkAvailability 
           align="end"
           className="w-64"
           onCloseAutoFocus={(event) => {
-            if (!shareAfterClose.current) return;
-            shareAfterClose.current = false;
+            const pending = dialogAfterClose.current;
+            if (!pending) return;
+            dialogAfterClose.current = null;
             event.preventDefault();
             triggerRef.current?.focus();
-            setShareOpen(true);
+            if (pending === 'add') setAddOpen(true);
+            else setShareOpen(true);
           }}
         >
+          <DropdownMenuItem
+            className="gap-2"
+            onSelect={() => {
+              dialogAfterClose.current = 'add';
+            }}
+          >
+            <UserPlus className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            Add a student
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={`/enrollments/import?batch=${encodeURIComponent(batchId)}`} className="gap-2">
               <FileSpreadsheet className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -105,7 +122,7 @@ export function AddStudentsMenu({ batchId, batchName, program, linkAvailability 
           <DropdownMenuItem
             className="gap-2"
             onSelect={() => {
-              shareAfterClose.current = true;
+              dialogAfterClose.current = 'share';
             }}
           >
             <Link2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -113,6 +130,16 @@ export function AddStudentsMenu({ batchId, batchName, program, linkAvailability 
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <AddStudentDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        batchId={batchId}
+        batchName={batchName}
+        programLabel={`${program.name} (${program.code})`}
+        collegeLabel={collegeLabel}
+        returnFocusRef={triggerRef}
+      />
 
       <Dialog open={shareOpen} onOpenChange={setShareOpen}>
         <DialogContent

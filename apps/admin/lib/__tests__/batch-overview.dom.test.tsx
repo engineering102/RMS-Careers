@@ -18,6 +18,7 @@ const notFound = vi.hoisted(() =>
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/db/queries', () => queries);
+vi.mock('../../app/(admin)/batches/[batchId]/students/actions', () => ({ addStudentToBatchAction: vi.fn() }));
 vi.mock('@/lib/authz', () => ({ requireAdminSession: vi.fn().mockResolvedValue({ user: { id: 'a1' } }) }));
 vi.mock('next/navigation', () => ({
   notFound,
