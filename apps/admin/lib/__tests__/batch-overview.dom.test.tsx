@@ -7,7 +7,8 @@ const queries = vi.hoisted(() => ({
   getBatchById: vi.fn(),
   getCollegeById: vi.fn(),
   getProgramById: vi.fn(),
-  getBatchRoster: vi.fn()
+  getBatchRoster: vi.fn(),
+  getProgramEnrollmentCount: vi.fn()
 }));
 const notFound = vi.hoisted(() =>
   vi.fn(() => {
@@ -106,7 +107,15 @@ describe('Batch overview page', () => {
   beforeEach(() => {
     queries.getBatchById.mockResolvedValue(batch);
     queries.getCollegeById.mockResolvedValue({ id: 'c-1', name: 'JNTUH', code: 'JNT' });
-    queries.getProgramById.mockResolvedValue({ id: 3, name: 'Full Stack', code: 'FS 1' });
+    queries.getProgramById.mockResolvedValue({
+      id: 3,
+      name: 'Full Stack',
+      code: 'FS 1',
+      status: 'active',
+      endDate: null,
+      capacity: 0
+    });
+    queries.getProgramEnrollmentCount.mockResolvedValue(3);
     queries.getBatchRoster.mockResolvedValue([
       entry(1, 'active', 'Asha Test'),
       entry(2, 'pending', 'Ravi Test'),
@@ -129,6 +138,7 @@ describe('Batch overview page', () => {
         .getAttribute('aria-current')
     ).toBe('page');
     expect(screen.getByRole('link', { name: 'All batches' }).getAttribute('href')).toBe('/batches');
+    expect(screen.getByRole('button', { name: /Add students/ })).toBeTruthy();
 
     const rows = screen.getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);
