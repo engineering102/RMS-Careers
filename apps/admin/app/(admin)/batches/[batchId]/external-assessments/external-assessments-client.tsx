@@ -63,6 +63,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/admin/empty-state';
 import { formatDate } from '@/lib/utils/format-date';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   previewExternalAssessmentCsvAction,
   confirmExternalAssessmentImportAction,
@@ -701,6 +702,7 @@ export function BatchExternalAssessmentsClient({
                       onClick={() => setDeletingRecordId(rec.id)}
                       className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                       title="Delete record"
+                      aria-label={`Delete ${rec.assessmentName} result for ${rec.studentName}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -713,32 +715,21 @@ export function BatchExternalAssessmentsClient({
       )}
 
       {/* Delete Record Confirmation Dialog */}
-      <Dialog open={deletingRecordId !== null} onOpenChange={(open) => !open && setDeletingRecordId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Assessment Record</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this imported external assessment result? This action is scoped strictly to this batch and cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeletingRecordId(null)}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deletingRecordId !== null && handleDeleteRecord(deletingRecordId)}
-              disabled={isDeleting}
-            >
-              {isDeleting ? 'Deleting...' : 'Delete Record'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={deletingRecordId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingRecordId(null);
+        }}
+        title="Delete Assessment Record"
+        description="Are you sure you want to remove this imported external assessment result? This action is scoped strictly to this batch and cannot be undone."
+        confirmLabel="Delete Record"
+        pendingLabel="Deleting…"
+        variant="destructive"
+        pending={isDeleting}
+        onConfirm={() => {
+          if (deletingRecordId !== null) return handleDeleteRecord(deletingRecordId);
+        }}
+      />
 
       {/* 5. CSV Import & Validation Workflow Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
