@@ -52,6 +52,7 @@ import {
 import { EmptyState } from '@/components/admin/empty-state';
 import { formatDate } from '@/lib/utils/format-date';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   addContentToBatchAction,
   updatePlacementAction,
@@ -603,6 +604,7 @@ export function BatchCurriculumClient({
                               onClick={() => setDeletingPlacement(item)}
                               className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                               title="Remove placement"
+                              aria-label={`Remove ${item.title} from week ${item.weekNumber}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -865,43 +867,32 @@ export function BatchCurriculumClient({
       )}
 
       {/* Delete Placement Confirmation Modal */}
-      {deletingPlacement && (
-        <Dialog open={!!deletingPlacement} onOpenChange={(open) => !open && setDeletingPlacement(null)}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Remove Placement from Batch</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove <strong>{deletingPlacement.title}</strong> from Week {deletingPlacement.weekNumber}?
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
-              <div>• Only the batch curriculum placement is deleted.</div>
-              <div>• The canonical content item in the Content Library is preserved.</div>
-              <div>• Any historical student completion/activity records remain intact.</div>
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDeletingPlacement(null)}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleRemove}
-                disabled={submitting}
-              >
-                {submitting ? 'Removing...' : 'Remove Placement'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <ConfirmDialog
+        open={deletingPlacement !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingPlacement(null);
+        }}
+        title="Remove Placement from Batch"
+        description={
+          deletingPlacement ? (
+            <>
+              Are you sure you want to remove <strong>{deletingPlacement.title}</strong> from Week{' '}
+              {deletingPlacement.weekNumber}?
+            </>
+          ) : undefined
+        }
+        confirmLabel="Remove Placement"
+        pendingLabel="Removing…"
+        variant="destructive"
+        pending={submitting}
+        onConfirm={handleRemove}
+      >
+        <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md space-y-1">
+          <div>• Only the batch curriculum placement is deleted.</div>
+          <div>• The canonical content item in the Content Library is preserved.</div>
+          <div>• Any historical student completion/activity records remain intact.</div>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

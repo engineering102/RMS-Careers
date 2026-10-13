@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { PlusCircle, Building2, Pencil, Power } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -234,32 +235,23 @@ export function CollegesClient({ initialColleges }: { initialColleges: CollegeIt
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!statusTarget} onOpenChange={(o) => !o && setStatusTarget(null)}>
-        <DialogContent className="sm:max-w-[460px]">
-          <DialogHeader>
-            <DialogTitle>
-              {statusTarget?.isActive ? 'Deactivate' : 'Activate'} {statusTarget?.name}?
-            </DialogTitle>
-            <DialogDescription>
-              {statusTarget?.isActive
-                ? 'This college will no longer be offered when creating programs, batches or imports. Existing students, programs, batches and enrollments are not changed. You can reactivate it at any time.'
-                : 'This college will be offered again in selectors for new programs, batches and imports.'}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStatusTarget(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant={statusTarget?.isActive ? 'destructive' : 'default'}
-              disabled={loading}
-              onClick={confirmStatusChange}
-            >
-              {loading ? 'Updating...' : statusTarget?.isActive ? 'Deactivate' : 'Activate'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={statusTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setStatusTarget(null);
+        }}
+        title={statusTarget ? `${statusTarget.isActive ? 'Deactivate' : 'Activate'} ${statusTarget.name}?` : ''}
+        description={
+          statusTarget?.isActive
+            ? 'This college will no longer be offered when creating programs, batches or imports, and its students lose Student Portal access until it is reactivated. No students, programs, batches or enrollments are deleted. You can reactivate it at any time.'
+            : 'This college will be offered again in selectors for new programs, batches and imports, and its students regain Student Portal access.'
+        }
+        confirmLabel={statusTarget?.isActive ? 'Deactivate' : 'Activate'}
+        pendingLabel="Updating…"
+        variant={statusTarget?.isActive ? 'destructive' : 'default'}
+        pending={loading}
+        onConfirm={confirmStatusChange}
+      />
     </div>
   );
 }
