@@ -55,6 +55,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/admin/empty-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatDate } from '@/lib/utils/format-date';
 import { toast } from 'sonner';
 import {
@@ -276,20 +277,46 @@ export function ContentClient({
     }
   };
 
-  const handleLifecycleChange = async (
+  type LifecycleAction = 'publish' | 'unpublish' | 'archive' | 'unarchive';
+
+  // Unpublishing and archiving hide the item from students, so they ask first.
+  const [pendingLifecycle, setPendingLifecycle] = React.useState<{
+    item: ContentItemWithDetails;
+    action: 'unpublish' | 'archive';
+  } | null>(null);
+
+  const applyLifecycleChange = async (
     item: ContentItemWithDetails,
-    action: 'publish' | 'unpublish' | 'archive' | 'unarchive'
-  ) => {
+    action: LifecycleAction
+  ): Promise<boolean> => {
     try {
       const res = await updateContentLifecycleAction(item.id, action);
       if (!res.success) {
         toast.error(res.error || `Failed to ${action} content.`);
-        return;
+        return false;
       }
       toast.success(`Content item ${action}ed successfully.`);
       router.refresh();
+      return true;
     } catch {
       toast.error('An unexpected error occurred.');
+      return false;
+    }
+  };
+
+  const handleLifecycleChange = (item: ContentItemWithDetails, action: LifecycleAction) => {
+    if (action === 'unpublish' || action === 'archive') {
+      setPendingLifecycle({ item, action });
+      return;
+    }
+    void applyLifecycleChange(item, action);
+  };
+
+  // Failures keep the dialog open (with a toast) so the admin can retry or cancel.
+  const confirmLifecycleChange = async () => {
+    if (!pendingLifecycle) return;
+    if (await applyLifecycleChange(pendingLifecycle.item, pendingLifecycle.action)) {
+      setPendingLifecycle(null);
     }
   };
 
@@ -794,6 +821,7 @@ export function ContentClient({
                                 onClick={() => handleLifecycleChange(item, 'archive')}
                                 className="h-8 w-8 p-0 text-slate-500 hover:text-slate-700 hover:bg-slate-500/10"
                                 title="Archive content"
+                                aria-label={`Archive ${item.title}`}
                               >
                                 <Archive className="h-4 w-4" />
                               </Button>
@@ -982,6 +1010,27 @@ export function ContentClient({
           </DialogContent>
         </Dialog>
       )}
+
+      <ConfirmDialog
+        open={pendingLifecycle !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingLifecycle(null);
+        }}
+        title={
+          pendingLifecycle
+            ? `${pendingLifecycle.action === 'archive' ? 'Archive' : 'Unpublish'} "${pendingLifecycle.item.title}"?`
+            : ''
+        }
+        description={
+          pendingLifecycle?.action === 'archive'
+            ? 'Students stop seeing it in their library and batch curricula. Restoring it returns it to Draft, and it must be published again. Student progress is not deleted.'
+            : 'It goes back to Draft, and students stop seeing it in their library and batch curricula until it is published again. Student progress is not deleted.'
+        }
+        confirmLabel={pendingLifecycle?.action === 'archive' ? 'Archive' : 'Unpublish'}
+        pendingLabel="Saving…"
+        variant={pendingLifecycle?.action === 'archive' ? 'destructive' : 'default'}
+        onConfirm={confirmLifecycleChange}
+      />
     </div>
   );
 }

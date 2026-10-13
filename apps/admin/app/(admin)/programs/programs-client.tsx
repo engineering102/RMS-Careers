@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { PlusCircle, BookOpen, ExternalLink, Check, Copy, Users, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { EmptyState } from '@/components/admin/empty-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   createProgramAction,
   updateProgramStatusAction,
@@ -49,12 +50,14 @@ interface CollegeOption {
 
 const NO_COLLEGE = '__none__';
 
+type ProgramStatus = 'draft' | 'active' | 'archived';
+
 interface ProgramItem {
   id: number;
   name: string;
   code: string;
   description: string | null;
-  status: 'draft' | 'active' | 'archived';
+  status: ProgramStatus;
   capacity: number;
   collegeId: string | null;
   startDate: Date | null;
@@ -83,23 +86,72 @@ export function ProgramsClient({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleStatusChange = async (id: number, status: 'draft' | 'active' | 'archived') => {
+  // The inline selects show the saved value until a change succeeds, so a cancelled or failed
+  // change never leaves the wrong value on screen. Server props win again after revalidation.
+  const [saved, setSaved] = useState<Record<number, { status?: ProgramStatus; collegeId?: string | null }>>({});
+  const statusOf = (prog: ProgramItem) => saved[prog.id]?.status ?? prog.status;
+  const collegeOf = (prog: ProgramItem) =>
+    saved[prog.id] && 'collegeId' in saved[prog.id] ? saved[prog.id].collegeId ?? null : prog.collegeId;
+  useEffect(() => setSaved({}), [initialPrograms]);
+  const remember = (id: number, patch: { status?: ProgramStatus; collegeId?: string | null }) =>
+    setSaved((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+
+  // Archiving and moving a program to another college ask first; other status changes apply directly.
+  const [pendingChange, setPendingChange] = useState<
+    | { kind: 'archive'; program: ProgramItem }
+    | { kind: 'college'; program: ProgramItem; collegeId: string | null }
+    | null
+  >(null);
+
+  const applyStatus = async (id: number, status: ProgramStatus): Promise<boolean> => {
     const res = await updateProgramStatusAction(id, status);
     if (res.success) {
+      remember(id, { status });
       toast.success(`Program status updated to ${status}`);
-    } else {
-      toast.error(res.error || 'Failed to update status');
+      return true;
     }
+    toast.error(res.error || 'Failed to update status');
+    return false;
   };
 
-  const handleCollegeChange = async (id: number, value: string) => {
-    const res = await updateProgramCollegeAction(id, value === NO_COLLEGE ? null : value);
+  const applyCollege = async (id: number, collegeId: string | null): Promise<boolean> => {
+    const res = await updateProgramCollegeAction(id, collegeId);
     if (res.success) {
+      remember(id, { collegeId });
       toast.success('Program college updated');
-    } else {
-      toast.error(res.error || 'Failed to update college');
+      return true;
     }
+    toast.error(res.error || 'Failed to update college');
+    return false;
   };
+
+  const handleStatusChange = (prog: ProgramItem, status: ProgramStatus) => {
+    if (status === statusOf(prog)) return;
+    if (status === 'archived') {
+      setPendingChange({ kind: 'archive', program: prog });
+      return;
+    }
+    void applyStatus(prog.id, status);
+  };
+
+  const handleCollegeChange = (prog: ProgramItem, value: string) => {
+    const collegeId = value === NO_COLLEGE ? null : value;
+    if (collegeId === collegeOf(prog)) return;
+    setPendingChange({ kind: 'college', program: prog, collegeId });
+  };
+
+  // Failures keep the dialog open (with a toast) so the admin can retry or cancel.
+  const confirmPendingChange = async () => {
+    if (!pendingChange) return;
+    const ok =
+      pendingChange.kind === 'archive'
+        ? await applyStatus(pendingChange.program.id, 'archived')
+        : await applyCollege(pendingChange.program.id, pendingChange.collegeId);
+    if (ok) setPendingChange(null);
+  };
+
+  const collegeName = (id: string | null) =>
+    id ? colleges.find((c) => c.id === id)?.name ?? 'another college' : 'no college';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -270,14 +322,14 @@ export function ProgramsClient({
                   <CardTitle className="text-lg font-semibold">{prog.name}</CardTitle>
                   <Badge
                     variant={
-                      prog.status === 'active'
+                      statusOf(prog) === 'active'
                         ? 'default'
-                        : prog.status === 'draft'
+                        : statusOf(prog) === 'draft'
                         ? 'secondary'
                         : 'outline'
                     }
                   >
-                    {prog.status.toUpperCase()}
+                    {statusOf(prog).toUpperCase()}
                   </Badge>
                 </div>
                 <CardDescription className="font-mono text-xs font-semibold text-primary">
@@ -308,15 +360,15 @@ export function ProgramsClient({
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="text-muted-foreground">College:</span>
                     <Select
-                      defaultValue={prog.collegeId ?? NO_COLLEGE}
-                      onValueChange={(val) => handleCollegeChange(prog.id, val)}
+                      value={collegeOf(prog) ?? NO_COLLEGE}
+                      onValueChange={(val) => handleCollegeChange(prog, val)}
                     >
                       <SelectTrigger className="h-7 w-[170px] text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={NO_COLLEGE}>No college</SelectItem>
-                        {selectableColleges(colleges, prog.collegeId).map((col) => (
+                        {selectableColleges(colleges, collegeOf(prog)).map((col) => (
                           <SelectItem key={col.id} value={col.id}>
                             {col.name}
                             {col.isActive ? '' : ' (inactive)'}
@@ -338,10 +390,8 @@ export function ProgramsClient({
               <CardFooter className="flex flex-col gap-2 pt-3 border-t bg-muted/20">
                 <div className="flex items-center justify-between w-full gap-2">
                   <Select
-                    defaultValue={prog.status}
-                    onValueChange={(val) =>
-                      handleStatusChange(prog.id, val as 'draft' | 'active' | 'archived')
-                    }
+                    value={statusOf(prog)}
+                    onValueChange={(val) => handleStatusChange(prog, val as ProgramStatus)}
                   >
                     <SelectTrigger className="h-8 text-xs w-[110px]">
                       <SelectValue />
@@ -361,7 +411,7 @@ export function ProgramsClient({
                       </Button>
                     </Link>
 
-                    {prog.status === 'active' && (
+                    {statusOf(prog) === 'active' && (
                       <>
                         <Button
                           size="sm"
@@ -390,6 +440,31 @@ export function ProgramsClient({
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingChange !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingChange(null);
+        }}
+        title={
+          pendingChange?.kind === 'archive'
+            ? `Archive ${pendingChange.program.name}?`
+            : pendingChange
+              ? `Change the college of ${pendingChange.program.name}?`
+              : ''
+        }
+        description={
+          pendingChange?.kind === 'archive'
+            ? 'Its public enrollment link stops accepting registrations, and enrolled students lose portal access to it. Setting the program back to Active restores both.'
+            : pendingChange
+              ? `The program moves from ${collegeName(collegeOf(pendingChange.program))} to ${collegeName(pendingChange.collegeId)}. Its batches must belong to the program's college.`
+              : undefined
+        }
+        confirmLabel={pendingChange?.kind === 'archive' ? 'Archive program' : 'Change college'}
+        pendingLabel="Saving…"
+        variant={pendingChange?.kind === 'archive' ? 'destructive' : 'default'}
+        onConfirm={confirmPendingChange}
+      />
     </div>
   );
 }
