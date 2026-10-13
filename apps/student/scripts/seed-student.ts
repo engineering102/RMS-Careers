@@ -587,13 +587,13 @@ async function runStudentSeeder() {
   // 4. DSA Sheet Content Item
   const dsaSheetItem = await getOrCreateContentItem({
     programId: program1.id,
-    slug: 'arrays-and-hashing',
-    title: 'Arrays & Hashing Starter Practice Sheet',
+    slug: 'dsa-sheet',
+    title: 'DSA Sheet',
     contentType: 'dsa_sheet',
-    description: 'Curated problem sheet covering hash lookups, frequency counters, and array manipulation.',
+    description: '150 core interview problems across 18 patterns, in day-by-day roadmap order.',
     metadata: {
-      topic: 'Arrays & Hashing',
-      questionCount: 6
+      topic: 'DSA Roadmap',
+      questionCount: 150
     }
   });
 
