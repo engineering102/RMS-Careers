@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { LEETCODE_150_SHEET } from '../data/leetcode-150';
-import { STUDENT_DSA_SHEETS, getDsaQuestionBySlug, getDsaSheetBySlug } from '../data/dsa-sheets';
+import { DSA_SHEET, STUDENT_DSA_SHEETS, getDsaQuestionBySlug, getDsaSheetBySlug } from '../data/dsa-sheets';
 
-const questions = LEETCODE_150_SHEET.questions;
+const questions = DSA_SHEET.questions;
 const leetcodeSlug = (url: string | undefined) => url?.match(/^https:\/\/leetcode\.com\/problems\/([a-z0-9-]+)\/$/)?.[1];
 
-describe('LeetCode 150 Roadmap sheet', () => {
+describe('DSA Sheet', () => {
   it('is registered in the student catalog', () => {
-    expect(STUDENT_DSA_SHEETS).toContain(LEETCODE_150_SHEET);
-    expect(getDsaSheetBySlug('leetcode-150-roadmap')).toBe(LEETCODE_150_SHEET);
+    expect(STUDENT_DSA_SHEETS).toContain(DSA_SHEET);
+    expect(getDsaSheetBySlug('dsa-sheet')).toBe(DSA_SHEET);
   });
 
   it('holds the 150 roadmap problems with the roadmap difficulty split (29 / 101 / 20)', () => {
@@ -21,7 +20,7 @@ describe('LeetCode 150 Roadmap sheet', () => {
   it('keeps roadmap order and its 18 patterns', () => {
     const patterns = [...new Set(questions.map((q) => q.pattern))];
     expect(patterns).toHaveLength(18);
-    expect(LEETCODE_150_SHEET.patternCount).toBe(18);
+    expect(DSA_SHEET.patternCount).toBe(18);
     expect(patterns[0]).toBe('Arrays');
     expect(patterns.at(-1)).toBe('Bit Manipulation');
     expect(questions[0].slug).toBe('contains-duplicate');
@@ -44,7 +43,7 @@ describe('LeetCode 150 Roadmap sheet', () => {
     }
   });
 
-  it('every slug matches its LeetCode URL, except progress slugs reused from existing sheets', () => {
+  it('every slug matches its LeetCode URL, except a progress slug kept from the earlier curated sheets', () => {
     const mismatched = questions
       .filter((q) => leetcodeSlug(q.externalUrl) !== q.slug)
       .map((q) => `${q.slug} -> ${leetcodeSlug(q.externalUrl)}`);
@@ -52,40 +51,43 @@ describe('LeetCode 150 Roadmap sheet', () => {
   });
 });
 
-describe('Problems shared across sheets', () => {
-  const all = STUDENT_DSA_SHEETS.flatMap((s) => s.questions.map((q) => ({ sheet: s.slug, q })));
+describe('Student DSA catalog', () => {
+  it('is exactly the DSA Sheet', () => {
+    expect(STUDENT_DSA_SHEETS).toEqual([DSA_SHEET]);
+  });
+
+  it('keeps every slug students may already have progress on from the earlier curated sheets', () => {
+    // These were the starter sheets' problems; progress rows are keyed by slug, so they must still resolve.
+    const earlierSlugs = [
+      'two-sum',
+      'contains-duplicate',
+      'valid-anagram',
+      'best-time-to-buy-and-sell-stock',
+      'maximum-subarray',
+      'valid-palindrome',
+      'two-sum-ii-sorted-array',
+      'container-with-most-water',
+      'reverse-linked-list',
+      'linked-list-cycle'
+    ];
+    for (const slug of earlierSlugs) {
+      expect(getDsaQuestionBySlug(slug)?.sheet.slug, slug).toBe('dsa-sheet');
+    }
+  });
 
   it('one LeetCode problem never appears under two different slugs (one progress row and XP reward per problem)', () => {
     const slugsByUrl = new Map<string, Set<string>>();
-    for (const { q } of all) {
+    for (const q of STUDENT_DSA_SHEETS.flatMap((s) => s.questions)) {
       const key = leetcodeSlug(q.externalUrl);
       if (!key) continue;
       slugsByUrl.set(key, (slugsByUrl.get(key) ?? new Set()).add(q.slug));
     }
-    const conflicts = [...slugsByUrl].filter(([, slugs]) => slugs.size > 1).map(([url, slugs]) => `${url}: ${[...slugs]}`);
-    expect(conflicts).toEqual([]);
+    expect([...slugsByUrl].filter(([, slugs]) => slugs.size > 1)).toEqual([]);
   });
 
-  it('a shared slug has the same difficulty and link in every sheet', () => {
-    const first = new Map<string, { difficulty: string; url?: string }>();
-    const shared = new Set<string>();
-    for (const { q } of all) {
-      const prev = first.get(q.slug);
-      if (!prev) {
-        first.set(q.slug, { difficulty: q.difficulty, url: q.externalUrl });
-        continue;
-      }
-      shared.add(q.slug);
-      expect(q.difficulty, q.slug).toBe(prev.difficulty);
-      expect(q.externalUrl, q.slug).toBe(prev.url);
-    }
-    // The original 10 curated problems are all part of the roadmap.
-    expect(shared.size).toBe(10);
-  });
-
-  it('solving resolves a shared slug to its first sheet and new problems to the roadmap', () => {
-    expect(getDsaQuestionBySlug('two-sum')?.sheet.slug).toBe('arrays-and-hashing');
-    expect(getDsaQuestionBySlug('trapping-rain-water')?.sheet.slug).toBe('leetcode-150-roadmap');
+  it('resolves problems by their progress slug, which can differ from the LeetCode URL slug', () => {
+    expect(getDsaQuestionBySlug('trapping-rain-water')?.question.title).toBe('Trapping Rain Water');
     expect(getDsaQuestionBySlug('two-sum-ii-input-array-is-sorted')).toBeNull();
+    expect(getDsaQuestionBySlug('not-a-problem')).toBeNull();
   });
 });

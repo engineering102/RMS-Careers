@@ -314,9 +314,9 @@ describe('Slice 10: DSA Practice Center', () => {
       expect(data.progressMap['valid-palindrome']?.isCompleted).toBeFalsy();
     });
 
-    it('counts a problem shared by two sheets once overall, but in each sheet summary', async () => {
+    it('counts each solved problem once, in the overall totals and in its sheet summary', async () => {
       const sharing = STUDENT_DSA_SHEETS.filter((s) => s.questions.some((q) => q.slug === 'two-sum'));
-      expect(sharing.length).toBeGreaterThan(1);
+      expect(sharing.length).toBeGreaterThan(0);
 
       mockDsaProgress = [
         {

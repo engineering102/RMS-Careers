@@ -206,11 +206,11 @@ describe('Slice 18 — Profile & Analytics', () => {
       expect(data?.topicProgress).toBeDefined();
       expect(data?.topicProgress.length).toBeGreaterThan(0);
 
-      // Sheet 1 has two-sum and contains-duplicate
-      const arraysSheet = data?.topicProgress.find((t) => t.topicSlug === 'arrays-and-hashing');
-      expect(arraysSheet).toBeDefined();
-      expect(arraysSheet?.solvedQuestions).toBe(2);
-      expect(arraysSheet?.percentage).toBeGreaterThan(0);
+      // The roadmap contains two-sum and contains-duplicate (the mocked solves)
+      const roadmap = data?.topicProgress.find((t) => t.topicSlug === 'dsa-sheet');
+      expect(roadmap).toBeDefined();
+      expect(roadmap?.solvedQuestions).toBe(2);
+      expect(roadmap?.percentage).toBeGreaterThan(0);
     });
 
     it('computes category XP breakdown percentages accurately', async () => {
