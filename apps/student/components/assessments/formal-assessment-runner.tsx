@@ -4,6 +4,8 @@ import React, { useState, useEffect, useTransition, useCallback, useRef } from '
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Timer,
   AlertTriangle,
@@ -460,55 +462,31 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             </div>
           </div>
 
-          {/* Confirmation Modal Overlay */}
-          {confirmSubmitOpen && (
-            <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-card border border-border rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
-                <div className="flex items-center gap-3 text-warning">
-                  <AlertTriangle className="h-6 w-6" />
-                  <h3 className="text-base font-bold text-foreground">
-                    Confirm Final Submission
-                  </h3>
-                </div>
-
-                <p className="text-xs text-foreground/80 leading-relaxed">
-                  You have answered <strong className="text-foreground">{answeredCount}</strong> of{' '}
-                  <strong className="text-foreground">{totalQuestions}</strong> questions.
-                  Once submitted, your attempt will be finalized and you cannot make further changes.
-                </p>
-
-                <div className="flex items-center justify-end gap-2.5 pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isSubmitting}
-                    onClick={() => setConfirmSubmitOpen(false)}
-                    className="text-muted-foreground text-xs"
-                  >
-                    Return to Questions
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={isSubmitting}
-                    onClick={handleManualSubmit}
-                    className="bg-success hover:bg-success/90 text-success-foreground text-xs gap-1.5 font-semibold"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>Finalizing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>Yes, Finalize & Submit</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Final-submission confirmation. Closing it is "Return to Questions"; it cannot be dismissed
+              while submitting, and the timer closes it before auto-submitting. */}
+          <ConfirmDialog
+            open={confirmSubmitOpen}
+            onOpenChange={setConfirmSubmitOpen}
+            title="Confirm Final Submission"
+            description={
+              <>
+                You have answered <strong className="text-foreground">{answeredCount}</strong> of{' '}
+                <strong className="text-foreground">{totalQuestions}</strong> questions. Once submitted,
+                your attempt will be finalized and you cannot make further changes.
+              </>
+            }
+            confirmLabel="Yes, Finalize & Submit"
+            pendingLabel="Finalizing…"
+            cancelLabel="Return to Questions"
+            pending={isSubmitting}
+            onConfirm={handleManualSubmit}
+          >
+            {errorMessage ? (
+              <Alert variant="destructive">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            ) : null}
+          </ConfirmDialog>
 
           {/* Question List */}
           <div className="space-y-6">
