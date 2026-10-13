@@ -19,6 +19,7 @@ import {
   type UpdateContentInput
 } from './schema';
 import { buildStudentMetadataPatch, InvalidVideoUrlError } from '@/lib/content/student-metadata';
+import { quizDefaultsFor } from '@/lib/content/types/registry';
 
 export async function createContentAction(
   formDataOrInput: FormData | Record<string, unknown>
@@ -43,6 +44,7 @@ export async function createContentAction(
         title: formDataOrInput.get('title'),
         slug: formDataOrInput.get('slug') || undefined,
         contentType: formDataOrInput.get('contentType'),
+        quizType: formDataOrInput.get('quizType') || undefined,
         description: formDataOrInput.get('description') || undefined,
         programId: formDataOrInput.get('programId') || undefined,
         isPublished: formDataOrInput.get('isPublished') === 'true',
@@ -111,7 +113,7 @@ export async function createContentAction(
     // 5b. If content item is a quiz, ensure 1-to-1 canonical quiz record is provisioned
     if (newItem.contentType === 'quiz') {
       try {
-        await getOrCreateQuizForContentItem(newItem.id);
+        await getOrCreateQuizForContentItem(newItem.id, quizDefaultsFor(data.quizType ?? 'practice'));
       } catch (quizErr) {
         console.warn('Could not auto-provision quiz row upon content creation:', quizErr);
       }

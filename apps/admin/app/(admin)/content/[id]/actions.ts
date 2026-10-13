@@ -9,12 +9,19 @@ import {
   updateContentItem,
   type ContentItemWithDetails
 } from '@/lib/db/queries';
-import { buildStudentMetadataPatch, InvalidVideoUrlError } from '@/lib/content/student-metadata';
+import { InvalidVideoUrlError } from '@/lib/content/student-metadata';
 import { contentBuilderSchema, type ContentBuilderInput } from './schema';
+import { builderMetadataPatch } from './metadata-patch';
 
 export type ContentBuilderResult =
   | { success: true; item: ContentItemWithDetails }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  | {
+      success: false;
+      error: string;
+      fieldErrors?: Record<string, string[]>;
+      /** Set when the details were saved but a later step (the project rubric) failed. */
+      savedItem?: ContentItemWithDetails;
+    };
 
 /**
  * Saves everything the content builder edits in one go: basics, the type-specific fields (stored under
@@ -43,29 +50,23 @@ export async function saveContentBuilderAction(input: ContentBuilderInput): Prom
 
     const existing = await getContentItemById(data.id);
     if (!existing) return { success: false, error: 'Content item not found.' };
+    // The builder never changes an item's type.
+    if (data.contentType !== existing.contentType) {
+      return { success: false, error: 'This item’s content type cannot be changed here. Reload the page and try again.' };
+    }
 
     if (data.programId !== null && !(await getProgramById(data.programId))) {
       return { success: false, error: 'Selected program does not exist.' };
     }
 
-    const type = existing.contentType;
     let metadata: Record<string, unknown>;
     try {
-      metadata = buildStudentMetadataPatch({
-        topic: data.topic,
-        durationMinutes: data.durationMinutes,
-        ...(type === 'lecture' ? { videoUrl: data.videoUrl } : {}),
-        ...(type === 'notes' || type === 'resource' ? { resourceLink: data.resourceLink, notes: data.notes } : {})
-      });
+      metadata = builderMetadataPatch(data);
     } catch (err) {
       if (err instanceof InvalidVideoUrlError) {
         return { success: false, error: err.message, fieldErrors: { videoUrl: [err.message] } };
       }
       throw err;
-    }
-
-    if (type === 'project' && !data.rubric) {
-      return { success: false, error: 'Add at least one rubric criterion.', fieldErrors: { rubric: ['Required'] } };
     }
 
     const item = await updateContentItem(data.id, {
@@ -76,19 +77,30 @@ export async function saveContentBuilderAction(input: ContentBuilderInput): Prom
       metadata
     });
 
-    if (type === 'project' && data.rubric) {
-      await saveProjectRubric(
-        data.id,
-        data.rubric.map((c) => ({
-          title: c.title,
-          maxPoints: c.maxPoints,
-          ...(c.description ? { description: c.description } : {})
-        }))
-      );
-    }
-
     revalidatePath('/content');
     revalidatePath(`/content/${data.id}`);
+
+    if (data.contentType === 'project') {
+      // Not in one transaction with the details above (neon-http), so report a partial save honestly.
+      try {
+        await saveProjectRubric(
+          data.id,
+          data.rubric.map((c) => ({
+            title: c.title,
+            maxPoints: c.maxPoints,
+            ...(c.description ? { description: c.description } : {})
+          }))
+        );
+      } catch (error) {
+        console.error('Error saving project rubric:', error);
+        return {
+          success: false,
+          error: 'Details saved, but the rubric could not be saved. Please save again.',
+          savedItem: item
+        };
+      }
+    }
+
     return { success: true, item };
   } catch (error) {
     console.error('Error in saveContentBuilderAction:', error);

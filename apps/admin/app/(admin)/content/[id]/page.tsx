@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { notFound } from 'next/navigation';
-import { getContentItemById, getProgramById, getPrograms, getProjectAssignmentConfig } from '@/lib/db/queries';
+import {
+  getContentItemById,
+  getContentPlacements,
+  getProgramById,
+  getPrograms,
+  getProjectAssignmentConfig,
+  getQuizByContentItemId
+} from '@/lib/db/queries';
 import { requireAdminSession } from '@/lib/authz';
 import { ContentBuilderClient } from './content-builder-client';
 
@@ -20,9 +27,12 @@ export default async function ContentBuilderPage(props: { params: Promise<{ id: 
   const item = await getContentItemById(id);
   if (!item) notFound();
 
-  const [programs, projectConfig] = await Promise.all([
+  const [programs, projectConfig, quiz, placements] = await Promise.all([
     getPrograms(),
-    item.contentType === 'project' ? getProjectAssignmentConfig(id) : Promise.resolve(null)
+    item.contentType === 'project' ? getProjectAssignmentConfig(id) : Promise.resolve(null),
+    // Read-only here: the quiz row is created by the workbench (or on create), never by viewing the builder.
+    item.contentType === 'quiz' ? getQuizByContentItemId(id) : Promise.resolve(null),
+    getContentPlacements(id)
   ]);
 
   // Keep an archived/inactive program selectable if this item still belongs to it.
@@ -31,5 +41,13 @@ export default async function ContentBuilderPage(props: { params: Promise<{ id: 
     if (current) programs.push(current);
   }
 
-  return <ContentBuilderClient item={item} programs={programs} projectConfig={projectConfig} />;
+  return (
+    <ContentBuilderClient
+      item={item}
+      programs={programs}
+      projectConfig={projectConfig}
+      quiz={quiz}
+      placements={placements}
+    />
+  );
 }
