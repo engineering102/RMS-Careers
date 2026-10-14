@@ -5,7 +5,7 @@ import { Compass, BookOpen, LayoutDashboard } from 'lucide-react';
 export default function DashboardNotFound() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card/60 p-8 sm:p-10 shadow-2xl text-center backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-border bg-card/60 p-8 sm:p-10 shadow-2xl text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-inner mb-4">
           <Compass className="h-7 w-7" />
         </div>

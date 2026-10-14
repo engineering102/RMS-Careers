@@ -295,7 +295,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
       {/* 1. PRE-ATTEMPT BRIEFING VIEW                         */}
       {/* ---------------------------------------------------- */}
       {!isExamActive && !completedAttempt && (
-        <Card className="border-border bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60">
           <CardContent className="p-6 sm:p-8 space-y-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-purple-400">
@@ -407,7 +407,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
         <>
           {/* Prominent Authoritative Countdown Banner */}
           <div
-            className={`sticky top-4 z-30 p-4 rounded-xl border backdrop-blur-md shadow-xl flex items-center justify-between gap-4 transition-all ${
+            className={`sticky top-20 z-20 p-4 rounded-xl border backdrop-blur-md shadow-xl flex items-center justify-between gap-4 transition-all ${
               remainingSeconds < 60
                 ? 'bg-[color-mix(in_srgb,hsl(var(--destructive))_18%,hsl(var(--card)))] border-destructive/50 text-foreground animate-pulse'
                 : remainingSeconds < 300
@@ -432,7 +432,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                 <span className="text-[11px] font-medium uppercase tracking-wider opacity-75">
                   Time Remaining
                 </span>
-                <p className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none mt-0.5">
+                <p className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none mt-0.5 tabular-nums">
                   {formatTime(remainingSeconds)}
                 </p>
               </div>
@@ -496,7 +496,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               return (
                 <Card
                   key={question.id}
-                  className="border-border bg-card/60 backdrop-blur-sm"
+                  className="border-border bg-card/60"
                 >
                   <CardContent className="p-5 sm:p-6 space-y-4">
                     {/* Header */}
@@ -541,7 +541,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                             key={option.id}
                             disabled={!isExamActive || remainingSeconds <= 0 || isSubmitting}
                             onClick={() => handleSelectOption(question, option.id)}
-                            className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm flex items-start gap-3 transition-all ${
+                            className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm flex items-start gap-3 transition-all active:scale-[0.99] motion-reduce:active:scale-100 ${
                               !isExamActive || remainingSeconds <= 0 || isSubmitting
                                 ? 'opacity-60 cursor-not-allowed'
                                 : 'cursor-pointer'
@@ -588,7 +588,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               completedAttempt.isPassed
                 ? 'border-success/40 bg-success/5'
                 : 'border-border bg-card/60'
-            } backdrop-blur-sm`}
+            }`}
           >
             <CardContent className="p-6 sm:p-8 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -623,7 +623,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-2xl font-black text-foreground">
+                    <div className="text-2xl font-black text-foreground tabular-nums">
                       {completedAttempt.percentage}%
                     </div>
                     <div className="text-[11px] text-muted-foreground">

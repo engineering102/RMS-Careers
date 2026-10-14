@@ -62,7 +62,7 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
           </div>
 
           {/* Navigation Items */}
-          <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto" aria-label="Mobile Navigation">
+          <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto overscroll-contain" aria-label="Mobile Navigation">
             {STUDENT_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const itemHref =
@@ -98,7 +98,7 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                    'flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium transition',
+                    'flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-medium transition active:scale-[0.99] motion-reduce:active:scale-100',
                     isActive
                       ? 'bg-primary/15 text-primary font-semibold border-l-2 border-primary pl-2.5'
                       : 'text-foreground/80 hover:bg-card hover:text-foreground'

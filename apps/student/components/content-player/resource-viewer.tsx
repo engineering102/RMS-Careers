@@ -23,7 +23,7 @@ export function ResourceViewer({
     <div className="space-y-6">
       {/* Resource Download / Access Card */}
       {documentUrl ? (
-        <Card className="border-border bg-card/60 backdrop-blur-sm overflow-hidden">
+        <Card className="border-border bg-card/60 overflow-hidden">
           <CardContent className="p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">

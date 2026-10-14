@@ -16,7 +16,7 @@ export function StreakCard({ stats }: StreakCardProps) {
   const isStreakActive = currentStreak > 0;
 
   return (
-    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card/90 to-warning/5 backdrop-blur-sm">
+    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card/90 to-warning/5">
       <div className="absolute top-0 right-0 -mr-8 -mt-8 h-28 w-28 rounded-full bg-warning/10 blur-2xl pointer-events-none" />
 
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -48,7 +48,7 @@ export function StreakCard({ stats }: StreakCardProps) {
       <CardContent className="space-y-4 pt-1">
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
               {currentStreak}
             </span>
             <span className="text-xs font-semibold uppercase tracking-wider text-warning">

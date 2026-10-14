@@ -20,7 +20,7 @@ export function Sidebar({
   const student = context.student;
 
   return (
-    <aside className="hidden md:flex h-screen w-64 flex-col border-r border-border bg-background text-foreground shrink-0">
+    <aside className="hidden md:flex sticky top-0 h-dvh w-64 flex-col border-r border-border bg-background text-foreground shrink-0">
       {/* Brand Header */}
       <div className="flex h-16 items-center justify-between border-b border-border px-6">
         <div>
@@ -77,7 +77,7 @@ export function Sidebar({
               key={item.title}
               href={item.href}
               className={cn(
-                'flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition',
+                'flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition active:scale-[0.99] motion-reduce:active:scale-100',
                 isActive
                   ? 'bg-primary/15 text-primary font-semibold border-l-2 border-primary pl-2.5'
                   : 'text-foreground/80 hover:bg-card hover:text-foreground'

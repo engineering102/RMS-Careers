@@ -91,48 +91,48 @@ export function AnalyticsSection({
       {/* 1. High-Level Milestone Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Total XP */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Zap className="h-4 w-4 text-warning" />
             <span>Total XP</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground">{formatNumber(stats.totalXp)}</p>
+          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{formatNumber(stats.totalXp)}</p>
           <p className="mt-0.5 text-[11px] text-warning/80">Level {stats.currentLevel}</p>
         </div>
 
         {/* Current Streak */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Flame className="h-4 w-4 text-orange-400" />
             <span>Current Streak</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground">{stats.currentStreak} days</p>
+          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.currentStreak} days</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">Asia/Kolkata IST</p>
         </div>
 
         {/* Longest Streak */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Trophy className="h-4 w-4 text-purple-400" />
             <span>Best Streak</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground">{stats.longestStreak} days</p>
+          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.longestStreak} days</p>
           <p className="mt-0.5 text-[11px] text-purple-400/80">Record achievement</p>
         </div>
 
         {/* DSA Solved */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-success" />
             <span>DSA Solved</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-foreground">{stats.dsaSolvedCount}</p>
+          <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.dsaSolvedCount}</p>
           <p className="mt-0.5 text-[11px] text-success/80">Verified solutions</p>
         </div>
       </div>
 
       {/* 2. 30-Day Activity Heatmap */}
-      <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+      <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 border border-success/20 text-success">
@@ -202,7 +202,7 @@ export function AnalyticsSection({
       {/* 3. Dual Section: Topic Completion Progress & Category XP Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* A. Topic Completion Progress Bars */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
           <div className="flex items-center gap-3 border-b border-border/80 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
               <Code2 className="h-5 w-5" />
@@ -237,7 +237,7 @@ export function AnalyticsSection({
         </div>
 
         {/* B. Category XP Breakdown */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
           <div className="flex items-center gap-3 border-b border-border/80 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <PieChart className="h-5 w-5" />

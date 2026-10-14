@@ -137,7 +137,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
       </div>
 
       {/* Quiz Header Hero */}
-      <div className="border border-border bg-card/60 backdrop-blur-sm rounded-xl p-6 sm:p-8 space-y-4">
+      <div className="border border-border bg-card/60 rounded-xl p-6 sm:p-8 space-y-4">
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {quiz.title}
@@ -187,7 +187,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
             submissionResult.isPassed
               ? 'border-success/40 bg-success/5'
               : 'border-warning/40 bg-warning/5'
-          } backdrop-blur-sm`}
+          }`}
         >
           <CardContent className="p-6 sm:p-8 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -403,7 +403,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                         key={option.id}
                         disabled={Boolean(submissionResult)}
                         onClick={() => handleSelectOption(question, option.id)}
-                        className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm flex items-start gap-3 transition-all ${optionClasses} ${
+                        className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm flex items-start gap-3 transition-all active:scale-[0.99] motion-reduce:active:scale-100 ${optionClasses} ${
                           submissionResult ? 'cursor-default' : 'cursor-pointer'
                         }`}
                       >

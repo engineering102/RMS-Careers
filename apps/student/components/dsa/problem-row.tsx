@@ -31,7 +31,7 @@ export const PROBLEM_GRID =
   'grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 md:grid-cols-[3rem_2.75rem_minmax(0,1fr)_4.5rem_4.5rem_5.5rem]';
 
 const iconButton =
-  'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 export function ProblemRow({ question, position, progress, isSaving = false, onSelect, onQuickSolve }: ProblemRowProps) {
   const isSolved = Boolean(progress?.isCompleted);
@@ -61,7 +61,7 @@ export function ProblemRow({ question, position, progress, isSaving = false, onS
             disabled={isSaving}
             aria-label={`Mark ${question.title} as solved`}
             title="Mark as solved"
-            className="inline-flex h-5 w-5 items-center justify-center rounded border border-input bg-background transition-colors hover:border-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
+            className="inline-flex h-5 w-5 items-center justify-center rounded border border-input bg-background transition active:scale-[0.97] motion-reduce:active:scale-100 hover:border-success focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait"
           >
             {isSaving && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </button>

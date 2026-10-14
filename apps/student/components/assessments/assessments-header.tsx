@@ -57,11 +57,11 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-border bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Total Assessments</p>
-              <p className="text-2xl font-bold text-foreground mt-0.5">{allTotal}</p>
+              <p className="text-2xl font-bold text-foreground mt-0.5 tabular-nums">{allTotal}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <ClipboardCheck className="h-5 w-5" />
@@ -69,11 +69,11 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-success mt-0.5">{allCompleted}</p>
+              <p className="text-2xl font-bold text-success mt-0.5 tabular-nums">{allCompleted}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-success/10 border border-success/20 text-success">
               <CheckCircle2 className="h-5 w-5" />
@@ -81,11 +81,11 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Avg. Score</p>
-              <p className="text-2xl font-bold text-primary mt-0.5">
+              <p className="text-2xl font-bold text-primary mt-0.5 tabular-nums">
                 {totalPercentages.length > 0 ? `${averagePercentage}%` : '—'}
               </p>
             </div>
@@ -95,11 +95,11 @@ export function AssessmentsHeader({ quizzes, formalAssessments = [] }: Assessmen
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card/60 backdrop-blur-sm">
+        <Card className="border-border bg-card/60">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Quiz XP Earned</p>
-              <p className="text-2xl font-bold text-warning mt-0.5">+{estimatedXp}</p>
+              <p className="text-2xl font-bold text-warning mt-0.5 tabular-nums">+{estimatedXp}</p>
             </div>
             <div className="p-2.5 rounded-xl bg-warning/10 border border-warning/20 text-warning">
               <Zap className="h-5 w-5" />

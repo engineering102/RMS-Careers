@@ -96,7 +96,7 @@ export function getDeadlineHref(item: StudentDeadlineItem): string {
 
 export function DeadlinesCard({ deadlines }: DeadlinesCardProps) {
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-card/60">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary border border-input text-foreground/80">

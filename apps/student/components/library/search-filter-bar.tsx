@@ -153,7 +153,7 @@ export function SearchFilterBar({
               key={opt.value}
               type="button"
               onClick={() => updateFilters({ type: opt.value })}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                   : 'bg-card/80 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/80'

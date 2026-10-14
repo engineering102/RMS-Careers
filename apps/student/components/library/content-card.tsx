@@ -82,7 +82,7 @@ export function ContentCard({ item }: ContentCardProps) {
   const duration = item.metadata.durationMinutes;
 
   return (
-    <Card className="group flex flex-col justify-between overflow-hidden border-border bg-card/60 backdrop-blur-sm hover:border-input hover:bg-card/80 transition-all duration-200">
+    <Card className="group flex flex-col justify-between overflow-hidden border-border bg-card/60 hover:border-input hover:bg-card/80 transition-all duration-200">
       <CardContent className="p-5 space-y-4 flex-1 flex flex-col justify-between">
         <div className="space-y-3">
           {/* Header Row: Content Type & Topic Badges */}

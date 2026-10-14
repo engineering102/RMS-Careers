@@ -62,7 +62,7 @@ export function ExternalAssessmentCard({ record }: ExternalAssessmentCardProps) 
   }).format(new Date(record.importedAt));
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm flex flex-col justify-between hover:border-input/80 transition-all duration-200">
+    <Card className="border-border bg-card/60 flex flex-col justify-between hover:border-input/80 transition-all duration-200">
       <CardContent className="p-5 sm:p-6 space-y-4 flex-1 flex flex-col justify-between">
         <div className="space-y-3">
           {/* 1. Header Badges: External Provider & Performance Tier */}

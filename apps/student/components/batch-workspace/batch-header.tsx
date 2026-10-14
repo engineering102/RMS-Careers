@@ -128,7 +128,7 @@ export function BatchHeader({
                   <Link
                     key={b.batchId}
                     href={`/batches/${b.batchId}`}
-                    className="rounded-lg border border-input bg-secondary/80 px-2.5 py-1 text-xs text-foreground/80 hover:border-input hover:text-foreground transition"
+                    className="rounded-lg border border-input bg-secondary/80 px-2.5 py-1 text-xs text-foreground/80 hover:border-input hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100"
                   >
                     {b.batchName}
                   </Link>

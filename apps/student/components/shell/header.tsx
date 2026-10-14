@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { CohortSwitcher } from './cohort-switcher';
@@ -34,14 +35,29 @@ export function Header({
         .toUpperCase()
     : 'ST';
 
+  // Scroll edge: no divider at the top of the page; once content passes under the header it turns into a
+  // translucent material with a hairline edge.
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setIsScrolled(window.scrollY > 4);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/90 px-4 md:px-8 backdrop-blur-md">
+    <header
+      data-scrolled={isScrolled || undefined}
+      className={`material-chrome sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 md:px-8 transition-[background-color,border-color] duration-200 ${
+        isScrolled ? 'border-border/70 bg-background/75 backdrop-blur-xl backdrop-saturate-150' : 'border-transparent bg-background'
+      }`}
+    >
       {/* Left: Mobile Menu Trigger + Mobile Brand */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileNav}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 hover:bg-card md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 hover:bg-card md:hidden transition active:scale-[0.97] motion-reduce:active:scale-100"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />

@@ -65,7 +65,7 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
   const projectHref = `/content/${project.contentItemId}?batchId=${encodeURIComponent(project.batchId)}`;
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm hover:border-input transition-all">
+    <Card className="border-border bg-card/60 hover:border-input transition-all">
       <CardContent className="p-5 flex flex-col justify-between h-full space-y-4">
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">

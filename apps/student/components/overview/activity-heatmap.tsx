@@ -50,7 +50,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
   const dateRangeDisplay = `${formatIstDateReadable(startDate)} – ${formatIstDateReadable(endDate)}`;
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-card/60">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 border border-success/20 text-success">
