@@ -22,6 +22,7 @@ import {
 } from '@rms/db';
 import { eq, inArray, sql } from 'drizzle-orm';
 import {
+  countContentItems,
   getContentItemsWithDetails,
   getContentItemById,
   createContentItem,
@@ -321,6 +322,28 @@ describe('Phase 2 — Slice B1: Central Content Library Foundation', { timeout: 
     // Filter by draft status
     const draftOnly = await getContentItemsWithDetails({ status: 'draft' });
     expect(draftOnly.every((ci) => ci.lifecycleStatus === 'draft')).toBe(true);
+  });
+
+  // =========================================================================
+  // Test P: Pagination (count matches the filters; pages cover every row once)
+  // =========================================================================
+  it('P — counts filtered items and pages through them without repeats or gaps', async () => {
+    const keyword = `PagedKeyword${Date.now()}`;
+    // Created back to back, so several share an updated_at: the id tie-breaker keeps offsets stable.
+    for (let i = 0; i < 5; i++) {
+      const item = await createContentItem({ title: `${keyword} ${i}`, contentType: 'notes' });
+      createdContentIds.push(item.id);
+    }
+
+    expect(await countContentItems({ search: keyword })).toBe(5);
+    expect(await countContentItems({ search: keyword, status: 'published' })).toBe(0);
+
+    const pages = await Promise.all(
+      [0, 2, 4].map((offset) => getContentItemsWithDetails({ search: keyword, limit: 2, offset }))
+    );
+    expect(pages.map((p) => p.length)).toEqual([2, 2, 1]);
+    const ids = pages.flat().map((ci) => ci.id);
+    expect(new Set(ids).size).toBe(5);
   });
 
   // =========================================================================

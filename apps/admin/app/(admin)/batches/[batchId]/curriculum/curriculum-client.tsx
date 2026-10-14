@@ -63,6 +63,7 @@ import type {
   EligibleContentItem
 } from '@/lib/db/queries';
 import type { Batch, College, Program, ContentTypeEnum } from '@rms/db';
+import { PaginationBar } from '@/components/admin/pagination-bar';
 
 interface BatchCurriculumClientProps {
   batch: Batch;
@@ -70,7 +71,12 @@ interface BatchCurriculumClientProps {
   program: Program | null;
   initialCurriculum: CurriculumPlacementItem[];
   eligibleContent: EligibleContentItem[];
+  /** The picker's query cap; reaching it means some eligible items were not loaded. */
+  eligibleContentLimit?: number;
 }
+
+/** The schedule is paged by whole weeks so a week is never split across pages. */
+const WEEKS_PER_PAGE = 4;
 
 const CONTENT_TYPE_LABELS: Record<ContentTypeEnum, string> = {
   lecture: 'Lecture',
@@ -86,7 +92,8 @@ export function BatchCurriculumClient({
   college,
   program,
   initialCurriculum,
-  eligibleContent
+  eligibleContent,
+  eligibleContentLimit
 }: BatchCurriculumClientProps) {
   const router = useRouter();
   const isReadOnly = ['completed', 'archived'].includes(batch.status);
@@ -135,6 +142,48 @@ export function BatchCurriculumClient({
 
   // Next suggested week
   const highestWeek = sortedWeeks.length > 0 ? sortedWeeks[sortedWeeks.length - 1] : 1;
+
+  // Week pagination. `focusWeek` is the week to bring into view once it exists in the (refreshed) data:
+  // after adding or moving an item, or choosing a week in "Jump to week".
+  const [weekPage, setWeekPage] = React.useState(1);
+  const [focusWeek, setFocusWeek] = React.useState<number | null>(null);
+  const weekPageCount = Math.max(1, Math.ceil(sortedWeeks.length / WEEKS_PER_PAGE));
+  const currentWeekPage = Math.min(weekPage, weekPageCount);
+  const visibleWeeks = sortedWeeks.slice(
+    (currentWeekPage - 1) * WEEKS_PER_PAGE,
+    currentWeekPage * WEEKS_PER_PAGE
+  );
+
+  const [scrollToWeek, setScrollToWeek] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (focusWeek === null) return;
+    const index = sortedWeeks.indexOf(focusWeek);
+    if (index === -1) return; // not in the data yet; retried when the refreshed curriculum arrives
+    setWeekPage(Math.floor(index / WEEKS_PER_PAGE) + 1);
+    setScrollToWeek(focusWeek);
+    setFocusWeek(null);
+  }, [focusWeek, sortedWeeks]);
+
+  // Scroll once the target week's card has actually rendered on its page.
+  React.useEffect(() => {
+    if (scrollToWeek === null || !visibleWeeks.includes(scrollToWeek)) return;
+    document
+      .getElementById(`curriculum-week-${scrollToWeek}`)
+      ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    setScrollToWeek(null);
+  }, [scrollToWeek, visibleWeeks]);
+
+  const firstVisibleWeek = visibleWeeks[0];
+  const lastVisibleWeek = visibleWeeks[visibleWeeks.length - 1];
+  const weekPagerSummary =
+    sortedWeeks.length === 0
+      ? ''
+      : `Weeks ${firstVisibleWeek}${lastVisibleWeek !== firstVisibleWeek ? `–${lastVisibleWeek}` : ''} · ${
+          sortedWeeks.length
+        } week${sortedWeeks.length === 1 ? '' : 's'}, ${initialCurriculum.length} item${
+          initialCurriculum.length === 1 ? '' : 's'
+        } in total`;
 
   // Filter eligible content inside picker
   const filteredEligibleContent = React.useMemo(() => {
@@ -187,6 +236,7 @@ export function BatchCurriculumClient({
 
       toast.success('Content item placed into batch curriculum.');
       setIsAddOpen(false);
+      setFocusWeek(addWeekNumber);
       router.refresh();
     } catch {
       toast.error('An unexpected error occurred.');
@@ -227,6 +277,7 @@ export function BatchCurriculumClient({
 
       toast.success('Curriculum placement updated.');
       setEditingPlacement(null);
+      setFocusWeek(editWeekNumber);
       router.refresh();
     } catch {
       toast.error('An unexpected error occurred.');
@@ -420,13 +471,47 @@ export function BatchCurriculumClient({
           }
         />
       ) : (
-        /* Weeks Accordion / Sections */
+        /* Weeks Accordion / Sections (paged by week) */
         <div className="flex flex-col gap-5">
-          {sortedWeeks.map((weekNum) => {
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <PaginationBar
+              label="Curriculum weeks"
+              page={currentWeekPage}
+              pageCount={weekPageCount}
+              summary={weekPagerSummary}
+              onPageChange={setWeekPage}
+              className="flex-1"
+            />
+            {sortedWeeks.length > WEEKS_PER_PAGE && (
+              <div className="flex items-center gap-2">
+                <span id="jump-to-week-label" className="text-xs text-muted-foreground whitespace-nowrap">
+                  Jump to week
+                </span>
+                <Select value="" onValueChange={(value) => setFocusWeek(Number(value))}>
+                  <SelectTrigger className="h-8 w-40 text-xs" aria-labelledby="jump-to-week-label">
+                    <SelectValue placeholder="Choose a week" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortedWeeks.map((weekNum) => (
+                      <SelectItem key={weekNum} value={String(weekNum)}>
+                        Week {weekNum} ({weeksMap.get(weekNum)?.length ?? 0})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {visibleWeeks.map((weekNum) => {
             const items = weeksMap.get(weekNum) || [];
 
             return (
-              <Card key={weekNum} className="border shadow-sm overflow-hidden">
+              <Card
+                key={weekNum}
+                id={`curriculum-week-${weekNum}`}
+                className="border shadow-sm overflow-hidden scroll-mt-4"
+              >
                 <CardHeader className="p-4 bg-muted/40 border-b flex flex-row items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Badge variant="secondary" className="font-semibold text-sm px-2.5 py-0.5">
@@ -606,6 +691,20 @@ export function BatchCurriculumClient({
               </Card>
             );
           })}
+
+          {/* Repeat the pager under the list so the next page is reachable without scrolling back up. */}
+          {weekPageCount > 1 && (
+            <PaginationBar
+              label="Curriculum weeks (bottom)"
+              page={currentWeekPage}
+              pageCount={weekPageCount}
+              summary={weekPagerSummary}
+              onPageChange={(next) => {
+                setWeekPage(next);
+                setScrollToWeek(sortedWeeks[(next - 1) * WEEKS_PER_PAGE] ?? null);
+              }}
+            />
+          )}
         </div>
       )}
 
@@ -649,8 +748,20 @@ export function BatchCurriculumClient({
               </div>
             </div>
 
+            <p className="text-xs text-muted-foreground" aria-live="polite">
+              {filteredEligibleContent.length === eligibleContent.length
+                ? `${eligibleContent.length} eligible item${eligibleContent.length === 1 ? '' : 's'}`
+                : `${filteredEligibleContent.length} of ${eligibleContent.length} eligible items match`}
+              {eligibleContentLimit !== undefined && eligibleContent.length >= eligibleContentLimit && (
+                <span className="text-amber-600">
+                  {' '}
+                  · only the first {eligibleContentLimit.toLocaleString('en-IN')} (A–Z) are loaded
+                </span>
+              )}
+            </p>
+
             {/* Content Selection List */}
-            <div className="space-y-1.5 max-h-56 overflow-y-auto border rounded-md p-2">
+            <div className="space-y-1.5 max-h-80 overflow-y-auto border rounded-md p-2">
               {filteredEligibleContent.length === 0 ? (
                 <div className="text-center py-6 text-xs text-muted-foreground">
                   No eligible published content found matching your search.

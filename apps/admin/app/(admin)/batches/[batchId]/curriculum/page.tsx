@@ -16,6 +16,12 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Upper bound for the Add Content picker (the query defaults to 100, which silently hid everything
+ * after the first 100 titles). The picker says so if a batch ever reaches this many eligible items.
+ */
+const ELIGIBLE_CONTENT_LIMIT = 1000;
+
 export default async function BatchCurriculumPage(props: {
   params: Promise<{ batchId: string }>;
 }) {
@@ -32,7 +38,7 @@ export default async function BatchCurriculumPage(props: {
     getCollegeById(batch.collegeId),
     getProgramById(batch.programId),
     getBatchCurriculum(batchId),
-    getEligibleContentForBatch(batchId)
+    getEligibleContentForBatch(batchId, { limit: ELIGIBLE_CONTENT_LIMIT })
   ]);
 
   return (
@@ -42,6 +48,7 @@ export default async function BatchCurriculumPage(props: {
       program={program}
       initialCurriculum={curriculum}
       eligibleContent={eligibleContent}
+      eligibleContentLimit={ELIGIBLE_CONTENT_LIMIT}
     />
   );
 }

@@ -67,6 +67,7 @@ import type { ContentItemWithDetails } from '@/lib/db/queries';
 import type { Program, ContentTypeEnum } from '@rms/db';
 import { CONTENT_TYPE_DEFS, CREATE_CHOICES, type CreateChoiceId } from '@/lib/content/types/registry';
 import { ContentTypePicker } from './content-type-picker';
+import { PaginationBar } from '@/components/admin/pagination-bar';
 
 interface ContentClientProps {
   initialContentItems: ContentItemWithDetails[];
@@ -75,6 +76,11 @@ interface ContentClientProps {
   selectedType?: string;
   selectedStatus?: string;
   searchQuery?: string;
+  /** Items matching the filters across all pages. */
+  totalCount?: number;
+  /** 1-based page and page size of initialContentItems. */
+  page?: number;
+  pageSize?: number;
 }
 
 const CONTENT_TYPE_LABELS = Object.fromEntries(
@@ -87,7 +93,10 @@ export function ContentClient({
   selectedProgramId = 'all',
   selectedType = 'all',
   selectedStatus = 'all',
-  searchQuery = ''
+  searchQuery = '',
+  totalCount = initialContentItems.length,
+  page = 1,
+  pageSize = initialContentItems.length || 1
 }: ContentClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -157,6 +166,9 @@ export function ContentClient({
       } else {
         params.delete('q');
       }
+
+      // New filters start again from the first page.
+      params.delete('page');
 
       router.push(`/content?${params.toString()}`);
     },
@@ -328,7 +340,7 @@ export function ContentClient({
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight">Content Library</h1>
             <Badge variant="outline" className="h-6">
-              {initialContentItems.length} Canonical Item{initialContentItems.length === 1 ? '' : 's'}
+              {totalCount} Canonical Item{totalCount === 1 ? '' : 's'}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
@@ -847,6 +859,22 @@ export function ContentClient({
           )}
         </CardContent>
       </Card>
+
+      {totalCount > 0 && (
+        <PaginationBar
+          label="Content library pages"
+          page={page}
+          pageCount={Math.max(1, Math.ceil(totalCount / pageSize))}
+          summary={`Showing ${(page - 1) * pageSize + 1}–${(page - 1) * pageSize + initialContentItems.length} of ${totalCount} item${totalCount === 1 ? '' : 's'}`}
+          hrefForPage={(target) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (target <= 1) params.delete('page');
+            else params.set('page', String(target));
+            const query = params.toString();
+            return query ? `/content?${query}` : '/content';
+          }}
+        />
+      )}
 
       {/* Edit Content Modal */}
       {editingItem && (
