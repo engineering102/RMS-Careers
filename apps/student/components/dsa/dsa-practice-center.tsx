@@ -255,15 +255,14 @@ export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: Ds
         </div>
       )}
 
-      {selectedQuestion && (
-        <ProblemDetailModal
-          question={selectedQuestion}
-          progress={progressMap[selectedQuestion.slug]}
-          batchId={batchId}
-          onClose={() => setSelectedQuestion(null)}
-          onSuccess={handleModalSuccess}
-        />
-      )}
+      {/* Always mounted: `question={null}` closes it with an exit animation. */}
+      <ProblemDetailModal
+        question={selectedQuestion}
+        progress={selectedQuestion ? progressMap[selectedQuestion.slug] : undefined}
+        batchId={batchId}
+        onClose={() => setSelectedQuestion(null)}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   );
 }

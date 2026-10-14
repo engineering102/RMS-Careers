@@ -222,7 +222,7 @@ export function ProblemView({
       </div>
 
       {showHints && (
-        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs space-y-2">
+        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs space-y-2 animate-in fade-in-0 slide-in-from-top-1 duration-200 ease-out-quint motion-reduce:slide-in-from-top-0">
           <div className="font-semibold text-amber-700 dark:text-amber-400">Hints:</div>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground leading-relaxed">
             {question.hints.map((hint, idx) => (
@@ -233,7 +233,7 @@ export function ProblemView({
       )}
 
       {showApproach && (
-        <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs space-y-2">
+        <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 text-xs space-y-2 animate-in fade-in-0 slide-in-from-top-1 duration-200 ease-out-quint motion-reduce:slide-in-from-top-0">
           <div className="font-semibold text-blue-700 dark:text-blue-400">Algorithmic Approach:</div>
           <p className="text-muted-foreground leading-relaxed">{question.approach}</p>
         </div>

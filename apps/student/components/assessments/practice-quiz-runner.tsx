@@ -183,7 +183,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
       {/* Submission Result Hero (Rendered upon submission) */}
       {submissionResult && (
         <Card
-          className={`border ${
+          className={`border animate-in fade-in-0 zoom-in-[0.96] duration-250 ease-out-quint motion-reduce:zoom-in-100 ${
             submissionResult.isPassed
               ? 'border-success/40 bg-success/5'
               : 'border-warning/40 bg-warning/5'
@@ -200,7 +200,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                   }`}
                 >
                   {submissionResult.isPassed ? (
-                    <CheckCircle2 className="h-7 w-7" />
+                    <CheckCircle2 className="h-7 w-7 animate-pop [animation-delay:100ms] motion-reduce:animate-none" />
                   ) : (
                     <XCircle className="h-7 w-7" />
                   )}
