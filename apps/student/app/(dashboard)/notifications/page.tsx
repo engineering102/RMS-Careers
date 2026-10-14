@@ -20,7 +20,7 @@ export default async function NotificationsPage() {
 
   if (!userId) {
     return (
-      <div className="max-w-4xl mx-auto py-12 text-center text-slate-400">
+      <div className="max-w-4xl mx-auto py-12 text-center text-muted-foreground">
         <p>No user account associated with this student profile.</p>
       </div>
     );

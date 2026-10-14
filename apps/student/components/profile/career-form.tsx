@@ -81,15 +81,15 @@ export function CareerForm({ career }: CareerFormProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+    <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
+      <div className="flex items-center gap-3 border-b border-border/80 pb-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
           <Briefcase className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-slate-100">Career & Placement Profile</h2>
-          <p className="text-xs text-slate-400">
+          <h2 className="text-base font-semibold text-foreground">Career & Placement Profile</h2>
+          <p className="text-xs text-muted-foreground">
             Portfolio links and engineering preferences shared with placement coordinators
           </p>
         </div>
@@ -100,8 +100,8 @@ export function CareerForm({ career }: CareerFormProps) {
         {/* GitHub & LinkedIn URLs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Github className="h-3.5 w-3.5 text-slate-400" />
+            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+              <Github className="h-3.5 w-3.5 text-muted-foreground" />
               <span>GitHub Profile</span>
             </label>
             <input
@@ -109,12 +109,12 @@ export function CareerForm({ career }: CareerFormProps) {
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               placeholder="https://github.com/username"
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
               <Linkedin className="h-3.5 w-3.5 text-sky-400" />
               <span>LinkedIn Profile</span>
             </label>
@@ -123,15 +123,15 @@ export function CareerForm({ career }: CareerFormProps) {
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
               placeholder="https://linkedin.com/in/username"
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
 
         {/* Portfolio Website */}
         <div>
-          <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-            <Globe className="h-3.5 w-3.5 text-emerald-400" />
+          <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+            <Globe className="h-3.5 w-3.5 text-success" />
             <span>Personal Portfolio / Blog URL</span>
           </label>
           <input
@@ -139,15 +139,15 @@ export function CareerForm({ career }: CareerFormProps) {
             value={portfolioUrl}
             onChange={(e) => setPortfolioUrl(e.target.value)}
             placeholder="https://myportfolio.dev"
-            className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
         {/* Target Companies & Primary Language */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-amber-400" />
+            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-warning" />
               <span>Target Companies</span>
             </label>
             <input
@@ -156,13 +156,13 @@ export function CareerForm({ career }: CareerFormProps) {
               onChange={(e) => setTargetCompanies(e.target.value)}
               placeholder="e.g. Google, Microsoft, Amazon, Atlassian"
               maxLength={255}
-              className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            <p className="mt-1 text-[11px] text-slate-500">Comma-separated target companies</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Comma-separated target companies</p>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
               <Code2 className="h-3.5 w-3.5 text-purple-400" />
               <span>Primary Language</span>
             </label>
@@ -173,7 +173,7 @@ export function CareerForm({ career }: CareerFormProps) {
                 onChange={(e) => setPrimaryLanguage(e.target.value)}
                 placeholder="e.g. TypeScript, Java, Python"
                 maxLength={50}
-                className="flex-1 rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             {/* Quick language chips */}
@@ -185,8 +185,8 @@ export function CareerForm({ career }: CareerFormProps) {
                   onClick={() => setPrimaryLanguage(lang)}
                   className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition ${
                     primaryLanguage === lang
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground'
                   }`}
                 >
                   {lang}
@@ -201,14 +201,14 @@ export function CareerForm({ career }: CareerFormProps) {
           <div
             className={`flex items-center gap-2 rounded-xl p-3.5 text-xs ${
               feedback.type === 'success'
-                ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                : 'border border-red-500/20 bg-red-500/10 text-red-300'
+                ? 'border border-success/20 bg-success/10 text-success'
+                : 'border border-destructive/20 bg-destructive/10 text-destructive'
             }`}
           >
             {feedback.type === 'success' ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
             ) : (
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+              <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
             )}
             <span>{feedback.message}</span>
           </div>
@@ -219,7 +219,7 @@ export function CareerForm({ career }: CareerFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

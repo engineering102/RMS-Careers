@@ -60,11 +60,11 @@ export default async function LeaderboardsPage({ searchParams }: LeaderboardsPag
       {/* 2. Ranked Peer Table (Privacy Masked) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-200">
+          <h2 className="text-sm font-semibold text-foreground">
             {data.timeframe === 'weekly' ? 'Weekly XP Standings' : 'All-Time XP Standings'}
           </h2>
 
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {data.entries.length} {data.entries.length === 1 ? 'participant' : 'participants'}
           </span>
         </div>
