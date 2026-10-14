@@ -86,6 +86,11 @@ export default {
       transitionDuration: {
         250: '250ms'
       },
+      // Half step used by cards (p-4.5 = 18px). Tailwind 3 has no 4.5 by default, so the class silently
+      // produced no padding at all before this was added.
+      spacing: {
+        '4.5': '1.125rem'
+      },
       keyframes: {
         // Success check icons: grow in with a small overshoot.
         pop: {

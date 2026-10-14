@@ -103,3 +103,42 @@ export function initialOpenSheets(sheets: DSASheet[], progressMap: ProgressMap, 
   const firstOpen = sheets.find((s) => s.questions.some((q) => !isSolved(progressMap, q.slug)));
   return firstOpen ? [firstOpen.slug] : sheets.slice(0, 1).map((s) => s.slug);
 }
+
+export interface PatternGroup {
+  pattern: string;
+  /** Questions of this pattern that pass the filters, in roadmap order. */
+  questions: DSAQuestion[];
+  /** 1-based roadmap position of each visible question, keyed by slug. */
+  positions: Record<string, number>;
+  /** Progress over the whole pattern, independent of filters. */
+  solvedCount: number;
+  totalCount: number;
+}
+
+/**
+ * Splits a sheet into consecutive pattern groups in roadmap order (the sheet lists each pattern as one
+ * contiguous run). Groups with no visible question are dropped; counts always cover the whole pattern.
+ */
+export function groupByPattern(sheet: DSASheet, visible: DSAQuestion[], progressMap: ProgressMap): PatternGroup[] {
+  const visibleSlugs = new Set(visible.map((q) => q.slug));
+  const groups: PatternGroup[] = [];
+  sheet.questions.forEach((q, index) => {
+    let group = groups[groups.length - 1];
+    if (!group || group.pattern !== q.pattern) {
+      group = { pattern: q.pattern, questions: [], positions: {}, solvedCount: 0, totalCount: 0 };
+      groups.push(group);
+    }
+    group.totalCount += 1;
+    if (isSolved(progressMap, q.slug)) group.solvedCount += 1;
+    if (visibleSlugs.has(q.slug)) {
+      group.questions.push(q);
+      group.positions[q.slug] = index + 1;
+    }
+  });
+  return groups.filter((g) => g.questions.length > 0);
+}
+
+/** DOM id of a pattern group, for the pattern jump chips. */
+export function patternAnchorId(sheetSlug: string, pattern: string): string {
+  return `dsa-${sheetSlug}-${pattern.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+}
