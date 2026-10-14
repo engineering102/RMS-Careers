@@ -539,6 +539,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                           <button
                             type="button"
                             key={option.id}
+                            aria-pressed={isSelected}
                             disabled={!isExamActive || remainingSeconds <= 0 || isSubmitting}
                             onClick={() => handleSelectOption(question, option.id)}
                             className={`w-full text-left p-3.5 rounded-lg border text-xs sm:text-sm flex items-start gap-3 transition-all active:scale-[0.99] motion-reduce:active:scale-100 ${

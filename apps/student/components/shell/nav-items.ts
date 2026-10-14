@@ -69,3 +69,14 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
     description: 'Academic details, portfolio links & 30-day heatmap'
   }
 ];
+
+/** Routes that are not nav items but belong to a section for wayfinding (e.g. a lesson opened from the library). */
+const SECTION_OVERRIDES: { prefix: string; title: string }[] = [{ prefix: '/content', title: 'Lesson' }];
+
+/** "Where am I?": the section name for the header, from the nav item whose route the path is in. */
+export function sectionTitleFor(pathname: string): string {
+  const inRoute = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
+  const override = SECTION_OVERRIDES.find((o) => inRoute(o.prefix));
+  if (override) return override.title;
+  return STUDENT_NAV_ITEMS.find((item) => inRoute(item.href))?.title ?? 'Student Portal';
+}

@@ -38,9 +38,24 @@ export function WorkspaceSubnav({ batchId, activeTab = 'curriculum' }: Workspace
     }
   ];
 
+  // Sections that have not shipped are not shown ("decide what not to build"); they used to appear as
+  // disabled "Coming Soon" tabs. With a single live section there is nothing to switch between, so it
+  // is shown as a heading; the tab bar returns as soon as a second section ships.
+  const liveTabs = tabs.filter((tab) => !tab.badge);
+  if (liveTabs.length === 1) {
+    const [only] = liveTabs;
+    const Icon = only.icon;
+    return (
+      <h2 className="flex items-center gap-2 border-b border-border pb-3 text-sm font-semibold text-foreground">
+        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+        {only.label}
+      </h2>
+    );
+  }
+
   return (
     <nav className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border scrollbar-none">
-      {tabs.map((tab) => {
+      {liveTabs.map((tab) => {
         const Icon = tab.icon;
         return (
           <div

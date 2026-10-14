@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { CohortSwitcher } from './cohort-switcher';
 import { SignOutButton } from './sign-out-button';
 
 import { NotificationBell } from './notification-bell';
+import { sectionTitleFor } from './nav-items';
 import type { NotificationItem } from '@/lib/types/notifications';
 
 interface HeaderProps {
@@ -34,6 +36,9 @@ export function Header({
         .join('')
         .toUpperCase()
     : 'ST';
+
+  // Wayfinding: the header names the section you are in (each page keeps its own <h1>).
+  const sectionTitle = sectionTitleFor(usePathname() ?? '');
 
   // Scroll edge: no divider at the top of the page; once content passes under the header it turns into a
   // translucent material with a hairline edge.
@@ -63,14 +68,14 @@ export function Header({
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          <span className="text-xs font-bold tracking-wider text-foreground uppercase">RMS Portal</span>
+        <div className="flex min-w-0 items-center gap-2 md:hidden">
+          <GraduationCap className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <span className="truncate text-sm font-semibold text-foreground">{sectionTitle}</span>
         </div>
 
         {/* Desktop Breadcrumb / Title */}
         <div className="hidden md:block">
-          <h1 className="text-base font-semibold text-foreground">Learning Dashboard</h1>
+          <p className="text-base font-semibold text-foreground">{sectionTitle}</p>
           <p className="text-xs text-muted-foreground">
             {student?.collegeName || 'RMS Partner College'}
             {student?.branch ? ` · ${student.branch}` : ''}
