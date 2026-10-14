@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach, beforeEach, type MockInstance } fr
 import React from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import './helpers/jsdom-gestures';
 
 import { SignOutButton, SIGN_OUT_DIALOG_COPY } from '../shell/sign-out-button';
 import { MobileNav } from '../shell/mobile-nav';

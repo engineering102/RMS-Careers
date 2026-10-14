@@ -2,6 +2,8 @@
 
 import React, { useState, useTransition, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Drawer } from 'vaul';
+import { useMediaQuery } from '@/lib/hooks/use-media-query';
 import {
   X,
   CheckCircle2,
@@ -45,6 +47,8 @@ export function ProblemDetailModal({
   if (requestedQuestion && requestedQuestion !== question) setQuestion(requestedQuestion);
   if (requestedQuestion && requestedProgress !== progress) setProgress(requestedProgress);
   const isOpen = requestedQuestion !== null;
+  // Phones get a bottom sheet (drag down to dismiss); wider screens keep the centred dialog.
+  const isDesktop = useMediaQuery('(min-width: 640px)', true);
 
   const [submissionUrl, setSubmissionUrl] = useState('');
   const [notes, setNotes] = useState('');
@@ -125,15 +129,9 @@ export function ProblemDetailModal({
 
   // Radix Dialog: focus trap, Escape to close, scroll lock, and enter/exit animation (fade + scale from 0.97,
   // centred). Clicking the backdrop still does not close it, so typed notes are not lost by a stray click.
-  return (
-    <DialogPrimitive.Root open={isOpen} onOpenChange={(next) => !next && onClose()}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 ease-out-quint">
-          <DialogPrimitive.Content
-            aria-describedby={undefined}
-            onInteractOutside={(event) => event.preventDefault()}
-            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto focus:outline-none ease-out-quint data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97] data-[state=closed]:duration-150 motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100"
-          >
+  // The same header and body render in both containers.
+  const body = (
+    <>
             {/* Modal Header */}
             <div className="flex items-start justify-between p-5 sm:p-6 border-b border-border/80 bg-card sticky top-0 z-10">
               <div className="space-y-2 pr-4">
@@ -359,6 +357,37 @@ export function ProblemDetailModal({
                 </div>
               </form>
             </div>
+    </>
+  );
+
+  if (!isDesktop) {
+    return (
+      <Drawer.Root open={isOpen} onOpenChange={(next) => !next && onClose()}>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 z-50 bg-black/70" />
+          <Drawer.Content
+            aria-describedby={undefined}
+            onInteractOutside={(event) => event.preventDefault()}
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-card shadow-2xl outline-none"
+          >
+            <div aria-hidden="true" className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-muted-foreground/40" />
+            {body}
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
+    );
+  }
+
+  return (
+    <DialogPrimitive.Root open={isOpen} onOpenChange={(next) => !next && onClose()}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 ease-out-quint">
+          <DialogPrimitive.Content
+            aria-describedby={undefined}
+            onInteractOutside={(event) => event.preventDefault()}
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto focus:outline-none ease-out-quint data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97] data-[state=closed]:duration-150 motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100"
+          >
+            {body}
           </DialogPrimitive.Content>
         </DialogPrimitive.Overlay>
       </DialogPrimitive.Portal>

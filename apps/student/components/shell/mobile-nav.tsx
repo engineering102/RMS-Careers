@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Drawer } from 'vaul';
 import { usePathname } from 'next/navigation';
 import { X, LogOut, GraduationCap, Building2, CheckCircle2 } from 'lucide-react';
 import { STUDENT_NAV_ITEMS } from './nav-items';
@@ -21,18 +21,19 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
   const pathname = usePathname();
   const student = context.student;
 
-  // Radix keeps the drawer mounted while it animates out, traps focus, closes on Escape / backdrop click and
-  // locks page scroll. It slides in from (and back out to) the left edge it is attached to.
+  // vaul (on Radix Dialog): focus trap, Escape / backdrop to close, scroll lock, and a drawer that follows the
+  // finger 1:1, resists past its open edge and closes on a left swipe based on release velocity. It slides in
+  // from, and back out to, the left edge it is attached to.
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm md:hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-200 ease-out-quint" />
+    <Drawer.Root open={open} onOpenChange={(next) => !next && onClose()} direction="left">
+      <Drawer.Portal>
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm md:hidden" />
 
-        <DialogPrimitive.Content
+        <Drawer.Content
           aria-describedby={undefined}
-          className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-background border-r border-border p-4 text-foreground shadow-2xl md:hidden focus:outline-none data-[state=open]:animate-in data-[state=open]:slide-in-from-left-full data-[state=open]:duration-300 data-[state=open]:ease-drawer data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left-full data-[state=closed]:duration-200 data-[state=closed]:ease-out-quint motion-reduce:data-[state=open]:slide-in-from-left-0 motion-reduce:data-[state=closed]:slide-out-to-left-0 motion-reduce:data-[state=open]:fade-in-0 motion-reduce:data-[state=closed]:fade-out-0"
+          className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-background border-r border-border p-4 text-foreground shadow-2xl outline-none md:hidden"
         >
-          <DialogPrimitive.Title className="sr-only">Navigation menu</DialogPrimitive.Title>
+          <Drawer.Title className="sr-only">Navigation menu</Drawer.Title>
           {/* Header with Close Button */}
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <div className="flex items-center gap-2">
@@ -42,12 +43,12 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
                 <p className="text-xs font-semibold text-foreground">Student Portal</p>
               </div>
             </div>
-            <DialogPrimitive.Close
+            <Drawer.Close
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-card hover:text-foreground"
               aria-label="Close navigation menu"
             >
               <X className="h-5 w-5" />
-            </DialogPrimitive.Close>
+            </Drawer.Close>
           </div>
 
           {/* Current Cohort Switcher */}
@@ -131,8 +132,8 @@ export function MobileNav({ context, activeCohort = null, open, onClose }: Mobil
               </SignOutButton>
             </div>
           </div>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 }

@@ -120,3 +120,12 @@
     display: none;
   }
 }
+
+/* vaul drawers / sheets: no slide under reduced motion (they appear and leave in place; drag still tracks the finger). */
+@media (prefers-reduced-motion: reduce) {
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
