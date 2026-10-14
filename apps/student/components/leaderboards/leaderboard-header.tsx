@@ -18,6 +18,7 @@ import type {
   BatchOption,
   StudentLeaderboardStanding
 } from '@/lib/types/leaderboards';
+import { formatNumber } from '@/lib/format/datetime';
 
 interface LeaderboardHeaderProps {
   scope: LeaderboardScope;
@@ -87,7 +88,7 @@ export function LeaderboardHeader({
               <span className="text-muted-foreground">·</span>
               <span className="inline-flex items-center gap-1 text-success font-mono font-semibold">
                 <Zap className="h-3 w-3" />
-                {userStanding.xp} XP
+                {formatNumber(userStanding.xp)} XP
               </span>
               <span className="text-muted-foreground">·</span>
               <span className="inline-flex items-center gap-1 text-warning font-mono">
@@ -129,14 +130,15 @@ export function LeaderboardHeader({
         </div>
 
         {/* Right Controls: Batch Selector (if batch scope) + Timeframe Toggle */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
           {scope === 'batch' && availableBatches.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Cohort:</span>
+            <div className="flex items-center gap-2 min-w-0 max-w-full">
+              <span className="shrink-0 text-xs text-muted-foreground">Cohort:</span>
+              {/* A long batch name must not widen the page: the select shrinks and truncates. */}
               <select
                 value={selectedBatchId}
                 onChange={handleBatchChange}
-                className="bg-card border border-border rounded-lg px-2.5 py-1 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
+                className="min-w-0 max-w-full sm:max-w-xs truncate bg-card border border-border rounded-lg px-2.5 py-1 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
               >
                 {availableBatches.map((b) => (
                   <option key={b.batchId} value={b.batchId}>
@@ -176,18 +178,18 @@ export function LeaderboardHeader({
 
       {/* 3. Scope Context Indicator */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {scope === 'batch' ? (
-            <span className="flex items-center gap-1.5 text-foreground/80">
-              <Users className="h-3.5 w-3.5 text-primary" />
-              <span>Showing rankings for cohort:</span>
-              <strong className="text-foreground font-semibold">{batchName || 'Your Enrolled Batch'}</strong>
+            <span className="flex items-start gap-1.5 text-foreground/80 min-w-0">
+              <Users className="h-3.5 w-3.5 mt-px shrink-0 text-primary" />
+              <span className="shrink-0">Showing rankings for cohort:</span>
+              <strong className="min-w-0 break-words text-foreground font-semibold">{batchName || 'Your Enrolled Batch'}</strong>
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-foreground/80">
-              <Building2 className="h-3.5 w-3.5 text-primary" />
-              <span>Showing rankings across:</span>
-              <strong className="text-foreground font-semibold">{collegeName || 'Your College'}</strong>
+            <span className="flex items-start gap-1.5 text-foreground/80 min-w-0">
+              <Building2 className="h-3.5 w-3.5 mt-px shrink-0 text-primary" />
+              <span className="shrink-0">Showing rankings across:</span>
+              <strong className="min-w-0 break-words text-foreground font-semibold">{collegeName || 'Your College'}</strong>
             </span>
           )}
         </div>
