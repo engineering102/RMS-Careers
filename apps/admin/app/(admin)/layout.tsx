@@ -10,14 +10,6 @@ import {
   Building2
 } from 'lucide-react';
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -28,6 +20,7 @@ import {
 import { User } from './user';
 import Providers from './providers';
 import { NavItem } from './nav-item';
+import { AdminBreadcrumb } from './admin-breadcrumb';
 import { SearchInput } from './search';
 import { requireAdminSession } from '@/lib/authz';
 
@@ -174,23 +167,5 @@ function MobileNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
         </nav>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function AdminBreadcrumb() {
-  return (
-    <Breadcrumb className="hidden md:flex">
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/programs">Academy</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>Enrollment Admin</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
   );
 }

@@ -6,10 +6,6 @@ import {
   batchCurriculum,
   contentItems,
   batches,
-  quizzes,
-  quizAttempts,
-  assignments,
-  assignmentSubmissions,
   activities,
   enrollments
 } from '@rms/db';
@@ -26,6 +22,7 @@ import {
   calculateHeatmapIntensity
 } from '@/lib/types/overview';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
+import { getBatchProgressSummary } from '@/lib/db/queries/progress';
 
 export type {
   StudentStatsOverview,
@@ -164,42 +161,22 @@ export async function getStudentOverview(
         .limit(10);
 
       if (rawDeadlines.length > 0) {
-        // Query completed quizzes and projects to flag completion status
-        const completedQuizIds = new Set<string>();
-        const completedAssignmentIds = new Set<string>();
-
-        const passedQuizzes = await db
-          .select({ contentItemId: quizzes.contentItemId })
-          .from(quizAttempts)
-          .innerJoin(quizzes, eq(quizzes.id, quizAttempts.quizId))
-          .where(
-            and(
-              eq(quizAttempts.studentId, studentId),
-              eq(quizAttempts.isPassed, true)
-            )
-          );
-
-        passedQuizzes.forEach((pq) => {
-          if (pq.contentItemId) completedQuizIds.add(pq.contentItemId);
-        });
-
-        const submittedProjects = await db
-          .select({ contentItemId: assignments.contentItemId })
-          .from(assignmentSubmissions)
-          .innerJoin(assignments, eq(assignments.id, assignmentSubmissions.assignmentId))
-          .where(eq(assignmentSubmissions.studentId, studentId));
-
-        submittedProjects.forEach((sp) => {
-          if (sp.contentItemId) completedAssignmentIds.add(sp.contentItemId);
+        // Completion uses the batch workspace's own rules (lectures, quizzes, approved projects, DSA
+        // problems), so a deadline is "done" here exactly when its milestone is done in the workspace.
+        const deadlineBatchIds = Array.from(new Set(rawDeadlines.map((d) => d.batchId)));
+        const summaries = await Promise.all(
+          deadlineBatchIds.map((id) => getBatchProgressSummary(studentId, id).catch(() => null))
+        );
+        const completedKeys = new Set<string>();
+        summaries.forEach((summary, index) => {
+          if (!summary) return;
+          for (const [contentItemId, record] of Object.entries(summary.itemsMap)) {
+            if (record.status === 'completed') completedKeys.add(`${deadlineBatchIds[index]}:${contentItemId}`);
+          }
         });
 
         deadlines = rawDeadlines.map((item) => {
-          let isCompleted = false;
-          if (item.contentType === 'quiz') {
-            isCompleted = completedQuizIds.has(item.contentItemId);
-          } else if (item.contentType === 'project') {
-            isCompleted = completedAssignmentIds.has(item.contentItemId);
-          }
+          const isCompleted = completedKeys.has(`${item.batchId}:${item.contentItemId}`);
 
           return {
             id: item.id,

@@ -9,6 +9,16 @@ import {
 
 vi.mock('server-only', () => ({}));
 
+// Deadline completion comes from the batch workspace's progress summary (keyed by batch + content item).
+let mockCompletedByBatch: Record<string, string[]> = {};
+vi.mock('@/lib/db/queries/progress', () => ({
+  getBatchProgressSummary: async (_studentId: number, batchId: string) => ({
+    itemsMap: Object.fromEntries(
+      (mockCompletedByBatch[batchId] ?? []).map((id) => [id, { contentItemId: id, status: 'completed' }])
+    )
+  })
+}));
+
 // In-memory test mocks
 let mockStudentStats: any[] = [];
 let mockEnrollments: any[] = [];
@@ -138,6 +148,7 @@ describe('Slice 6: Student Overview Dashboard & getStudentOverview', () => {
     ];
 
     mockPassedQuizzes = [{ contentItemId: 'content-quiz-01' }];
+    mockCompletedByBatch = { [accessibleBatchId]: ['content-quiz-01'] };
     mockSubmittedProjects = [];
 
     mockActivities = [
@@ -213,12 +224,18 @@ describe('Slice 6: Student Overview Dashboard & getStudentOverview', () => {
       const quizDeadline = overview.deadlines.find((d) => d.contentType === 'quiz');
       expect(quizDeadline).toBeDefined();
       expect(quizDeadline?.title).toBe('Binary Search Practice Quiz');
-      expect(quizDeadline?.isCompleted).toBe(true); // passed in mockPassedQuizzes
+      expect(quizDeadline?.isCompleted).toBe(true); // completed in the batch progress summary
 
       const projectDeadline = overview.deadlines.find((d) => d.contentType === 'project');
       expect(projectDeadline).toBeDefined();
       expect(projectDeadline?.title).toBe('Fullstack Portfolio Project');
       expect(projectDeadline?.isCompleted).toBe(false); // not submitted
+    });
+
+    it('only counts completion recorded for the deadline batch', async () => {
+      mockCompletedByBatch = { 'some-other-batch': ['content-quiz-01', 'content-project-01'] };
+      const overview = await getStudentOverview(studentId, [accessibleBatchId]);
+      expect(overview.deadlines.every((d) => !d.isCompleted)).toBe(true);
     });
 
     it('returns empty deadlines when student has no accessible batches', async () => {
