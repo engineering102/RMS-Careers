@@ -13,17 +13,18 @@ function getRankBadge(rank: number) {
   switch (rank) {
     case 1:
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs shadow-sm">
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-warning/15 border border-warning/30 text-warning font-bold text-xs shadow-sm">
           <Trophy className="h-3.5 w-3.5" />
         </span>
       );
     case 2:
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-300/15 border border-slate-300/30 text-slate-200 font-bold text-xs shadow-sm">
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-muted-foreground/15 border border-muted-foreground/30 text-foreground font-bold text-xs shadow-sm">
           <Medal className="h-3.5 w-3.5" />
         </span>
       );
     case 3:
+      // Bronze is decorative and has no design token (rank 1 gold uses `warning`).
       return (
         <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-700/15 border border-amber-700/30 text-amber-500 font-bold text-xs shadow-sm">
           <Medal className="h-3.5 w-3.5" />
@@ -31,7 +32,7 @@ function getRankBadge(rank: number) {
       );
     default:
       return (
-        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-800 border border-slate-700/70 text-slate-400 font-semibold text-xs font-mono">
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary border border-input/70 text-muted-foreground font-semibold text-xs font-mono">
           {rank}
         </span>
       );
@@ -45,15 +46,15 @@ function getRankBadge(rank: number) {
 export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
-      <Card className="border-slate-800 bg-slate-900/40">
+      <Card className="border-border bg-card/40">
         <CardContent className="p-12 text-center space-y-3">
-          <div className="mx-auto w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400">
+          <div className="mx-auto w-12 h-12 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
             <Trophy className="h-6 w-6" />
           </div>
-          <h3 className="text-base font-semibold text-slate-200">
+          <h3 className="text-base font-semibold text-foreground">
             No Leaderboard Entries Recorded
           </h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
             {timeframe === 'weekly'
               ? 'No XP activities have been logged for this cohort/college during the current calendar week yet. Complete a learning activity to take the #1 spot!'
               : 'No student progress records exist yet for this cohort/college.'}
@@ -63,66 +64,78 @@ export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) 
     );
   }
 
+  // Below `sm` the Branch and Streak columns fold into the Student cell so Rank, Student and XP fit a
+  // phone without horizontal scrolling; the table still scrolls inside its card if a cell is too wide.
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
+    <Card className="border-border bg-card/60 backdrop-blur-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold text-[11px] tracking-wider bg-slate-950/40 whitespace-nowrap">
-              <th className="py-3 px-4 w-16 text-center">Rank</th>
-              <th className="py-3 px-4">Student</th>
-              <th className="py-3 px-4">Department / Branch</th>
-              <th className="py-3 px-4 text-center">Daily Streak</th>
-              <th className="py-3 px-4 text-right">
+            <tr className="border-b border-border text-muted-foreground uppercase font-semibold text-[11px] tracking-wider bg-background/40 whitespace-nowrap">
+              <th className="py-3 px-3 sm:px-4 w-14 sm:w-16 text-center">Rank</th>
+              <th className="py-3 px-3 sm:px-4">Student</th>
+              <th className="hidden sm:table-cell py-3 px-4">Department / Branch</th>
+              <th className="hidden sm:table-cell py-3 px-4 text-center">Daily Streak</th>
+              <th className="py-3 px-3 sm:px-4 text-right">
                 {timeframe === 'weekly' ? 'Weekly XP' : 'Total XP'}
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-border/60">
             {entries.map((entry) => (
               <tr
                 key={entry.studentId}
-                className={`transition-colors whitespace-nowrap ${
+                className={`transition-colors ${
                   entry.isCurrentUser
-                    ? 'bg-blue-950/30 border-l-2 border-l-blue-500 hover:bg-blue-950/40'
-                    : 'hover:bg-slate-800/30'
+                    ? 'bg-primary/5 border-l-2 border-l-primary hover:bg-primary/5'
+                    : 'hover:bg-secondary/30'
                 }`}
               >
                 {/* 1. Rank Column */}
-                <td className="py-3.5 px-4 text-center">{getRankBadge(entry.rank)}</td>
+                <td className="py-3.5 px-3 sm:px-4 text-center">{getRankBadge(entry.rank)}</td>
 
                 {/* 2. Student Full Name (Privacy-compliant plain text, non-clickable) */}
-                <td className="py-3.5 px-4 font-medium text-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold truncate max-w-xs">
+                <td className="py-3.5 px-3 sm:px-4 font-medium text-foreground min-w-[9rem]">
+                  <div className="flex items-start gap-2">
+                    {/* Names wrap to two lines; the full name stays available on hover. */}
+                    <span className="text-sm font-semibold line-clamp-2 break-words" title={entry.fullName}>
                       {entry.fullName}
                     </span>
                     {entry.isCurrentUser && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+                      <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 font-mono">
                         You
                       </span>
                     )}
                   </div>
+                  {/* Phone layout: branch and streak under the name (their own columns are hidden). */}
+                  <div className="sm:hidden mt-1 flex items-center gap-2 text-[11px] text-muted-foreground font-mono">
+                    {entry.branch && <span className="line-clamp-1 break-all" title={entry.branch}>{entry.branch}</span>}
+                    <span className="shrink-0 inline-flex items-center gap-0.5 text-warning">
+                      <Flame className="h-3 w-3 fill-warning/20" aria-hidden="true" />
+                      {entry.currentStreak}d
+                    </span>
+                  </div>
                 </td>
 
-                {/* 3. Branch / Department */}
-                <td className="py-3.5 px-4 text-slate-300 font-mono text-xs">
-                  {entry.branch || 'General Engineering'}
+                {/* 3. Branch / Department ("—" when the college never recorded one) */}
+                <td className="hidden sm:table-cell py-3.5 px-4 text-foreground/80 font-mono text-xs max-w-[16rem] break-words">
+                  {entry.branch || <span className="text-muted-foreground">—</span>}
                 </td>
 
                 {/* 4. Daily Streak */}
-                <td className="py-3.5 px-4 text-center">
-                  <span className="inline-flex items-center gap-1 text-amber-400 font-mono font-medium">
-                    <Flame className="h-3.5 w-3.5 fill-amber-400/20" />
+                <td className="hidden sm:table-cell py-3.5 px-4 text-center whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 text-warning font-mono font-medium">
+                    <Flame className="h-3.5 w-3.5 fill-warning/20" />
                     <span>{entry.currentStreak}d</span>
                   </span>
                 </td>
 
-                {/* 5. XP Score */}
-                <td className="py-3.5 px-4 text-right font-mono">
-                  <span className="inline-flex items-center gap-1 font-bold text-emerald-400 text-sm">
+                {/* 5. XP Score (never truncated or wrapped) */}
+                <td className="py-3.5 px-3 sm:px-4 text-right font-mono whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 font-bold text-success text-sm">
                     <Zap className="h-3.5 w-3.5" />
-                    +{formatNumber(entry.xp)} XP
+                    {entry.xp > 0 ? '+' : ''}
+                    {formatNumber(entry.xp)} XP
                   </span>
                 </td>
               </tr>

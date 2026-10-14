@@ -46,6 +46,9 @@ export function formatAcademicYear(year: number): string {
   return map[year] || `${year}th Year`;
 }
 
+/** Same limit as the admin "Add student" form (batches/[batchId]/students/actions.ts). */
+export const MAX_TEXT_FIELD_LENGTH = 200;
+
 /**
  * Validates raw rows and identifies in-file duplicate entries.
  */
@@ -59,6 +62,8 @@ export function validateImportRows(rawRows: RawImportRow[]): ValidatedImportRow[
     // 1. Full Name check
     if (!row.fullName || row.fullName.trim().length < 2) {
       issues.push('Full Name is required (minimum 2 characters)');
+    } else if (row.fullName.trim().length > MAX_TEXT_FIELD_LENGTH) {
+      issues.push(`Full Name must be at most ${MAX_TEXT_FIELD_LENGTH} characters`);
     }
 
     // 2. Email check
@@ -85,6 +90,8 @@ export function validateImportRows(rawRows: RawImportRow[]): ValidatedImportRow[
     // 5. Branch check
     if (!row.branch || row.branch.trim().length === 0) {
       issues.push('Branch is required');
+    } else if (row.branch.trim().length > MAX_TEXT_FIELD_LENGTH) {
+      issues.push(`Branch must be at most ${MAX_TEXT_FIELD_LENGTH} characters`);
     }
 
     // 6. Academic Year check

@@ -96,14 +96,14 @@ export function ProjectSubmissionWorkspace({
     switch (status) {
       case 'submitted':
         return (
-          <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300 gap-1 px-3 py-1">
+          <Badge className="border-primary/30 bg-primary/10 text-primary gap-1 px-3 py-1">
             <Clock className="h-3.5 w-3.5" />
             <span>Submitted for Review</span>
           </Badge>
         );
       case 'under_review':
         return (
-          <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300 gap-1 px-3 py-1">
+          <Badge className="border-warning/30 bg-warning/10 text-warning gap-1 px-3 py-1">
             <Lock className="h-3.5 w-3.5" />
             <span>Under Tutor Review</span>
           </Badge>
@@ -117,7 +117,7 @@ export function ProjectSubmissionWorkspace({
         );
       case 'approved':
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 gap-1 px-3 py-1">
+          <Badge className="border-success/30 bg-success/10 text-success gap-1 px-3 py-1">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Project Approved</span>
           </Badge>
@@ -125,7 +125,7 @@ export function ProjectSubmissionWorkspace({
       case 'draft':
       default:
         return (
-          <Badge className="border-slate-700 bg-slate-800 text-slate-300 gap-1 px-3 py-1">
+          <Badge className="border-input bg-secondary text-foreground/80 gap-1 px-3 py-1">
             <FolderGit2 className="h-3.5 w-3.5" />
             <span>Not Submitted</span>
           </Badge>
@@ -137,11 +137,11 @@ export function ProjectSubmissionWorkspace({
     <div className="space-y-8">
       {/* 1. Status Banner */}
       {!assignment.isAvailable && (
-        <div className="p-4 sm:p-5 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-300 flex items-start gap-4">
-          <Lock className="h-6 w-6 shrink-0 mt-0.5 text-slate-400" />
+        <div className="p-4 sm:p-5 rounded-xl border border-input bg-card/60 text-foreground/80 flex items-start gap-4">
+          <Lock className="h-6 w-6 shrink-0 mt-0.5 text-muted-foreground" />
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-slate-200">Assignment Locked</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h4 className="text-sm font-bold text-foreground">Assignment Locked</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               This project assignment is not yet open for submission. It unlocks on{' '}
               {assignment.availableFrom
                 ? formatDate(assignment.availableFrom)
@@ -153,17 +153,17 @@ export function ProjectSubmissionWorkspace({
       )}
 
       {status === 'approved' && (
-        <div className="p-4 sm:p-5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 text-emerald-300 flex items-start gap-4">
-          <CheckCircle2 className="h-6 w-6 shrink-0 mt-0.5 text-emerald-400" />
+        <div className="p-4 sm:p-5 rounded-xl border border-success/30 bg-success/5 text-success flex items-start gap-4">
+          <CheckCircle2 className="h-6 w-6 shrink-0 mt-0.5 text-success" />
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-emerald-200">
+            <h4 className="text-sm font-bold text-success">
               Project Approved {submission?.score !== null && `• Score: ${submission?.score}/${assignment.maxScore}`}
             </h4>
-            <p className="text-xs text-emerald-300/90 leading-relaxed">
+            <p className="text-xs text-success/90 leading-relaxed">
               Congratulations! Your project assignment has been reviewed and approved by the academic team.
             </p>
             {submission?.tutorFeedback && (
-              <div className="mt-3 p-3 rounded-lg bg-emerald-900/30 border border-emerald-500/20 text-xs text-emerald-200">
+              <div className="mt-3 p-3 rounded-lg bg-success/5 border border-success/20 text-xs text-success">
                 <span className="font-semibold block mb-1">Tutor Feedback:</span>
                 {submission.tutorFeedback}
               </div>
@@ -173,11 +173,11 @@ export function ProjectSubmissionWorkspace({
       )}
 
       {status === 'under_review' && (
-        <div className="p-4 sm:p-5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-amber-300 flex items-start gap-4">
-          <Lock className="h-6 w-6 shrink-0 mt-0.5 text-amber-400" />
+        <div className="p-4 sm:p-5 rounded-xl border border-warning/30 bg-warning/5 text-warning flex items-start gap-4">
+          <Lock className="h-6 w-6 shrink-0 mt-0.5 text-warning" />
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-amber-200">Review in Progress</h4>
-            <p className="text-xs text-amber-300/90 leading-relaxed">
+            <h4 className="text-sm font-bold text-warning">Review in Progress</h4>
+            <p className="text-xs text-warning/90 leading-relaxed">
               A tutor is actively evaluating your repository against the rubric. Resubmission is temporarily locked while evaluation is in progress.
             </p>
           </div>
@@ -203,11 +203,11 @@ export function ProjectSubmissionWorkspace({
       )}
 
       {status === 'submitted' && (
-        <div className="p-4 sm:p-5 rounded-xl border border-blue-500/30 bg-blue-950/20 text-blue-300 flex items-start gap-4">
-          <Clock className="h-6 w-6 shrink-0 mt-0.5 text-blue-400" />
+        <div className="p-4 sm:p-5 rounded-xl border border-primary/30 bg-primary/5 text-primary flex items-start gap-4">
+          <Clock className="h-6 w-6 shrink-0 mt-0.5 text-primary" />
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-blue-200">Submission Received</h4>
-            <p className="text-xs text-blue-300/90 leading-relaxed">
+            <h4 className="text-sm font-bold text-primary">Submission Received</h4>
+            <p className="text-xs text-primary/90 leading-relaxed">
               Your repository was submitted on{' '}
               {submission ? formatDate(submission.submittedAt) : 'recently'}. You may push updates and resubmit anytime until a tutor begins review.
             </p>
@@ -218,27 +218,27 @@ export function ProjectSubmissionWorkspace({
       {/* 2. Project Brief & Rubric Criteria */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60 backdrop-blur-sm">
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
                     {assignment.batchName}
                   </span>
-                  <h2 className="text-xl font-bold text-slate-100">{assignment.title}</h2>
+                  <h2 className="text-xl font-bold text-foreground">{assignment.title}</h2>
                 </div>
                 {getStatusBadge()}
               </div>
 
               {assignment.description && (
-                <div className="pt-2 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                <div className="pt-2 text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                   {assignment.description}
                 </div>
               )}
 
               {assignment.dueAt && (
-                <div className="flex items-center gap-2 pt-2 text-xs text-slate-400 font-mono">
-                  <Clock className="h-3.5 w-3.5 text-slate-500" />
+                <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground font-mono">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                   <span>
                     Deadline: {formatDate(assignment.dueAt)} at{' '}
                     {formatTime(assignment.dueAt, { hour: '2-digit', minute: '2-digit' })}
@@ -249,41 +249,41 @@ export function ProjectSubmissionWorkspace({
           </Card>
 
           {/* Submission Form */}
-          <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60 backdrop-blur-sm">
             <CardContent className="p-6 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <FolderGit2 className="h-4 w-4 text-amber-400" />
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <FolderGit2 className="h-4 w-4 text-warning" />
                   <span>{submission ? 'Update Submission' : 'Submit Repository'}</span>
                 </h3>
-                <span className="text-xs text-slate-400">Public GitHub Repository</span>
+                <span className="text-xs text-muted-foreground">Public GitHub Repository</span>
               </div>
 
               {errorMessage && (
-                <div className="p-3.5 rounded-lg border border-red-500/30 bg-red-950/20 text-red-300 text-xs flex items-center gap-2.5">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+                <div className="p-3.5 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-xs flex items-center gap-2.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               {successMessage && (
-                <div className="p-3.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-300 text-xs flex items-center gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <div className="p-3.5 rounded-lg border border-success/30 bg-success/5 text-success text-xs flex items-center gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                   <span>{successMessage}</span>
                 </div>
               )}
 
               {/* Mobile ergonomics notice per Section 19 */}
-              <div className="sm:hidden flex items-center gap-2 p-3 rounded-xl border border-slate-800 bg-slate-950/70 text-xs text-slate-400">
-                <Laptop className="h-4 w-4 text-amber-400 shrink-0" />
+              <div className="sm:hidden flex items-center gap-2 p-3 rounded-xl border border-border bg-background/70 text-xs text-muted-foreground">
+                <Laptop className="h-4 w-4 text-warning shrink-0" />
                 <span>Desktop recommended for GitHub repository submission</span>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* GitHub Repository URL */}
                 <div className="space-y-1.5">
-                  <label htmlFor="githubUrl" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Github className="h-3.5 w-3.5 text-slate-400" />
+                  <label htmlFor="githubUrl" className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                    <Github className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>GitHub Repository URL *</span>
                   </label>
                   <input
@@ -294,17 +294,17 @@ export function ProjectSubmissionWorkspace({
                     onChange={(e) => setGithubUrl(e.target.value)}
                     placeholder="https://github.com/username/project-name"
                     required
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-sm placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warning/50 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
                   />
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-muted-foreground">
                     Must be a publicly accessible repository. The server validates accessibility via a HEAD request.
                   </p>
                 </div>
 
                 {/* Live Demo URL */}
                 <div className="space-y-1.5">
-                  <label htmlFor="liveUrl" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Globe className="h-3.5 w-3.5 text-slate-400" />
+                  <label htmlFor="liveUrl" className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Live Demo URL (Optional)</span>
                   </label>
                   <input
@@ -314,14 +314,14 @@ export function ProjectSubmissionWorkspace({
                     value={liveUrl}
                     onChange={(e) => setLiveUrl(e.target.value)}
                     placeholder="https://my-project.vercel.app"
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-sm placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warning/50 disabled:opacity-60 disabled:cursor-not-allowed font-mono"
                   />
                 </div>
 
                 {/* Notes & Highlights */}
                 <div className="space-y-1.5">
-                  <label htmlFor="notes" className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 text-slate-400" />
+                  <label htmlFor="notes" className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Notes for Reviewer (Optional)</span>
                   </label>
                   <textarea
@@ -332,19 +332,19 @@ export function ProjectSubmissionWorkspace({
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Mention architecture decisions, environment variables setup, or specific features to test..."
                     maxLength={2000}
-                    className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 text-sm placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 disabled:opacity-60 disabled:cursor-not-allowed resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-warning/50 disabled:opacity-60 disabled:cursor-not-allowed resize-none"
                   />
                 </div>
 
                 {/* Submit Button */}
                 <div className="pt-2 flex items-center justify-between">
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted-foreground">
                     {submission && submission.githubUrl && (
                       <a
                         href={submission.githubUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-amber-400 hover:underline"
+                        className="inline-flex items-center gap-1 text-warning hover:underline"
                       >
                         <span>View Current Repo</span>
                         <ExternalLink className="h-3 w-3" />
@@ -355,7 +355,7 @@ export function ProjectSubmissionWorkspace({
                   <Button
                     type="submit"
                     disabled={!canSubmit || isPending}
-                    className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs gap-2 px-5 py-2"
+                    className="bg-warning hover:bg-warning/90 text-warning-foreground font-semibold text-xs gap-2 px-5 py-2"
                   >
                     {isPending ? (
                       <>
@@ -377,10 +377,10 @@ export function ProjectSubmissionWorkspace({
 
         {/* 3. Evaluation Rubric Sidebar */}
         <div className="space-y-6">
-          <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60 backdrop-blur-sm">
             <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-purple-400" />
                   <span>Evaluation Rubric</span>
                 </h3>
@@ -390,16 +390,16 @@ export function ProjectSubmissionWorkspace({
               </div>
 
               {assignment.rubricCriteria.length === 0 ? (
-                <p className="text-xs text-slate-400">General holistic project evaluation.</p>
+                <p className="text-xs text-muted-foreground">General holistic project evaluation.</p>
               ) : (
                 <div className="space-y-3">
                   {assignment.rubricCriteria.map((criterion, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-lg border border-slate-800/80 bg-slate-950/40 space-y-1"
+                      className="p-3 rounded-lg border border-border/80 bg-background/40 space-y-1"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-200">
+                        <span className="text-xs font-semibold text-foreground">
                           {criterion.title}
                         </span>
                         <span className="text-[11px] font-mono font-bold text-purple-300">
@@ -407,7 +407,7 @@ export function ProjectSubmissionWorkspace({
                         </span>
                       </div>
                       {criterion.description && (
-                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
                           {criterion.description}
                         </p>
                       )}
@@ -416,8 +416,8 @@ export function ProjectSubmissionWorkspace({
                 </div>
               )}
 
-              <div className="pt-2 border-t border-slate-800/60 text-[11px] text-slate-500 flex items-start gap-2">
-                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-slate-400" />
+              <div className="pt-2 border-t border-border/60 text-[11px] text-muted-foreground flex items-start gap-2">
+                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
                 <span>
                   Projects are evaluated by industry tutors against clean code standards, git workflow, and functional completeness.
                 </span>

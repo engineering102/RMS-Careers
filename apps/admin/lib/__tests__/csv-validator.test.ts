@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeAcademicYear,
   formatAcademicYear,
-  validateImportRows
+  validateImportRows,
+  MAX_TEXT_FIELD_LENGTH
 } from '../csv/validator';
 import type { RawImportRow } from '../csv/parser';
 
@@ -382,5 +383,29 @@ describe('validateImportRows — boundary conditions', () => {
     );
     const results = validateImportRows(rows);
     expect(results.every((r) => r.status === 'valid')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateImportRows — length limits (match the admin "Add student" form)
+// ---------------------------------------------------------------------------
+
+describe('validateImportRows — length limits', () => {
+  it('accepts a full name and branch at exactly the limit', () => {
+    const [result] = validateImportRows([
+      makeRow({ fullName: 'a'.repeat(MAX_TEXT_FIELD_LENGTH), branch: 'b'.repeat(MAX_TEXT_FIELD_LENGTH) })
+    ]);
+    expect(result.status).toBe('valid');
+  });
+
+  it('rejects a full name or branch over the limit', () => {
+    const [longName, longBranch] = validateImportRows([
+      makeRow({ fullName: 'a'.repeat(MAX_TEXT_FIELD_LENGTH + 1) }),
+      makeRow({ email: 'other@example.com', branch: 'b'.repeat(MAX_TEXT_FIELD_LENGTH + 1) })
+    ]);
+    expect(longName.status).toBe('invalid');
+    expect(longName.issue).toContain('Full Name must be at most');
+    expect(longBranch.status).toBe('invalid');
+    expect(longBranch.issue).toContain('Branch must be at most');
   });
 });

@@ -39,15 +39,15 @@ export function AnalyticsSection({
   const getIntensityClass = (intensity: number) => {
     switch (intensity) {
       case 1:
-        return 'bg-emerald-950/70 border-emerald-800/60';
+        return 'bg-success/5 border-success/30';
       case 2:
-        return 'bg-emerald-800/80 border-emerald-600/60';
+        return 'bg-success/5 border-success/60';
       case 3:
-        return 'bg-emerald-600 border-emerald-500';
+        return 'bg-success border-success';
       case 4:
-        return 'bg-emerald-400 border-emerald-300 shadow-sm shadow-emerald-400/40';
+        return 'bg-success border-success shadow-sm shadow-success/40';
       default:
-        return 'bg-slate-900 border-slate-800/80';
+        return 'bg-card border-border/80';
     }
   };
 
@@ -55,9 +55,9 @@ export function AnalyticsSection({
     switch (category) {
       case 'dsa':
         return {
-          bar: 'bg-blue-500',
-          dot: 'bg-blue-500',
-          text: 'text-blue-400'
+          bar: 'bg-primary',
+          dot: 'bg-primary',
+          text: 'text-primary'
         };
       case 'quizzes':
         return {
@@ -67,21 +67,21 @@ export function AnalyticsSection({
         };
       case 'projects':
         return {
-          bar: 'bg-emerald-500',
-          dot: 'bg-emerald-500',
-          text: 'text-emerald-400'
+          bar: 'bg-success',
+          dot: 'bg-success',
+          text: 'text-success'
         };
       case 'external':
         return {
-          bar: 'bg-amber-500',
-          dot: 'bg-amber-500',
-          text: 'text-amber-400'
+          bar: 'bg-warning',
+          dot: 'bg-warning',
+          text: 'text-warning'
         };
       default:
         return {
-          bar: 'bg-slate-500',
-          dot: 'bg-slate-500',
-          text: 'text-slate-400'
+          bar: 'bg-muted-foreground',
+          dot: 'bg-muted-foreground',
+          text: 'text-muted-foreground'
         };
     }
   };
@@ -91,67 +91,67 @@ export function AnalyticsSection({
       {/* 1. High-Level Milestone Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Total XP */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm shadow-md">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-            <Zap className="h-4 w-4 text-amber-400" />
+        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <Zap className="h-4 w-4 text-warning" />
             <span>Total XP</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{formatNumber(stats.totalXp)}</p>
-          <p className="mt-0.5 text-[11px] text-amber-400/80">Level {stats.currentLevel}</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">{formatNumber(stats.totalXp)}</p>
+          <p className="mt-0.5 text-[11px] text-warning/80">Level {stats.currentLevel}</p>
         </div>
 
         {/* Current Streak */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm shadow-md">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Flame className="h-4 w-4 text-orange-400" />
             <span>Current Streak</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.currentStreak} days</p>
-          <p className="mt-0.5 text-[11px] text-slate-500">Asia/Kolkata IST</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">{stats.currentStreak} days</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Asia/Kolkata IST</p>
         </div>
 
         {/* Longest Streak */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm shadow-md">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Trophy className="h-4 w-4 text-purple-400" />
             <span>Best Streak</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.longestStreak} days</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">{stats.longestStreak} days</p>
           <p className="mt-0.5 text-[11px] text-purple-400/80">Record achievement</p>
         </div>
 
         {/* DSA Solved */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm shadow-md">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="rounded-2xl border border-border bg-card/60 p-4 backdrop-blur-sm shadow-md">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-success" />
             <span>DSA Solved</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.dsaSolvedCount}</p>
-          <p className="mt-0.5 text-[11px] text-emerald-400/80">Verified solutions</p>
+          <p className="mt-2 text-2xl font-bold text-foreground">{stats.dsaSolvedCount}</p>
+          <p className="mt-0.5 text-[11px] text-success/80">Verified solutions</p>
         </div>
       </div>
 
       {/* 2. 30-Day Activity Heatmap */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+      <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 border border-success/20 text-success">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">30-Day Activity Heatmap</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-semibold text-foreground">30-Day Activity Heatmap</h3>
+              <p className="text-xs text-muted-foreground">
                 Daily learning consistency tracked in Asia/Kolkata timezone
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs">
-            <span className="text-slate-400">
-              Active Days: <strong className="text-emerald-400">{heatmap.totalActiveDays} / 30</strong>
+            <span className="text-muted-foreground">
+              Active Days: <strong className="text-success">{heatmap.totalActiveDays} / 30</strong>
             </span>
-            <span className="text-slate-400">
-              Period XP: <strong className="text-amber-400">+{heatmap.totalPeriodXp}</strong>
+            <span className="text-muted-foreground">
+              Period XP: <strong className="text-warning">+{heatmap.totalPeriodXp}</strong>
             </span>
           </div>
         </div>
@@ -171,9 +171,9 @@ export function AnalyticsSection({
                 />
                 {/* Floating tooltip */}
                 <div className="pointer-events-none absolute bottom-full mb-2 hidden -translate-x-1/2 left-1/2 flex-col items-center z-30 group-hover:flex">
-                  <div className="rounded-lg bg-slate-950 border border-slate-800 px-2.5 py-1.5 text-center text-[11px] text-white shadow-xl whitespace-nowrap">
+                  <div className="rounded-lg bg-background border border-border px-2.5 py-1.5 text-center text-[11px] text-foreground shadow-xl whitespace-nowrap">
                     <p className="font-semibold">{day.formattedDate}</p>
-                    <p className="text-slate-400 text-[10px]">
+                    <p className="text-muted-foreground text-[10px]">
                       {day.count} {day.count === 1 ? 'action' : 'actions'} · +{day.xp} XP
                     </p>
                   </div>
@@ -183,15 +183,15 @@ export function AnalyticsSection({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-800/40">
+          <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/40">
             <span>{heatmap.startDate}</span>
             <div className="flex items-center gap-1.5">
               <span>Less</span>
-              <div className="h-3 w-3 rounded-sm bg-slate-900 border border-slate-800" />
-              <div className="h-3 w-3 rounded-sm bg-emerald-950/70 border border-emerald-800/60" />
-              <div className="h-3 w-3 rounded-sm bg-emerald-800/80 border border-emerald-600/60" />
-              <div className="h-3 w-3 rounded-sm bg-emerald-600 border border-emerald-500" />
-              <div className="h-3 w-3 rounded-sm bg-emerald-400 border border-emerald-300" />
+              <div className="h-3 w-3 rounded-sm bg-card border border-border" />
+              <div className="h-3 w-3 rounded-sm bg-success/5 border border-success/30" />
+              <div className="h-3 w-3 rounded-sm bg-success/5 border border-success/60" />
+              <div className="h-3 w-3 rounded-sm bg-success border border-success" />
+              <div className="h-3 w-3 rounded-sm bg-success border border-success" />
               <span>More</span>
             </div>
             <span>{heatmap.endDate}</span>
@@ -202,14 +202,14 @@ export function AnalyticsSection({
       {/* 3. Dual Section: Topic Completion Progress & Category XP Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* A. Topic Completion Progress Bars */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+          <div className="flex items-center gap-3 border-b border-border/80 pb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
               <Code2 className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">Topic Completion</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-semibold text-foreground">Topic Completion</h3>
+              <p className="text-xs text-muted-foreground">
                 DSA problem patterns completed across curriculum sheets
               </p>
             </div>
@@ -219,15 +219,15 @@ export function AnalyticsSection({
             {topicProgress.map((topic) => (
               <div key={topic.topicSlug} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-slate-200">{topic.topicTitle}</span>
-                  <span className="text-slate-400">
-                    <strong className="text-slate-100">{topic.solvedQuestions}</strong> / {topic.totalQuestions}{' '}
-                    <span className="text-blue-400 font-semibold">({topic.percentage}%)</span>
+                  <span className="font-medium text-foreground">{topic.topicTitle}</span>
+                  <span className="text-muted-foreground">
+                    <strong className="text-foreground">{topic.solvedQuestions}</strong> / {topic.totalQuestions}{' '}
+                    <span className="text-primary font-semibold">({topic.percentage}%)</span>
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-950 border border-slate-800/60">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-background border border-border/60">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-500"
                     style={{ width: `${topic.percentage}%` }}
                   />
                 </div>
@@ -237,20 +237,20 @@ export function AnalyticsSection({
         </div>
 
         {/* B. Category XP Breakdown */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center gap-3 border-b border-slate-800/80 pb-4">
+        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+          <div className="flex items-center gap-3 border-b border-border/80 pb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <PieChart className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-100">Category XP Breakdown</h3>
-              <p className="text-xs text-slate-400">Distribution of experience points earned across activities</p>
+              <h3 className="text-base font-semibold text-foreground">Category XP Breakdown</h3>
+              <p className="text-xs text-muted-foreground">Distribution of experience points earned across activities</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-5">
             {/* Multi-segment Bar */}
-            <div className="h-3 w-full overflow-hidden rounded-full bg-slate-950 border border-slate-800 flex">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-background border border-border flex">
               {xpBreakdown.map((cat) => {
                 const colors = getCategoryColor(cat.category);
                 return cat.percentage > 0 ? (
@@ -271,24 +271,24 @@ export function AnalyticsSection({
                 return (
                   <div
                     key={cat.category}
-                    className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-3.5 flex items-center justify-between"
+                    className="rounded-xl border border-border/80 bg-background/40 p-3.5 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2.5">
                       <span className={`h-2.5 w-2.5 rounded-full ${colors.dot} shrink-0`} />
-                      <span className="text-xs font-medium text-slate-300">{cat.label}</span>
+                      <span className="text-xs font-medium text-foreground/80">{cat.label}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-bold text-white">+{cat.xp} XP</span>
-                      <span className="text-[10px] text-slate-500 block">({cat.percentage}%)</span>
+                      <span className="text-xs font-bold text-foreground">+{cat.xp} XP</span>
+                      <span className="text-[10px] text-muted-foreground block">({cat.percentage}%)</span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="rounded-xl bg-slate-950/60 border border-slate-800/60 p-3 flex items-center justify-between text-xs">
-              <span className="text-slate-400">Total Gamification Ledger</span>
-              <span className="font-bold text-amber-400">{formatNumber(stats.totalXp)} XP</span>
+            <div className="rounded-xl bg-background/60 border border-border/60 p-3 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Total Gamification Ledger</span>
+              <span className="font-bold text-warning">{formatNumber(stats.totalXp)} XP</span>
             </div>
           </div>
         </div>

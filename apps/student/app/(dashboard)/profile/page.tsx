@@ -25,7 +25,7 @@ export default async function ProfilePage() {
 
   if (!profileData) {
     return (
-      <div className="max-w-4xl mx-auto py-12 text-center text-slate-400">
+      <div className="max-w-4xl mx-auto py-12 text-center text-muted-foreground">
         <p>Unable to load student profile record.</p>
       </div>
     );
@@ -43,44 +43,44 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* 1. Profile Hero Banner */}
-      <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950/40 p-6 sm:p-8 backdrop-blur-sm shadow-xl">
+      <div className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-6 sm:p-8 backdrop-blur-sm shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xl sm:text-2xl font-bold text-white shadow-lg ring-4 ring-slate-800/80">
+            <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-xl sm:text-2xl font-bold text-foreground shadow-lg ring-4 ring-border/80">
               {initials}
             </div>
 
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground">
                   {profileData.academic.fullName}
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 border border-success/20 px-2.5 py-0.5 text-[11px] font-medium text-success">
                   <ShieldCheck className="h-3 w-3" />
                   <span>Enrolled</span>
                 </span>
               </div>
 
-              <p className="mt-1 text-xs sm:text-sm text-slate-400">
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                 {profileData.academic.collegeName}
                 {profileData.academic.branch ? ` · ${profileData.academic.branch}` : ''}
                 {profileData.academic.year ? ` · Year ${profileData.academic.year}` : ''}
               </p>
 
-              <p className="mt-1 font-mono text-xs text-slate-500 break-words">
+              <p className="mt-1 font-mono text-xs text-muted-foreground break-words">
                 Roll No: {profileData.academic.collegeRollNumber || 'N/A'} · {profileData.academic.email}
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-right self-stretch sm:self-auto">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block">
+          <div className="rounded-xl border border-border bg-background/60 px-4 py-3 text-right self-stretch sm:self-auto">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block">
               Cumulative Standing
             </span>
-            <span className="text-xl font-bold text-amber-400">
+            <span className="text-xl font-bold text-warning">
               {formatNumber(profileData.stats.totalXp)} XP
             </span>
-            <span className="text-xs text-slate-500 block">
+            <span className="text-xs text-muted-foreground block">
               Level {profileData.stats.currentLevel} · {profileData.stats.currentStreak}-day streak
             </span>
           </div>

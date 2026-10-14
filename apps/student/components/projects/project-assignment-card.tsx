@@ -25,14 +25,14 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
     switch (status) {
       case 'submitted':
         return (
-          <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300 gap-1 text-[11px] px-2 py-0.5">
+          <Badge className="border-primary/30 bg-primary/10 text-primary gap-1 text-[11px] px-2 py-0.5">
             <Clock className="h-3 w-3" />
             <span>Submitted</span>
           </Badge>
         );
       case 'under_review':
         return (
-          <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-300 gap-1 text-[11px] px-2 py-0.5">
+          <Badge className="border-warning/30 bg-warning/10 text-warning gap-1 text-[11px] px-2 py-0.5">
             <Lock className="h-3 w-3" />
             <span>Under Review</span>
           </Badge>
@@ -46,7 +46,7 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
         );
       case 'approved':
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300 gap-1 text-[11px] px-2 py-0.5">
+          <Badge className="border-success/30 bg-success/10 text-success gap-1 text-[11px] px-2 py-0.5">
             <CheckCircle2 className="h-3 w-3" />
             <span>Approved {project.submission?.score !== null && `(${project.submission?.score}/${project.maxScore})`}</span>
           </Badge>
@@ -54,7 +54,7 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
       case 'draft':
       default:
         return (
-          <Badge className="border-slate-700 bg-slate-800 text-slate-400 gap-1 text-[11px] px-2 py-0.5">
+          <Badge className="border-input bg-secondary text-muted-foreground gap-1 text-[11px] px-2 py-0.5">
             <FolderGit2 className="h-3 w-3" />
             <span>Not Submitted</span>
           </Badge>
@@ -65,32 +65,32 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
   const projectHref = `/content/${project.contentItemId}?batchId=${encodeURIComponent(project.batchId)}`;
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm hover:border-slate-700 transition-all">
+    <Card className="border-border bg-card/60 backdrop-blur-sm hover:border-input transition-all">
       <CardContent className="p-5 flex flex-col justify-between h-full space-y-4">
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
               {project.batchName}
             </span>
             {getStatusBadge()}
           </div>
 
-          <h3 className="text-base font-semibold text-slate-100 line-clamp-1">
+          <h3 className="text-base font-semibold text-foreground line-clamp-1">
             {project.title}
           </h3>
 
           {project.description && (
-            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
               {project.description}
             </p>
           )}
         </div>
 
-        <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
-          <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1.5">
+        <div className="pt-3 border-t border-border/80 flex items-center justify-between gap-3">
+          <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5">
             {project.dueAt ? (
               <>
-                <Clock className="h-3.5 w-3.5 text-slate-500" />
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>Due: {formatDate(project.dueAt)}</span>
               </>
             ) : (
@@ -102,7 +102,7 @@ export function ProjectAssignmentCard({ project }: ProjectAssignmentCardProps) {
             asChild
             size="sm"
             variant="ghost"
-            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 text-xs gap-1.5 px-3 h-8"
+            className="text-warning hover:text-warning hover:bg-warning/10 text-xs gap-1.5 px-3 h-8"
           >
             <Link href={projectHref}>
               <span>{project.submission ? 'View Workspace' : 'Submit Project'}</span>
