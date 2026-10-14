@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { BatchNav } from '@/components/admin/batch-nav';
 import {
   ArrowLeft,
   Building2,
@@ -23,9 +24,7 @@ import {
   ShieldAlert,
   Users,
   Award,
-  HelpCircle,
-  FolderGit2,
-  BarChart3
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -204,7 +203,7 @@ export function BatchAssessmentsClient({
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Top Breadcrumb & Navigation */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild className="gap-1.5 -ml-2">
             <Link href="/batches">
@@ -213,9 +212,12 @@ export function BatchAssessmentsClient({
             </Link>
           </Button>
           <span className="text-muted-foreground/40">/</span>
-          <span className="font-semibold text-foreground text-sm truncate max-w-[280px]">
+          <Link
+            href={`/batches/${batch.id}`}
+            className="font-semibold text-foreground text-sm truncate max-w-[280px] hover:underline underline-offset-4"
+          >
             {batch.name}
-          </span>
+          </Link>
           <span className="text-muted-foreground/40">/</span>
           <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
             Assessment Operations
@@ -223,34 +225,6 @@ export function BatchAssessmentsClient({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8 border-primary/30 hover:bg-primary/5">
-            <Link href={`/batches/${batch.id}/analytics`}>
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
-              Analytics
-            </Link>
-          </Button>
-
-          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
-            <Link href={`/batches/${batch.id}/projects`}>
-              <FolderGit2 className="h-3.5 w-3.5 text-amber-600" />
-              Projects
-            </Link>
-          </Button>
-
-          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
-            <Link href={`/batches/${batch.id}/external-assessments`}>
-              <Award className="h-3.5 w-3.5 text-emerald-600" />
-              External
-            </Link>
-          </Button>
-
-          <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
-            <Link href={`/batches/${batch.id}/curriculum`}>
-              <BookOpen className="h-3.5 w-3.5" />
-              Curriculum Builder
-            </Link>
-          </Button>
-
           <Button
             size="sm"
             variant="default"
@@ -298,6 +272,8 @@ export function BatchAssessmentsClient({
           </div>
         </div>
       </div>
+
+      <BatchNav batchId={batch.id} active="assessments" />
 
       {/* Section 1: Batch-wide Metric Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

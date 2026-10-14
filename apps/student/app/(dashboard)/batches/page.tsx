@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
+import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
+import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,13 +32,19 @@ export default async function BatchesPage() {
     return <EmptyEnrollmentView context={context} />;
   }
 
+  // Only the cohort the overview, leaderboards and deadlines are scoped to is "Active"; others are "Enrolled".
+  const cookieStore = await cookies();
+  const activeCohort = resolveActiveCohort(context.activeBatches, {
+    cookieBatchId: cookieStore.get(COHORT_COOKIE_NAME)?.value
+  });
+
   // If student is enrolled in multiple active batches, render the cohort workspace selector
   return (
     <div className="space-y-8">
       <div className="border-b border-border pb-6">
         <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
           <Layers className="h-4 w-4" />
-          <span>Active Cohorts</span>
+          <span>Your Cohorts</span>
         </div>
         <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           Batch Workspaces
@@ -61,10 +69,14 @@ export default async function BatchesPage() {
                 >
                   {batch.programCode}
                 </Badge>
-                <span className="flex items-center gap-1.5 text-xs text-success font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                  Active Cohort
-                </span>
+                {batch.batchId === activeCohort?.batchId ? (
+                  <span className="flex items-center gap-1.5 text-xs text-success font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                    Active Cohort
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-medium">Enrolled</span>
+                )}
               </div>
 
               <div>

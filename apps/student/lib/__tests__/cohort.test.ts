@@ -240,6 +240,11 @@ describe('Phase 4: Multi-Batch Alignment - Cohort Resolution and Switcher', () =
       expect(href).toBe('/dsa?batchId=11111111-1111-1111-1111-111111111111');
     });
 
+    it('deep links a dsa_sheet deadline to its problem when the slug is known', () => {
+      const href = getDeadlineHref({ ...baseItem, contentType: 'dsa_sheet', slug: 'climbing-stairs' });
+      expect(href).toBe('/dsa?sheet=climbing-stairs&batchId=11111111-1111-1111-1111-111111111111');
+    });
+
     it('generates correct deep link for quiz', () => {
       const href = getDeadlineHref({ ...baseItem, contentType: 'quiz' });
       expect(href).toBe('/assessments?batchId=11111111-1111-1111-1111-111111111111');

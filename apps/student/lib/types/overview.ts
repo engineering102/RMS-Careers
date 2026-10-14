@@ -20,6 +20,8 @@ export interface StudentDeadlineItem {
   batchId: string;
   batchName: string;
   contentItemId: string;
+  /** Content item slug; for a DSA item this is the problem slug used to deep-link the sheet. */
+  slug?: string;
   title: string;
   contentType: DeadlineContentType;
   weekNumber: number;

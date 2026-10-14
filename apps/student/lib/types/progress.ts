@@ -46,6 +46,8 @@ export interface ResumeLearningTarget {
   contentItemId?: string;
   contentTitle?: string;
   contentType?: ContentType;
+  /** Content item slug; for a DSA item this is the problem slug used to deep-link the sheet. */
+  contentSlug?: string;
   weekNumber?: number;
   sequenceOrder?: number;
   dueAt?: Date | null;

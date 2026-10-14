@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { BatchNav } from '@/components/admin/batch-nav';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -9,8 +10,6 @@ import {
   BookOpen,
   Calendar,
   Layers,
-  FileQuestion,
-  FolderGit2,
   Award,
   Upload,
   FileSpreadsheet,
@@ -23,8 +22,7 @@ import {
   Trash2,
   RefreshCw,
   Sparkles,
-  ArrowUpDown,
-  BarChart3
+  ArrowUpDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -346,7 +344,7 @@ export function BatchExternalAssessmentsClient({
   return (
     <div className="flex flex-col gap-6">
       {/* 1. Header & Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link
@@ -357,7 +355,9 @@ export function BatchExternalAssessmentsClient({
               <span>Batches</span>
             </Link>
             <span>/</span>
-            <span className="font-medium text-foreground">{batch.name}</span>
+            <Link href={`/batches/${batch.id}`} className="font-medium text-foreground hover:underline underline-offset-4">
+              {batch.name}
+            </Link>
             <span>/</span>
             <span>External Assessments</span>
           </div>
@@ -396,35 +396,10 @@ export function BatchExternalAssessmentsClient({
             <span>Import CSV</span>
           </Button>
 
-          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm border-primary/30 hover:bg-primary/5">
-            <Link href={`/batches/${batch.id}/analytics`}>
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
-              <span>Analytics</span>
-            </Link>
-          </Button>
-
-          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">
-            <Link href={`/batches/${batch.id}/assessments`}>
-              <FileQuestion className="h-3.5 w-3.5 text-violet-600" />
-              <span>Assessments</span>
-            </Link>
-          </Button>
-
-          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">
-            <Link href={`/batches/${batch.id}/projects`}>
-              <FolderGit2 className="h-3.5 w-3.5 text-amber-600" />
-              <span>Projects</span>
-            </Link>
-          </Button>
-
-          <Button asChild size="sm" variant="outline" className="h-9 gap-1.5 text-xs shadow-sm">
-            <Link href={`/batches/${batch.id}/curriculum`}>
-              <BookOpen className="h-3.5 w-3.5 text-blue-600" />
-              <span>Curriculum</span>
-            </Link>
-          </Button>
         </div>
       </div>
+
+      <BatchNav batchId={batch.id} active="external-assessments" />
 
       {/* 2. Summary Metric Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

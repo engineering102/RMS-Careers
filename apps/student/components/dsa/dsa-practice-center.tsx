@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { recordDsaProblemSolved } from '@/lib/actions/dsa';
 import {
   buildSheetViews,
+  findDeepLinkedQuestion,
   hasActiveFilters,
   initialOpenSheets,
   pickRandomUnsolved,
@@ -36,7 +37,10 @@ export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: Ds
   const [openSlugs, setOpenSlugs] = useState<Set<string>>(
     () => new Set(initialOpenSheets(sheets, initialData.progressMap, initialSheetSlug))
   );
-  const [selectedQuestion, setSelectedQuestion] = useState<DSAQuestion | null>(null);
+  // A curriculum deep link to a single problem opens it straight away.
+  const [selectedQuestion, setSelectedQuestion] = useState<DSAQuestion | null>(() =>
+    findDeepLinkedQuestion(sheets, initialSheetSlug)
+  );
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const [, startTransition] = useTransition();

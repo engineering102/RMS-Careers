@@ -70,9 +70,36 @@ export function pickRandomUnsolved(
   return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
 }
 
-/** Topics open on first load: the deep-linked topic, otherwise the first one with unsolved work. */
+/** Link into the DSA page, focused on a topic or problem and attributed to a batch when given. */
+export function buildDsaHref(slug?: string | null, batchId?: string | null): string {
+  const params = new URLSearchParams();
+  if (slug) params.set('sheet', slug);
+  if (batchId) params.set('batchId', batchId);
+  const query = params.toString();
+  return query ? `/dsa?${query}` : '/dsa';
+}
+
+/**
+ * The question a deep link points at. Batch curriculum DSA items link with the problem slug
+ * (`/dsa?sheet=<problem-slug>`), so the slug may name a single problem rather than a topic.
+ */
+export function findDeepLinkedQuestion(sheets: DSASheet[], deepLinkSlug?: string): DSAQuestion | null {
+  if (!deepLinkSlug) return null;
+  for (const sheet of sheets) {
+    const question = sheet.questions.find((q) => q.slug === deepLinkSlug);
+    if (question) return question;
+  }
+  return null;
+}
+
+/**
+ * Topics open on first load: the deep-linked topic (or the topic holding the deep-linked problem),
+ * otherwise the first one with unsolved work.
+ */
 export function initialOpenSheets(sheets: DSASheet[], progressMap: ProgressMap, deepLinkSlug?: string): string[] {
   if (deepLinkSlug && sheets.some((s) => s.slug === deepLinkSlug)) return [deepLinkSlug];
+  const linkedSheet = deepLinkSlug && sheets.find((s) => s.questions.some((q) => q.slug === deepLinkSlug));
+  if (linkedSheet) return [linkedSheet.slug];
   const firstOpen = sheets.find((s) => s.questions.some((q) => !isSolved(progressMap, q.slug)));
   return firstOpen ? [firstOpen.slug] : sheets.slice(0, 1).map((s) => s.slug);
 }
