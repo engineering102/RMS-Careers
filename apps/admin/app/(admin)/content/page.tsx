@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  countContentItems,
   getContentItemsWithDetails,
   getPrograms
 } from '@/lib/db/queries';
@@ -13,12 +14,16 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
+/** Content library page size; `?page=` selects the page (1-based). */
+const PAGE_SIZE = 50;
+
 export default async function ContentPage(props: {
   searchParams: Promise<{
     program?: string;
     type?: string;
     status?: string;
     q?: string;
+    page?: string;
   }>;
 }) {
   await requireAdminSession();
@@ -40,13 +45,21 @@ export default async function ContentPage(props: {
     }
   }
 
+  const filters = {
+    search: searchQuery,
+    programId: programIdFilter,
+    contentType: typeFilter && typeFilter !== ('all' as any) ? typeFilter : undefined,
+    status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined
+  };
+
+  // Count first so an out-of-range ?page= (e.g. after deleting the last item on it) shows the last page.
+  const totalCount = await countContentItems(filters);
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const requestedPage = parseInt(searchParams.page || '1', 10);
+  const page = Math.min(Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1), pageCount);
+
   const [contentList, programsList] = await Promise.all([
-    getContentItemsWithDetails({
-      search: searchQuery,
-      programId: programIdFilter,
-      contentType: typeFilter && typeFilter !== ('all' as any) ? typeFilter : undefined,
-      status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined
-    }),
+    getContentItemsWithDetails({ ...filters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
     getPrograms()
   ]);
 
@@ -58,6 +71,9 @@ export default async function ContentPage(props: {
       selectedType={searchParams.type || 'all'}
       selectedStatus={searchParams.status || 'all'}
       searchQuery={searchQuery || ''}
+      totalCount={totalCount}
+      page={page}
+      pageSize={PAGE_SIZE}
     />
   );
 }

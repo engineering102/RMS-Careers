@@ -69,6 +69,65 @@ export function generateSlug(text: string): string {
 }
 
 /**
+ * WHERE clause for the content library filters, shared by the list and its total count so the
+ * pagination total always matches the rows being paged.
+ */
+function buildContentFilterWhere(options: ContentFilterOptions) {
+  const conditions = [];
+
+  // Search filter across title, slug, and description
+  if (options.search && options.search.trim()) {
+    const term = `%${options.search.trim()}%`;
+    conditions.push(
+      or(
+        ilike(contentItems.title, term),
+        ilike(contentItems.slug, term),
+        ilike(contentItems.description, term)
+      )
+    );
+  }
+
+  // Program filter (specific program, all, or global only)
+  if (options.programId !== undefined && options.programId !== 'all') {
+    if (options.programId === 'global' || options.programId === null) {
+      conditions.push(isNull(contentItems.programId));
+    } else if (typeof options.programId === 'number') {
+      conditions.push(eq(contentItems.programId, options.programId));
+    }
+  }
+
+  // Content Type filter
+  if (options.contentType && options.contentType !== 'all') {
+    conditions.push(eq(contentItems.contentType, options.contentType));
+  }
+
+  // Lifecycle status filter
+  if (options.status && options.status !== 'all') {
+    if (options.status === 'published') {
+      conditions.push(
+        and(
+          eq(contentItems.isPublished, true),
+          sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = false`
+        )
+      );
+    } else if (options.status === 'draft') {
+      conditions.push(
+        and(
+          eq(contentItems.isPublished, false),
+          sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = false`
+        )
+      );
+    } else if (options.status === 'archived') {
+      conditions.push(
+        sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = true`
+      );
+    }
+  }
+
+  return conditions.length > 0 ? and(...conditions) : undefined;
+}
+
+/**
  * Retrieves content items joined with parent program and batch placement count.
  * Single parameterized query avoids N+1 database roundtrips.
  */
@@ -79,58 +138,7 @@ export async function getContentItemsWithDetails(
   try {
     if (!process.env.POSTGRES_URL) return [];
 
-    const conditions = [];
-
-    // Search filter across title, slug, and description
-    if (options.search && options.search.trim()) {
-      const term = `%${options.search.trim()}%`;
-      conditions.push(
-        or(
-          ilike(contentItems.title, term),
-          ilike(contentItems.slug, term),
-          ilike(contentItems.description, term)
-        )
-      );
-    }
-
-    // Program filter (specific program, all, or global only)
-    if (options.programId !== undefined && options.programId !== 'all') {
-      if (options.programId === 'global' || options.programId === null) {
-        conditions.push(isNull(contentItems.programId));
-      } else if (typeof options.programId === 'number') {
-        conditions.push(eq(contentItems.programId, options.programId));
-      }
-    }
-
-    // Content Type filter
-    if (options.contentType && options.contentType !== 'all') {
-      conditions.push(eq(contentItems.contentType, options.contentType));
-    }
-
-    // Lifecycle status filter
-    if (options.status && options.status !== 'all') {
-      if (options.status === 'published') {
-        conditions.push(
-          and(
-            eq(contentItems.isPublished, true),
-            sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = false`
-          )
-        );
-      } else if (options.status === 'draft') {
-        conditions.push(
-          and(
-            eq(contentItems.isPublished, false),
-            sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = false`
-          )
-        );
-      } else if (options.status === 'archived') {
-        conditions.push(
-          sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = true`
-        );
-      }
-    }
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = buildContentFilterWhere(options);
 
     const rows = await client
       .select({
@@ -153,7 +161,8 @@ export async function getContentItemsWithDetails(
       .leftJoin(batchCurriculum, eq(contentItems.id, batchCurriculum.contentItemId))
       .where(whereClause)
       .groupBy(contentItems.id, programs.name, programs.code)
-      .orderBy(desc(contentItems.updatedAt))
+      // id breaks ties so offset pages never repeat or skip rows with equal timestamps
+      .orderBy(desc(contentItems.updatedAt), asc(contentItems.id))
       .limit(options.limit || 100)
       .offset(options.offset || 0);
 
@@ -169,6 +178,27 @@ export async function getContentItemsWithDetails(
   } catch (error) {
     console.error('Error fetching content items with details:', error);
     return [];
+  }
+}
+
+/**
+ * Total number of content items matching the same filters as getContentItemsWithDetails
+ * (limit/offset ignored), for the content library's pagination.
+ */
+export async function countContentItems(
+  options: ContentFilterOptions = {},
+  client: DbClient = db
+): Promise<number> {
+  try {
+    if (!process.env.POSTGRES_URL) return 0;
+    const [row] = await client
+      .select({ total: count() })
+      .from(contentItems)
+      .where(buildContentFilterWhere(options));
+    return Number(row?.total ?? 0);
+  } catch (error) {
+    console.error('Error counting content items:', error);
+    return 0;
   }
 }
 
