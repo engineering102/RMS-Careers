@@ -363,16 +363,34 @@ export async function getPracticeQuizForRunner(
   const previousAttemptsCount = studentAttempts.length;
   const hasPassedPreviously = studentAttempts.some((a) => a.isPassed);
 
-  // 5. Batch context verification if supplied
+  // 5. Batch context: the supplied batch when the student belongs to it. Opened without one (e.g. from the
+  // assessments catalog), fall back to the single enrolled batch whose released curriculum holds this quiz,
+  // so the attempt is batch-attributed and counted by the admin batch analytics. Ambiguous -> no batch.
+  let contextBatchId: string | null =
+    batchId && isValidUuid(batchId) && batchIds.includes(batchId) ? batchId : null;
+  if (!contextBatchId && !batchId && batchIds.length > 0) {
+    const placements = await db
+      .selectDistinct({ batchId: batchCurriculum.batchId })
+      .from(batchCurriculum)
+      .where(
+        and(
+          inArray(batchCurriculum.batchId, batchIds),
+          eq(batchCurriculum.contentItemId, row.contentItemId),
+          sql`(${batchCurriculum.availableFrom} IS NULL OR ${batchCurriculum.availableFrom} <= NOW())`
+        )
+      );
+    if (placements.length === 1) contextBatchId = placements[0].batchId;
+  }
+
   let relatedBatchContext: { batchId: string; batchName: string } | null = null;
-  if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
+  if (contextBatchId) {
     const [batchRecord] = await db
       .select({
         id: batches.id,
         name: batches.name
       })
       .from(batches)
-      .where(eq(batches.id, batchId))
+      .where(eq(batches.id, contextBatchId))
       .limit(1);
 
     if (batchRecord) {

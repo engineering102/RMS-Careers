@@ -18,6 +18,7 @@ import {
 import type { CurriculumItem } from '@/lib/types/batch-workspace';
 import type { ContentType } from '@/lib/types/library';
 import { formatDate } from '@/lib/format/datetime';
+import { buildDsaHref } from '@/lib/dsa/sheet-view';
 
 interface CurriculumItemRowProps {
   item: CurriculumItem;
@@ -53,11 +54,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         icon: Code2,
         badgeClass: 'border-success/30 bg-success/10 text-success',
         actionLabel: 'Open DSA Sheet',
-        defaultHref: slug
-          ? batchId
-            ? `/dsa?sheet=${encodeURIComponent(slug)}&batchId=${encodeURIComponent(batchId)}`
-            : `/dsa?sheet=${encodeURIComponent(slug)}`
-          : '/dsa'
+        defaultHref: buildDsaHref(slug, batchId)
       };
     case 'quiz':
       return {
@@ -65,7 +62,10 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         icon: HelpCircle,
         badgeClass: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
         actionLabel: 'Take Quiz',
-        defaultHref: '/assessments'
+        // The runner accepts the content item id; the batch id attributes the attempt to this cohort.
+        defaultHref: contentItemId
+          ? `/assessments/${contentItemId}${batchId ? `?batchId=${encodeURIComponent(batchId)}` : ''}`
+          : '/assessments'
       };
     case 'project':
       return {

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { BatchNav } from '@/components/admin/batch-nav';
 import { useRouter } from 'next/navigation';
 import {
   Layers,
@@ -20,9 +21,7 @@ import {
   Search,
   Check,
   CalendarDays,
-  Sparkles,
-  FileQuestion,
-  FolderGit2
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -364,18 +363,6 @@ export function BatchCurriculumClient({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" asChild className="gap-1.5 h-9 text-xs">
-            <Link href={`/batches/${batch.id}/assessments`}>
-              <FileQuestion className="h-4 w-4 text-violet-600" />
-              Assessment Operations
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="gap-1.5 h-9 text-xs">
-            <Link href={`/batches/${batch.id}/projects`}>
-              <FolderGit2 className="h-4 w-4 text-amber-600" />
-              Projects
-            </Link>
-          </Button>
           {!isReadOnly && (
             <Button onClick={() => handleOpenAdd()} className="gap-2 h-9 text-xs">
               <PlusCircle className="h-4 w-4" />
@@ -384,6 +371,8 @@ export function BatchCurriculumClient({
           )}
         </div>
       </div>
+
+      <BatchNav batchId={batch.id} active="curriculum" />
 
       {/* Read-Only Banner */}
       {isReadOnly && (

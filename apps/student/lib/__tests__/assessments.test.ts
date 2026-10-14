@@ -246,6 +246,10 @@ vi.mock('@rms/db', async (importOriginal) => {
           };
         }
       }),
+      // selectDistinct shares the select mock (placement lookups return mockBatchCurriculumRows).
+      selectDistinct(fields?: any) {
+        return (this as any).select(fields);
+      },
       insert: (table: any) => ({
         values: (values: any) => ({
           returning: () => {
@@ -468,6 +472,21 @@ describe('Slice 11: Practice Knowledge Checks & Assessments', () => {
         expect((question as any).explanationText).toBeUndefined();
         expect(question.options).toHaveLength(3);
       }
+    });
+  });
+
+  describe('2b. Batch attribution when opened without a batch', () => {
+    it('attributes the runner to the single enrolled batch whose curriculum holds the quiz', async () => {
+      mockBatchCurriculumRows = [{ batchId: TEST_BATCH_ID }];
+      const runnerData = await getPracticeQuizForRunner(TEST_STUDENT_ID, TEST_QUIZ_ID);
+      expect(runnerData.relatedBatchContext).toEqual({ batchId: TEST_BATCH_ID, batchName: 'Full Stack Cohort Alpha' });
+    });
+
+    it('leaves the attempt unattributed when no or several batches hold the quiz', async () => {
+      mockBatchCurriculumRows = [];
+      expect((await getPracticeQuizForRunner(TEST_STUDENT_ID, TEST_QUIZ_ID)).relatedBatchContext).toBeNull();
+      mockBatchCurriculumRows = [{ batchId: TEST_BATCH_ID }, { batchId: '55555555-5555-4555-8555-555555555555' }];
+      expect((await getPracticeQuizForRunner(TEST_STUDENT_ID, TEST_QUIZ_ID)).relatedBatchContext).toBeNull();
     });
   });
 

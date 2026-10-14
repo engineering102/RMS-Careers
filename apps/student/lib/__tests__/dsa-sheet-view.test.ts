@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
+  buildDsaHref,
   buildSheetViews,
+  findDeepLinkedQuestion,
   hasActiveFilters,
   initialOpenSheets,
   matchesFilters,
@@ -89,6 +91,20 @@ describe('DSA sheet view', () => {
     expect(initialOpenSheets(SHEETS, solved('two-sum', 'max-subarray'))).toEqual(['pointers']);
     const all = solved('two-sum', 'max-subarray', 'valid-palindrome', 'container', 'reverse-list');
     expect(initialOpenSheets(SHEETS, all)).toEqual(['arrays']);
+  });
+
+  it('resolves a problem deep link to its question and opens that topic', () => {
+    expect(findDeepLinkedQuestion(SHEETS, 'reverse-list')?.slug).toBe('reverse-list');
+    expect(findDeepLinkedQuestion(SHEETS, 'lists')).toBeNull();
+    expect(findDeepLinkedQuestion(SHEETS, undefined)).toBeNull();
+    expect(initialOpenSheets(SHEETS, {}, 'reverse-list')).toEqual(['lists']);
+  });
+
+  it('builds DSA links with optional problem and batch', () => {
+    expect(buildDsaHref()).toBe('/dsa');
+    expect(buildDsaHref('two-sum')).toBe('/dsa?sheet=two-sum');
+    expect(buildDsaHref(null, 'b-1')).toBe('/dsa?batchId=b-1');
+    expect(buildDsaHref('two sum', 'b-1')).toBe('/dsa?sheet=two+sum&batchId=b-1');
   });
 
   it('computes rounded percentages and handles empty totals', () => {

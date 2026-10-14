@@ -84,28 +84,25 @@ export function BatchHeader({
             {batch.name}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          {/* Each separator travels with the item after it, so a wrapped line never ends on a stray "·". */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5 text-foreground/80 font-medium">
               <BookOpen className="h-3.5 w-3.5 text-primary" />
               {batch.programName}
             </span>
             {batch.collegeName && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  {batch.collegeName}
-                </span>
-              </>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span aria-hidden="true">·</span>
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                {batch.collegeName}
+              </span>
             )}
             {dateRange && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  {dateRange}
-                </span>
-              </>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span aria-hidden="true">·</span>
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                {dateRange}
+              </span>
             )}
           </div>
         </div>

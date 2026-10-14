@@ -145,6 +145,7 @@ export async function getStudentOverview(
           batchName: batches.name,
           contentItemId: batchCurriculum.contentItemId,
           title: contentItems.title,
+          slug: contentItems.slug,
           contentType: contentItems.contentType,
           weekNumber: batchCurriculum.weekNumber,
           dueAt: batchCurriculum.dueAt
@@ -205,6 +206,7 @@ export async function getStudentOverview(
             batchId: item.batchId,
             batchName: item.batchName || 'Cohort Batch',
             contentItemId: item.contentItemId,
+            slug: item.slug,
             title: item.title,
             contentType: item.contentType as DeadlineContentType,
             weekNumber: item.weekNumber,

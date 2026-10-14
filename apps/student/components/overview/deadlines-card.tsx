@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { StudentDeadlineItem, DeadlineContentType } from '@/lib/db/queries/overview';
 import { formatDate, formatTime } from '@/lib/format/datetime';
+import { buildDsaHref } from '@/lib/dsa/sheet-view';
 
 interface DeadlinesCardProps {
   deadlines: StudentDeadlineItem[];
@@ -83,7 +84,7 @@ export function getDeadlineHref(item: StudentDeadlineItem): string {
   const batchParam = `batchId=${encodeURIComponent(item.batchId)}`;
   switch (item.contentType) {
     case 'dsa_sheet':
-      return `/dsa?${batchParam}`;
+      return buildDsaHref(item.slug, item.batchId);
     case 'quiz':
       return `/assessments?${batchParam}`;
     case 'lecture':

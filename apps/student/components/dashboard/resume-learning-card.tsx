@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import type { ResumeLearningTarget } from '@/lib/types/progress';
 import type { ContentType } from '@/lib/types/library';
 import { formatDate } from '@/lib/format/datetime';
+import { buildDsaHref } from '@/lib/dsa/sheet-view';
 
 interface ResumeLearningCardProps {
   target: ResumeLearningTarget;
@@ -215,7 +216,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
 
   const targetHref =
     target.contentType === 'dsa_sheet'
-      ? `/dsa?batchId=${encodeURIComponent(target.batchId || '')}`
+      ? buildDsaHref(target.contentSlug, target.batchId)
       : `/content/${encodeURIComponent(target.contentItemId)}?batchId=${encodeURIComponent(
           target.batchId || ''
         )}`;

@@ -52,6 +52,9 @@
   }
 
   .dark {
+    /* Native scrollbars and form controls follow the dark theme. */
+    color-scheme: dark;
+
     --background: 224 71% 4%;
     --foreground: 213 31% 96%;
 
@@ -105,5 +108,15 @@
   input,
   button {
     font: inherit;
+  }
+}
+
+@layer utilities {
+  /* Horizontal strips (workspace tabs, library filters) scroll without a visible scrollbar. */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
