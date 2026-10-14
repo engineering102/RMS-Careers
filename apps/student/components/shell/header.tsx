@@ -1,11 +1,14 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
 import { CohortSwitcher } from './cohort-switcher';
 import { SignOutButton } from './sign-out-button';
 
 import { NotificationBell } from './notification-bell';
+import { sectionTitleFor } from './nav-items';
 import type { NotificationItem } from '@/lib/types/notifications';
 
 interface HeaderProps {
@@ -34,27 +37,45 @@ export function Header({
         .toUpperCase()
     : 'ST';
 
+  // Wayfinding: the header names the section you are in (each page keeps its own <h1>).
+  const sectionTitle = sectionTitleFor(usePathname() ?? '');
+
+  // Scroll edge: no divider at the top of the page; once content passes under the header it turns into a
+  // translucent material with a hairline edge.
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const update = () => setIsScrolled(window.scrollY > 4);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/90 px-4 md:px-8 backdrop-blur-md">
+    <header
+      data-scrolled={isScrolled || undefined}
+      className={`material-chrome sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 md:px-8 transition-[background-color,border-color] duration-200 ${
+        isScrolled ? 'border-border/70 bg-background/75 backdrop-blur-xl backdrop-saturate-150' : 'border-transparent bg-background'
+      }`}
+    >
       {/* Left: Mobile Menu Trigger + Mobile Brand */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onOpenMobileNav}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 hover:bg-card md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-foreground/80 hover:bg-card md:hidden transition active:scale-[0.97] motion-reduce:active:scale-100"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          <span className="text-xs font-bold tracking-wider text-foreground uppercase">RMS Portal</span>
+        <div className="flex min-w-0 items-center gap-2 md:hidden">
+          <GraduationCap className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <span className="truncate text-sm font-semibold text-foreground">{sectionTitle}</span>
         </div>
 
         {/* Desktop Breadcrumb / Title */}
         <div className="hidden md:block">
-          <h1 className="text-base font-semibold text-foreground">Learning Dashboard</h1>
+          <p className="text-base font-semibold text-foreground">{sectionTitle}</p>
           <p className="text-xs text-muted-foreground">
             {student?.collegeName || 'RMS Partner College'}
             {student?.branch ? ` · ${student.branch}` : ''}

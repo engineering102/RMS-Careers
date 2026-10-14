@@ -29,7 +29,7 @@ export function FormalAssessmentCard({ assessment }: FormalAssessmentCardProps) 
   const isClosed = status === 'closed';
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm hover:border-input transition-all flex flex-col justify-between">
+    <Card className="border-border bg-card/60 hover:border-input transition-all flex flex-col justify-between">
       <CardContent className="p-5 space-y-4">
         {/* Top Badges */}
         <div className="flex items-center justify-between gap-2">

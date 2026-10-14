@@ -72,7 +72,7 @@ export function LeaderboardHeader({
         </div>
 
         {/* User Standing Pill */}
-        <div className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card/60 backdrop-blur-sm self-start md:self-auto shrink-0">
+        <div className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card/60 self-start md:self-auto shrink-0">
           <div className="p-2 rounded-lg bg-warning/10 text-warning border border-warning/20">
             <Trophy className="h-5 w-5" />
           </div>
@@ -106,7 +106,7 @@ export function LeaderboardHeader({
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-card border border-border self-start">
           <Link
             href={`/leaderboards?scope=batch&timeframe=${timeframe}${selectedBatchId ? `&batchId=${selectedBatchId}` : ''}`}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
               scope === 'batch'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
@@ -118,7 +118,7 @@ export function LeaderboardHeader({
 
           <Link
             href={`/leaderboards?scope=college&timeframe=${timeframe}`}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
               scope === 'college'
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
@@ -153,7 +153,7 @@ export function LeaderboardHeader({
           <div className="flex items-center gap-1 p-1 rounded-lg bg-card border border-border">
             <Link
               href={`/leaderboards?scope=${scope}&timeframe=weekly${scope === 'batch' && selectedBatchId ? `&batchId=${selectedBatchId}` : ''}`}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
                 timeframe === 'weekly'
                   ? 'bg-secondary text-foreground font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -164,7 +164,7 @@ export function LeaderboardHeader({
 
             <Link
               href={`/leaderboards?scope=${scope}&timeframe=all_time${scope === 'batch' && selectedBatchId ? `&batchId=${selectedBatchId}` : ''}`}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
                 timeframe === 'all_time'
                   ? 'bg-secondary text-foreground font-semibold'
                   : 'text-muted-foreground hover:text-foreground'

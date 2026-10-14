@@ -163,7 +163,7 @@ export function ProblemDetailModal({
             </div>
 
             {/* Modal Body */}
-            <div className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
+            <div className="p-5 sm:p-6 space-y-6 overflow-y-auto overscroll-contain flex-1">
               {/* Problem Statement */}
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

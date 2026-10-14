@@ -140,7 +140,7 @@ export function NotificationsView({
             type="button"
             onClick={handleMarkAllAsRead}
             disabled={isMarkingAll}
-            className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg border border-input bg-secondary/80 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground transition disabled:opacity-50 shadow-sm"
+            className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg border border-input bg-secondary/80 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 disabled:opacity-50 shadow-sm"
           >
             <CheckCheck className="h-4 w-4 text-primary" />
             <span>Mark all as read</span>
@@ -153,7 +153,7 @@ export function NotificationsView({
         <button
           type="button"
           onClick={() => setFilter('all')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition ${
+          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
             filter === 'all'
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
@@ -172,7 +172,7 @@ export function NotificationsView({
         <button
           type="button"
           onClick={() => setFilter('unread')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition ${
+          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
             filter === 'unread'
               ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
@@ -193,7 +193,7 @@ export function NotificationsView({
 
       {/* 3. Notification List or Empty State */}
       {filteredNotifications.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card/40 p-12 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-border bg-card/40 p-12 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/70 border border-input/60 text-muted-foreground mb-4">
             <Bell className="h-7 w-7 text-muted-foreground" />
           </div>

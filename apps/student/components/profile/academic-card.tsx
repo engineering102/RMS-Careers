@@ -17,7 +17,7 @@ interface AcademicCardProps {
 
 export function AcademicCard({ academic }: AcademicCardProps) {
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 backdrop-blur-sm shadow-xl">
+    <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
         <div className="flex items-center gap-3">

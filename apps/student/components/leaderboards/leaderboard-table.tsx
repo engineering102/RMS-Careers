@@ -67,7 +67,7 @@ export function LeaderboardTable({ entries, timeframe }: LeaderboardTableProps) 
   // Below `sm` the Branch and Streak columns fold into the Student cell so Rank, Student and XP fit a
   // phone without horizontal scrolling; the table still scrolls inside its card if a cell is too wide.
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm overflow-hidden">
+    <Card className="border-border bg-card/60 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>

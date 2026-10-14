@@ -267,7 +267,7 @@ export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: Ds
                   <button
                     type="button"
                     onClick={() => jumpToPattern(chip.sheetSlug, chip.pattern)}
-                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       done
                         ? 'border-success/30 bg-success/10 text-success'
                         : 'border-border bg-card text-foreground/80 hover:border-input hover:text-foreground'

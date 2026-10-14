@@ -50,7 +50,7 @@ export function UnsupportedContentView({
   }
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-card/60">
       <CardContent className="p-8 sm:p-10 flex flex-col items-center text-center space-y-4 max-w-xl mx-auto">
         <div className={`p-3.5 rounded-xl border ${iconClass}`}>
           <Icon className="h-8 w-8" />

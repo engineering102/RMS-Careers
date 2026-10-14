@@ -64,7 +64,7 @@ export function DsaHeader({ summary, topicCount, patternCount, estimatedHours }:
             {totalSolved} / {totalProblems} solved
           </span>
         </div>
-        <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">{overallPercentage}%</p>
+        <p className="mt-1 text-4xl font-bold tracking-tight text-foreground tabular-nums">{overallPercentage}%</p>
         <div
           className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary"
           role="progressbar"

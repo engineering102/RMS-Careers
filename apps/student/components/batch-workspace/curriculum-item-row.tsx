@@ -227,7 +227,7 @@ export function CurriculumItemRow({ item, showTopic = true }: CurriculumItemRowP
         {!item.isLocked && (
           <Link
             href={meta.defaultHref}
-            className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               item.isCompleted
                 ? 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                 : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20'

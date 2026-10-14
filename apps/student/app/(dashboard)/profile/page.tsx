@@ -43,7 +43,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
       {/* 1. Profile Hero Banner */}
-      <div className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-6 sm:p-8 backdrop-blur-sm shadow-xl">
+      <div className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-primary/5 p-6 sm:p-8 shadow-xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-indigo-600 text-xl sm:text-2xl font-bold text-foreground shadow-lg ring-4 ring-border/80">

@@ -218,7 +218,7 @@ export function ProjectSubmissionWorkspace({
       {/* 2. Project Brief & Rubric Criteria */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-border bg-card/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60">
             <CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
@@ -249,7 +249,7 @@ export function ProjectSubmissionWorkspace({
           </Card>
 
           {/* Submission Form */}
-          <Card className="border-border bg-card/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60">
             <CardContent className="p-6 space-y-5">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -377,7 +377,7 @@ export function ProjectSubmissionWorkspace({
 
         {/* 3. Evaluation Rubric Sidebar */}
         <div className="space-y-6">
-          <Card className="border-border bg-card/60 backdrop-blur-sm">
+          <Card className="border-border bg-card/60">
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">

@@ -26,7 +26,9 @@ export function DashboardShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
+    // The document scrolls (not an inner container): the sticky header is translucent chrome that content
+    // passes under, window.scrollTo works, and mobile browsers can collapse their toolbars while scrolling.
+    <div className="flex min-h-dvh w-full bg-background text-foreground">
       {/* Desktop Sidebar */}
       <Sidebar context={context} activeCohort={activeCohort} />
 
@@ -39,7 +41,7 @@ export function DashboardShell({
       />
 
       {/* Main Content Column */}
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0">
         {/* Top Header */}
         <Header
           context={context}
@@ -50,7 +52,7 @@ export function DashboardShell({
         />
 
         {/* Scrollable Page Body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>

@@ -131,7 +131,7 @@ export function ActivityLedger({
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-border bg-card/60 backdrop-blur-sm overflow-hidden">
+        <Card className="border-border bg-card/60 overflow-hidden">
           <div className="divide-y divide-border/80">
             {activities.map((activity) => {
               const config =

@@ -129,3 +129,42 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Native feel on touch devices: no grey tap flash and no double-tap-zoom delay on controls.
+ * ------------------------------------------------------------------------------------------------ */
+@layer base {
+  a,
+  button,
+  [role='button'],
+  summary,
+  label,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Reduced transparency: translucent chrome becomes solid and nothing blurs. */
+@media (prefers-reduced-transparency: reduce) {
+  *,
+  *::before,
+  *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .material-chrome {
+    background-color: hsl(var(--background)) !important;
+  }
+}
+
+/* Increased contrast: stronger edges and secondary text on the dark theme the portal uses. */
+@media (prefers-contrast: more) {
+  .dark {
+    --border: 215 20% 42%;
+    --input: 215 20% 55%;
+    --muted-foreground: 215 25% 80%;
+  }
+}

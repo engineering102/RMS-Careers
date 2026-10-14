@@ -110,7 +110,7 @@ export function NotificationBell({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground/80 hover:bg-secondary hover:text-foreground transition focus:outline-none focus:ring-2 focus:ring-ring/40"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground/80 hover:bg-secondary hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 focus:outline-none focus:ring-2 focus:ring-ring/40"
         aria-label="Open notifications"
         aria-expanded={isOpen}
       >
