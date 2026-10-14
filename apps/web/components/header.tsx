@@ -196,7 +196,7 @@ export function Header() {
 
             {portalDropdownOpen && (
               <div
-                className="absolute right-0 mt-2 w-72 rounded-xl border border-border bg-card p-2 shadow-xl z-50 text-foreground animate-in fade-in zoom-in-95 duration-150"
+                className="absolute right-0 mt-2 w-72 rounded-xl border border-border bg-card p-2 shadow-xl z-50 text-foreground origin-top-right animate-in fade-in zoom-in-95 duration-150 ease-out-quint"
                 role="menu"
                 aria-labelledby="portal-login-button"
               >

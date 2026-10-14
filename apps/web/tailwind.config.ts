@@ -69,6 +69,12 @@ export default {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
         mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono]
       },
+      // Motion vocabulary (also drives tailwindcss-animate's animate-in/out via ease-*):
+      // ease-out-quint for UI entrances, ease-drawer for sheets sliding in from an edge.
+      transitionTimingFunction: {
+        'out-quint': 'cubic-bezier(0.23, 1, 0.32, 1)',
+        drawer: 'cubic-bezier(0.32, 0.72, 0, 1)'
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

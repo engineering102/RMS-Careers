@@ -124,7 +124,7 @@ export function NotificationBell({
 
       {/* Popover Drawer */}
       {isOpen && (
-        <div className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-xl border border-border bg-card/95 p-0 shadow-2xl backdrop-blur-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-xl border border-border bg-card/95 p-0 shadow-2xl backdrop-blur-xl z-50 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-150 ease-out-quint">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background/60">
             <div className="flex items-center gap-2">

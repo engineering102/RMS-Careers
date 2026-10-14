@@ -47,10 +47,20 @@ export function CompletionButton({
   };
 
   if (isCompleted) {
+    // Reward moment: the badge settles in and the check pops, only when completed during this visit.
+    const justCompleted = !initialCompleted;
     return (
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <div className="inline-flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3.5 py-2 text-xs font-semibold text-success">
-          <CheckCircle2 className="h-4 w-4 text-success" />
+        <div
+          className={`inline-flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3.5 py-2 text-xs font-semibold text-success ${
+            justCompleted
+              ? 'animate-in fade-in-0 zoom-in-[0.96] duration-250 ease-out-quint motion-reduce:zoom-in-100'
+              : ''
+          }`}
+        >
+          <CheckCircle2
+            className={`h-4 w-4 text-success ${justCompleted ? 'animate-pop motion-reduce:animate-none' : ''}`}
+          />
           <span>Completed</span>
           {completedAt && (
             <span className="text-[11px] font-normal text-success/80 border-l border-success/30 pl-2 ml-0.5">
@@ -62,7 +72,7 @@ export function CompletionButton({
           )}
         </div>
         {feedback && (
-          <span className="text-xs text-success font-medium flex items-center gap-1">
+          <span className="text-xs text-success font-medium flex items-center gap-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 delay-75 fill-mode-both ease-out-quint motion-reduce:slide-in-from-bottom-0">
             <Sparkles className="h-3 w-3" />
             {feedback}
           </span>
