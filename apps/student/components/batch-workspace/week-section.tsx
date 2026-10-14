@@ -10,6 +10,9 @@ interface WeekSectionProps {
 
 export function WeekSection({ week }: WeekSectionProps) {
   const isAllCompleted = week.totalCount > 0 && week.completedCount === week.totalCount;
+  // A topic shared by every item is shown once under the week title instead of on each row.
+  const topics = new Set(week.items.map((item) => item.metadata.topic || ''));
+  const sharedTopic = topics.size === 1 ? [...topics][0] : '';
 
   return (
     <div className="relative pl-6 sm:pl-8 space-y-4">
@@ -29,10 +32,13 @@ export function WeekSection({ week }: WeekSectionProps) {
             {isAllCompleted ? <CheckCircle2 className="h-3.5 w-3.5" /> : week.weekNumber}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <h3 className="text-base font-bold tracking-tight text-foreground">
               Week {week.weekNumber}
             </h3>
+            {sharedTopic && (
+              <span className="text-xs font-medium text-muted-foreground">· {sharedTopic}</span>
+            )}
             {isAllCompleted && (
               <Badge
                 variant="outline"
@@ -57,7 +63,7 @@ export function WeekSection({ week }: WeekSectionProps) {
       {/* Weekly Curriculum Items */}
       <div className="space-y-3 pt-1">
         {week.items.map((item) => (
-          <CurriculumItemRow key={item.id} item={item} />
+          <CurriculumItemRow key={item.id} item={item} showTopic={!sharedTopic} />
         ))}
       </div>
     </div>

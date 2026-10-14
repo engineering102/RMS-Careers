@@ -5,6 +5,8 @@ import { formatDate } from '@/lib/format/datetime';
 
 interface ProblemRowProps {
   question: DSAQuestion;
+  /** 1-based position in the roadmap. */
+  position?: number;
   progress?: StudentProblemProgress;
   isSaving?: boolean;
   onSelect: (question: DSAQuestion) => void;
@@ -17,14 +19,21 @@ export const DIFFICULTY_TEXT: Record<string, string> = {
   hard: 'text-destructive'
 };
 
-/** Shared column template so the header row and problem rows line up. */
+/** Difficulty pill colours (shared with the sheet's legend). */
+export const DIFFICULTY_PILL: Record<string, string> = {
+  easy: 'border-success/30 bg-success/10 text-success',
+  medium: 'border-warning/30 bg-warning/10 text-warning',
+  hard: 'border-destructive/30 bg-destructive/10 text-destructive'
+};
+
+/** Shared column template so the header row and problem rows line up: status, #, problem, practice, notes, difficulty. */
 export const PROBLEM_GRID =
-  'grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 md:grid-cols-[3.25rem_minmax(0,1fr)_4.5rem_4.5rem_4.5rem] xl:grid-cols-[3.25rem_minmax(0,1fr)_11rem_4.5rem_4.5rem_4.5rem]';
+  'grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 md:grid-cols-[3rem_2.75rem_minmax(0,1fr)_4.5rem_4.5rem_5.5rem]';
 
 const iconButton =
   'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
-export function ProblemRow({ question, progress, isSaving = false, onSelect, onQuickSolve }: ProblemRowProps) {
+export function ProblemRow({ question, position, progress, isSaving = false, onSelect, onQuickSolve }: ProblemRowProps) {
   const isSolved = Boolean(progress?.isCompleted);
   const hasNotes = Boolean(progress?.notes);
   const submissionUrl = progress?.submissionUrl || null;
@@ -59,33 +68,37 @@ export function ProblemRow({ question, progress, isSaving = false, onSelect, onQ
         )}
       </div>
 
+      {/* Roadmap position */}
+      <span className="hidden text-xs tabular-nums text-muted-foreground md:block">
+        {position !== undefined ? `#${position}` : ''}
+      </span>
+
       {/* Problem */}
       <div className="min-w-0">
         <button
           type="button"
           onClick={() => onSelect(question)}
-          className="block max-w-full truncate text-left text-sm font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:underline"
+          className={`block max-w-full truncate text-left text-sm font-medium hover:text-primary focus-visible:outline-none focus-visible:underline ${
+            isSolved ? 'text-muted-foreground' : 'text-foreground'
+          }`}
         >
           {question.title}
         </button>
-        {/* Details that do not have their own column at this width */}
-        <p className="mt-0.5 flex min-w-0 items-center gap-x-2 text-xs text-muted-foreground">
-          <span className={`shrink-0 font-medium capitalize md:hidden ${DIFFICULTY_TEXT[question.difficulty] ?? ''}`}>
-            {question.difficulty}
-          </span>
-          <span className="truncate xl:hidden">{question.pattern}</span>
-          {isSolved && progress?.completedAt && (
-            <span className="shrink-0">
-              Solved {formatDate(progress.completedAt, { month: 'short', day: 'numeric' })}
+        {/* Details that do not have their own column at this width (the pattern is the group heading) */}
+        {(isSolved && progress?.completedAt) || position !== undefined ? (
+          <p className="mt-0.5 flex min-w-0 items-center gap-x-2 text-xs text-muted-foreground">
+            {position !== undefined && <span className="tabular-nums md:hidden">#{position}</span>}
+            <span className={`shrink-0 font-medium capitalize md:hidden ${DIFFICULTY_TEXT[question.difficulty] ?? ''}`}>
+              {question.difficulty}
             </span>
-          )}
-        </p>
+            {isSolved && progress?.completedAt && (
+              <span className="shrink-0 text-success">
+                Solved {formatDate(progress.completedAt, { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+          </p>
+        ) : null}
       </div>
-
-      {/* Pattern */}
-      <p className="hidden truncate text-xs text-muted-foreground xl:block" title={question.pattern}>
-        {question.pattern}
-      </p>
 
       {/* Practice + solution links */}
       <div className="flex items-center justify-end gap-0.5 md:justify-center">
@@ -152,9 +165,15 @@ export function ProblemRow({ question, progress, isSaving = false, onSelect, onQ
       </div>
 
       {/* Difficulty */}
-      <p className={`hidden text-center text-xs font-semibold capitalize md:block ${DIFFICULTY_TEXT[question.difficulty] ?? ''}`}>
-        {question.difficulty}
-      </p>
+      <div className="hidden justify-center md:flex">
+        <span
+          className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${
+            DIFFICULTY_PILL[question.difficulty] ?? ''
+          }`}
+        >
+          {question.difficulty}
+        </span>
+      </div>
     </div>
   );
 }

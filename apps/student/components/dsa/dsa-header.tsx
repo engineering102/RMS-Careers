@@ -25,7 +25,8 @@ export function DsaHeader({ summary, topicCount, patternCount, estimatedHours }:
   };
 
   const meta = [
-    { icon: Layers, value: topicCount, label: topicCount === 1 ? 'Topic' : 'Topics' },
+    // A single sheet is not worth a "1 Topic" fact; its patterns are the useful grouping.
+    ...(topicCount > 1 ? [{ icon: Layers, value: topicCount, label: 'Topics' }] : []),
     { icon: ListChecks, value: totalProblems, label: totalProblems === 1 ? 'Problem' : 'Problems' },
     { icon: Code2, value: patternCount, label: patternCount === 1 ? 'Pattern' : 'Patterns' },
     { icon: Clock, value: estimatedHours, label: 'Hrs' }

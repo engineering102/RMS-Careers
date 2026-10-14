@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useTransition } from 'react';
+import React, { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronsDownUp, ChevronsUpDown, SearchX, Search, Shuffle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { recordDsaProblemSolved } from '@/lib/actions/dsa';
 import {
   buildSheetViews,
   findDeepLinkedQuestion,
+  groupByPattern,
   hasActiveFilters,
+  patternAnchorId,
   initialOpenSheets,
   pickRandomUnsolved,
   type SheetFilters,
@@ -47,6 +49,34 @@ export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: Ds
   const router = useRouter();
 
   const filtering = hasActiveFilters(filters);
+
+  // Pattern jump: every pattern of every sheet with its progress (unaffected by filters).
+  const patternChips = useMemo(
+    () =>
+      sheets.flatMap((sheet) =>
+        groupByPattern(sheet, sheet.questions, progressMap).map((group) => ({
+          sheetSlug: sheet.slug,
+          pattern: group.pattern,
+          solved: group.solvedCount,
+          total: group.totalCount
+        }))
+      ),
+    [sheets, progressMap]
+  );
+  const [jumpTarget, setJumpTarget] = useState<string | null>(null);
+  const jumpToPattern = (sheetSlug: string, pattern: string) => {
+    if (filtering) setFilters(DEFAULT_FILTERS); // the group could be filtered out
+    setOpenSlugs((prev) => new Set(prev).add(sheetSlug));
+    setJumpTarget(patternAnchorId(sheetSlug, pattern));
+  };
+  // Scroll once the group is rendered (its sheet may have just been opened).
+  useEffect(() => {
+    if (!jumpTarget) return;
+    const target = document.getElementById(jumpTarget);
+    if (!target) return;
+    target.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    setJumpTarget(null);
+  }, [jumpTarget, openSlugs, filters]);
   const views = useMemo(() => buildSheetViews(sheets, filters, progressMap), [sheets, filters, progressMap]);
   // While searching or filtering, every matching topic is shown expanded.
   const isOpen = (slug: string) => filtering || openSlugs.has(slug);
@@ -225,6 +255,35 @@ export function DsaPracticeCenter({ initialData, initialSheetSlug, batchId }: Ds
           </div>
         )}
       </div>
+
+      {/* Pattern jump */}
+      {patternChips.length > 1 && (
+        <nav aria-label="Jump to pattern" className="-mx-1 overflow-x-auto scrollbar-none">
+          <ul className="flex w-max gap-1.5 px-1 pb-1">
+            {patternChips.map((chip) => {
+              const done = chip.total > 0 && chip.solved === chip.total;
+              return (
+                <li key={`${chip.sheetSlug}-${chip.pattern}`}>
+                  <button
+                    type="button"
+                    onClick={() => jumpToPattern(chip.sheetSlug, chip.pattern)}
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      done
+                        ? 'border-success/30 bg-success/10 text-success'
+                        : 'border-border bg-card text-foreground/80 hover:border-input hover:text-foreground'
+                    }`}
+                  >
+                    {chip.pattern}
+                    <span className={`tabular-nums ${done ? '' : 'text-muted-foreground'}`}>
+                      {chip.solved}/{chip.total}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
 
       {/* Topics */}
       {views.length === 0 ? (

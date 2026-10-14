@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Video,
   FileText,
@@ -13,7 +12,7 @@ import {
   Clock,
   Lock,
   AlertCircle,
-  ExternalLink
+  ArrowRight
 } from 'lucide-react';
 import type { CurriculumItem } from '@/lib/types/batch-workspace';
 import type { ContentType } from '@/lib/types/library';
@@ -22,6 +21,8 @@ import { buildDsaHref } from '@/lib/dsa/sheet-view';
 
 interface CurriculumItemRowProps {
   item: CurriculumItem;
+  /** False when the week header already shows the topic shared by every item in the week. */
+  showTopic?: boolean;
 }
 
 function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?: string, slug?: string) {
@@ -53,7 +54,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         label: 'DSA Practice',
         icon: Code2,
         badgeClass: 'border-success/30 bg-success/10 text-success',
-        actionLabel: 'Open DSA Sheet',
+        actionLabel: 'Solve Problem',
         defaultHref: buildDsaHref(slug, batchId)
       };
     case 'quiz':
@@ -115,187 +116,126 @@ function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
   }
 }
 
-export function CurriculumItemRow({ item }: CurriculumItemRowProps) {
+export function CurriculumItemRow({ item, showTopic = true }: CurriculumItemRowProps) {
   const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId, item.slug);
   const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
   const dueInfo = formatRelativeDue(item.dueAt, item.isCompleted);
 
+  // One status chip, only when there is something to say (a plain not-started item needs none).
+  const status = item.isCompleted
+    ? { label: 'Completed', icon: CheckCircle2, className: 'border-success/30 bg-success/10 text-success' }
+    : item.status === 'needs_revision'
+    ? { label: 'Needs revision', icon: AlertCircle, className: 'border-destructive/30 bg-destructive/10 text-destructive' }
+    : item.status === 'in_review'
+    ? { label: 'In review', icon: Clock, className: 'border-warning/30 bg-warning/10 text-warning' }
+    : item.isLocked
+    ? {
+        label: item.availableFrom ? `Unlocks ${formatDate(item.availableFrom, { month: 'short', day: 'numeric' })}` : 'Locked',
+        icon: Lock,
+        className: 'border-input bg-secondary text-muted-foreground'
+      }
+    : dueInfo
+    ? {
+        label: dueInfo.text,
+        icon: dueInfo.isOverdue ? AlertCircle : Clock,
+        className: dueInfo.isOverdue
+          ? 'border-destructive/30 bg-destructive/10 text-destructive'
+          : dueInfo.isUrgent
+          ? 'border-warning/30 bg-warning/10 text-warning'
+          : 'border-input bg-secondary text-muted-foreground'
+      }
+    : null;
+
+  const actionLabel = item.isCompleted
+    ? 'Review'
+    : item.status === 'needs_revision'
+    ? 'Revise'
+    : item.status === 'in_review'
+    ? 'View'
+    : meta.actionLabel;
+
   return (
     <div
-      className={`group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4.5 transition-all ${
+      className={`group relative flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-4.5 transition-colors ${
         item.isCompleted
-          ? 'border-success/30 bg-success/5 hover:border-success/40'
-          : item.status === 'needs_revision'
-          ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/40'
+          ? 'border-success/25 bg-success/[0.04]'
+          : item.status === 'needs_revision' || item.isOverdue
+          ? 'border-destructive/30 bg-destructive/5'
           : item.status === 'in_review'
-          ? 'border-warning/30 bg-warning/5 hover:border-warning/40'
-          : item.isOverdue
-          ? 'border-destructive/30 bg-destructive/5 hover:border-destructive/40'
+          ? 'border-warning/30 bg-warning/5'
           : item.isLocked
-          ? 'border-border/60 bg-card/20 opacity-75'
+          ? 'border-border/60 bg-card/20'
           : 'border-border bg-card/50 hover:border-input hover:bg-card/80'
       }`}
     >
-      {/* Left Column: Icon & Content Details */}
-      <div className="flex items-start gap-3.5 flex-1">
-        <div
-          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
-            item.isCompleted
-              ? 'border-success/30 bg-success/10 text-success'
-              : item.isLocked
-              ? 'border-border bg-secondary/60 text-muted-foreground'
-              : 'border-input/60 bg-secondary/80 text-foreground/80'
-          }`}
-        >
-          {item.isLocked ? (
-            <Lock className="h-4 w-4" />
-          ) : (
-            <Icon className="h-4 w-4" />
-          )}
-        </div>
-
-        <div className="space-y-1.5 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h4
-              className={`text-sm font-semibold transition-colors ${
-                item.isCompleted
-                  ? 'text-foreground'
-                  : 'text-foreground group-hover:text-primary'
-              }`}
-            >
-              {item.title}
-            </h4>
-            <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
-              {meta.label}
-            </Badge>
-            {item.isRequired ? (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 px-1.5 border-warning/30 bg-warning/10 text-warning font-medium"
-              >
-                Required
-              </Badge>
-            ) : (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 px-1.5 border-input bg-secondary text-muted-foreground font-medium"
-              >
-                Optional
-              </Badge>
-            )}
-            {item.isArchived && (
-              <Badge
-                variant="outline"
-                className="text-[10px] py-0 px-1.5 border-input bg-secondary/80 text-muted-foreground font-medium"
-              >
-                Archived
-              </Badge>
-            )}
-            {item.metadata.topic && (
-              <span className="text-[11px] text-muted-foreground font-medium">
-                · {item.metadata.topic}
-              </span>
-            )}
-          </div>
-
-          {item.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed">
-              {item.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            {duration ? (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {duration} mins
-              </span>
-            ) : null}
-            {item.availableFrom && item.isLocked && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                Unlocks {formatDate(item.availableFrom)}
-              </span>
-            )}
-          </div>
-        </div>
+      {/* Icon */}
+      <div
+        className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border sm:flex ${
+          item.isCompleted
+            ? 'border-success/30 bg-success/10 text-success'
+            : item.isLocked
+            ? 'border-border bg-secondary/60 text-muted-foreground'
+            : 'border-input/60 bg-secondary/80 text-foreground/80'
+        }`}
+        aria-hidden="true"
+      >
+        {item.isLocked ? <Lock className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
       </div>
 
-      {/* Right Column: Status & Action Button */}
-      <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/60">
-        <div className="flex items-center gap-2">
-          {item.isCompleted ? (
-            <span
-              className="flex items-center gap-1.5 rounded-full bg-success/10 border border-success/20 px-2.5 py-0.5 text-[11px] font-semibold text-success"
-              aria-label="Completed"
-            >
-              <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-              Completed
-            </span>
-          ) : item.status === 'needs_revision' ? (
-            <span
-              className="flex items-center gap-1.5 rounded-full bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 text-[11px] font-semibold text-destructive"
-              aria-label="Needs Revision"
-            >
-              <AlertCircle className="h-3 w-3" aria-hidden="true" />
-              Needs Revision
-            </span>
-          ) : item.status === 'in_review' ? (
-            <span
-              className="flex items-center gap-1.5 rounded-full bg-warning/10 border border-warning/20 px-2.5 py-0.5 text-[11px] font-semibold text-warning"
-              aria-label="In Review"
-            >
+      {/* Title, facts, description */}
+      <div className={`min-w-0 flex-1 space-y-1.5 ${item.isLocked ? 'opacity-75' : ''}`}>
+        <h4 className="text-sm font-semibold leading-snug text-foreground line-clamp-2">{item.title}</h4>
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
+            <Icon className="mr-1 h-3 w-3 sm:hidden" aria-hidden="true" />
+            {meta.label}
+          </Badge>
+          <span className={item.isRequired ? 'font-medium text-warning' : ''}>
+            {item.isRequired ? 'Required' : 'Optional'}
+          </span>
+          {item.isArchived && <span>· Archived</span>}
+          {duration ? (
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden="true">·</span>
               <Clock className="h-3 w-3" aria-hidden="true" />
-              In Review
+              {duration} min
             </span>
-          ) : item.isLocked ? (
-            <span
-              className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-              aria-label={item.availableFrom ? `Locked until ${formatDate(item.availableFrom)}` : 'Locked'}
-            >
-              <Lock className="h-3 w-3" aria-hidden="true" />
-              Locked
-            </span>
-          ) : dueInfo ? (
-            <span
-              className={`flex items-center gap-1 text-xs font-semibold ${
-                dueInfo.isOverdue
-                  ? 'text-destructive'
-                  : dueInfo.isUrgent
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-              }`}
-              aria-label={dueInfo.isOverdue ? `Overdue deadline: ${dueInfo.text}` : dueInfo.text}
-            >
-              {dueInfo.isOverdue && <AlertCircle className="h-3 w-3" aria-hidden="true" />}
-              {dueInfo.text}
-            </span>
-          ) : (
-            <span className="text-[11px] text-muted-foreground">Scheduled</span>
-          )}
+          ) : null}
+          {showTopic && item.metadata.topic && <span className="truncate">· {item.metadata.topic}</span>}
         </div>
 
-        {!item.isLocked && (
-          <Button
-            asChild
-            size="sm"
-            variant="ghost"
-            className="text-xs text-primary hover:text-primary hover:bg-primary/10 px-2.5 h-7 gap-1"
+        {item.description && (
+          <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2">{item.description}</p>
+        )}
+      </div>
+
+      {/* Status + action */}
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 pt-3 sm:w-44 sm:flex-col sm:items-end sm:justify-center sm:gap-2 sm:border-t-0 sm:pt-0">
+        {status ? (
+          <span
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${status.className}`}
           >
-            <Link href={meta.defaultHref}>
-              <span>
-                {item.isCompleted
-                  ? 'Review'
-                  : item.status === 'needs_revision'
-                  ? 'Revise'
-                  : item.status === 'in_review'
-                  ? 'View'
-                  : meta.actionLabel}
-              </span>
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-          </Button>
+            <status.icon className="h-3 w-3" aria-hidden="true" />
+            {status.label}
+          </span>
+        ) : (
+          <span className="hidden sm:block" aria-hidden="true" />
+        )}
+
+        {!item.isLocked && (
+          <Link
+            href={meta.defaultHref}
+            className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              item.isCompleted
+                ? 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20'
+            }`}
+          >
+            {actionLabel}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
         )}
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ProblemRow, PROBLEM_GRID } from './problem-row';
-import { percentOf, type ProgressMap, type SheetView } from '@/lib/dsa/sheet-view';
+import { groupByPattern, patternAnchorId, percentOf, type ProgressMap, type SheetView } from '@/lib/dsa/sheet-view';
 import type { DSAQuestion } from '@/lib/types/dsa';
 
 interface SheetSectionProps {
@@ -27,6 +27,7 @@ export function SheetSection({
   const percent = percentOf(solvedCount, totalCount);
   const panelId = `dsa-sheet-${sheet.slug}`;
   const isComplete = totalCount > 0 && solvedCount === totalCount;
+  const groups = isOpen ? groupByPattern(sheet, questions, progressMap) : [];
 
   return (
     <section id={`topic-${sheet.slug}`} className="scroll-mt-24 border-t border-border first:border-t-0">
@@ -80,22 +81,52 @@ export function SheetSection({
               aria-hidden
             >
               <span className="text-center">Status</span>
+              <span>#</span>
               <span>Problem</span>
-              <span className="hidden xl:block">Pattern</span>
               <span className="text-center">Practice</span>
               <span className="text-center">Notes</span>
               <span className="text-center">Difficulty</span>
             </div>
-            {questions.map((q) => (
-              <ProblemRow
-                key={q.slug}
-                question={q}
-                progress={progressMap[q.slug]}
-                isSaving={savingSlug === q.slug}
-                onSelect={onSelect}
-                onQuickSolve={onQuickSolve}
-              />
-            ))}
+            {groups.map((group) => {
+              const groupDone = group.solvedCount === group.totalCount;
+              return (
+                <div
+                  key={group.pattern}
+                  id={patternAnchorId(sheet.slug, group.pattern)}
+                  className="scroll-mt-24 border-t border-border first:border-t-0"
+                >
+                  {/* Pattern heading with its own progress */}
+                  <div className="flex items-center gap-3 bg-secondary/30 px-3 py-2">
+                    <h3 className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wide text-foreground/80">
+                      {group.pattern}
+                    </h3>
+                    <span className="hidden h-1 w-20 overflow-hidden rounded-full bg-secondary sm:block" aria-hidden>
+                      <span
+                        className={`block h-full rounded-full ${groupDone ? 'bg-success' : 'bg-primary'}`}
+                        style={{ width: `${percentOf(group.solvedCount, group.totalCount)}%` }}
+                      />
+                    </span>
+                    <span
+                      className={`text-[11px] font-medium tabular-nums ${groupDone ? 'text-success' : 'text-muted-foreground'}`}
+                    >
+                      <span className="sr-only">Solved </span>
+                      {group.solvedCount}/{group.totalCount}
+                    </span>
+                  </div>
+                  {group.questions.map((q) => (
+                    <ProblemRow
+                      key={q.slug}
+                      question={q}
+                      position={group.positions[q.slug]}
+                      progress={progressMap[q.slug]}
+                      isSaving={savingSlug === q.slug}
+                      onSelect={onSelect}
+                      onQuickSolve={onQuickSolve}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
