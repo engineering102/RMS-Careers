@@ -158,6 +158,14 @@ describe('required edge cases', () => {
     assert.equal(r.allApps, false);
   });
 
+  test('9b. k6 load-test suite change: nothing to build or deploy', () => {
+    const r = run(['tests/load/scenarios/student-browse.js', 'tests/load/lib/config.js', 'tests/load/run.mjs', 'tests/load/package.json']);
+    assert.deepEqual(r.affectedApps, []);
+    assert.deepEqual(r.deployableApps, []);
+    assert.equal(r.ciInfra, false);
+    assert.equal(r.allApps, false);
+  });
+
   test('10. lockfile change: conservative all apps', () => {
     const r = run(['pnpm-lock.yaml']);
     assert.equal(r.allApps, true);
