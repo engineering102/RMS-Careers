@@ -2,6 +2,7 @@
 import type { ContentTypeEnum } from '@rms/db';
 import type { ContentItemWithDetails, ProjectAssignmentConfig } from '@/lib/db/queries';
 import { readAuthoringFields } from '@/lib/content/student-metadata';
+import { readExternalTestFields } from '@/lib/content/external-test';
 import { DEFAULT_PROJECT_RUBRIC } from '@/lib/content/project-rubric';
 import type { ContentBuilderInput } from './schema';
 
@@ -24,6 +25,9 @@ export interface BuilderForm {
   notes: string;
   durationMinutes: string;
   rubric: RubricRow[];
+  externalProvider: string;
+  externalUrl: string;
+  assessmentCode: string;
 }
 
 let rubricKeySeed = 0;
@@ -31,6 +35,7 @@ export const rubricKey = () => `criterion-${++rubricKeySeed}`;
 
 export function initialForm(item: ContentItemWithDetails, projectConfig: ProjectAssignmentConfig | null): BuilderForm {
   const fields = readAuthoringFields(item.metadata);
+  const external = readExternalTestFields(item.metadata);
   const rubricSource =
     projectConfig && projectConfig.rubricCriteria.length > 0 ? projectConfig.rubricCriteria : DEFAULT_PROJECT_RUBRIC;
   return {
@@ -51,7 +56,10 @@ export function initialForm(item: ContentItemWithDetails, projectConfig: Project
             maxPoints: String(c.maxPoints),
             description: c.description ?? ''
           }))
-        : []
+        : [],
+    externalProvider: external.externalProvider || (item.contentType === 'external_test' ? 'QwikTest' : ''),
+    externalUrl: external.externalUrl,
+    assessmentCode: external.assessmentCode
   };
 }
 
@@ -86,5 +94,14 @@ export function toBuilderInput(id: string, type: ContentTypeEnum, form: BuilderF
     case 'quiz':
     case 'dsa_sheet':
       return { ...base, contentType: type };
+    case 'external_test':
+      return {
+        ...base,
+        contentType: type,
+        externalProvider: form.externalProvider,
+        externalUrl: form.externalUrl,
+        assessmentCode: form.assessmentCode,
+        durationMinutes: duration
+      };
   }
 }

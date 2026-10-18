@@ -64,7 +64,8 @@ export const contentTypeEnum = pgEnum('content_type', [
   'dsa_sheet',
   'quiz',
   'project',
-  'resource'
+  'resource',
+  'external_test'
 ]);
 export type ContentTypeEnum = (typeof contentTypeEnum.enumValues)[number];
 

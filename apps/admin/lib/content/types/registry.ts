@@ -67,6 +67,15 @@ export const CONTENT_TYPE_DEFS: Record<ContentTypeEnum, ContentTypeDefinition> =
     hasDuration: false,
     descriptionLabel: 'Description',
     descriptionHint: 'A short summary shown under the title.'
+  },
+  external_test: {
+    label: 'External test',
+    description: 'A link to a proctored test on another platform (e.g. QwikTest). Shown under Assessments; results are imported.',
+    workflow: 'inline',
+    hasDuration: true,
+    durationLabel: 'Time limit (minutes)',
+    descriptionLabel: 'Instructions',
+    descriptionHint: 'What students need before they start: the email to sign in with, device, camera, rules.'
   }
 };
 
@@ -83,7 +92,8 @@ export type CreateChoiceId =
   | 'practice_quiz'
   | 'formal_assessment'
   | 'project'
-  | 'dsa_sheet';
+  | 'dsa_sheet'
+  | 'external_test';
 
 export interface CreateChoice {
   id: CreateChoiceId;
@@ -114,7 +124,13 @@ export const CREATE_CHOICES: CreateChoice[] = [
     description: 'Timed, single attempt, with a server-enforced deadline and auto-submit.'
   },
   { id: 'project', contentType: 'project', label: CONTENT_TYPE_DEFS.project.label, description: CONTENT_TYPE_DEFS.project.description },
-  { id: 'dsa_sheet', contentType: 'dsa_sheet', label: CONTENT_TYPE_DEFS.dsa_sheet.label, description: CONTENT_TYPE_DEFS.dsa_sheet.description }
+  { id: 'dsa_sheet', contentType: 'dsa_sheet', label: CONTENT_TYPE_DEFS.dsa_sheet.label, description: CONTENT_TYPE_DEFS.dsa_sheet.description },
+  {
+    id: 'external_test',
+    contentType: 'external_test',
+    label: CONTENT_TYPE_DEFS.external_test.label,
+    description: CONTENT_TYPE_DEFS.external_test.description
+  }
 ];
 
 /** Quiz row defaults for a new quiz, matching what updateQuizConfig would default to for that type. */

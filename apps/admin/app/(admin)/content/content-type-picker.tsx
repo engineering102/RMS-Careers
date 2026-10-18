@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Bookmark, Code2, FileQuestion, FileText, FolderGit2, PlayCircle, ShieldCheck } from 'lucide-react';
+import { Bookmark, Code2, ExternalLink, FileQuestion, FileText, FolderGit2, PlayCircle, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONTENT_TYPE_DEFS, CREATE_CHOICES, WORKFLOW_LABELS, type CreateChoiceId } from '@/lib/content/types/registry';
 
@@ -12,7 +12,8 @@ const CHOICE_STYLE: Record<CreateChoiceId, { icon: React.ElementType; accent: st
   practice_quiz: { icon: FileQuestion, accent: 'text-violet-500 bg-violet-500/10 border-violet-500/20' },
   formal_assessment: { icon: ShieldCheck, accent: 'text-amber-500 bg-amber-500/10 border-amber-500/20' },
   project: { icon: FolderGit2, accent: 'text-green-500 bg-green-500/10 border-green-500/20' },
-  dsa_sheet: { icon: Code2, accent: 'text-orange-500 bg-orange-500/10 border-orange-500/20' }
+  dsa_sheet: { icon: Code2, accent: 'text-orange-500 bg-orange-500/10 border-orange-500/20' },
+  external_test: { icon: ExternalLink, accent: 'text-rose-500 bg-rose-500/10 border-rose-500/20' }
 };
 
 /** The content-type step of the create dialog: one card per thing an admin can actually make. */

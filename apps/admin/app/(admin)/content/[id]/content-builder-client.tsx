@@ -178,7 +178,9 @@ export function ContentBuilderClient({
       resourceLink: form.resourceLink,
       notes: form.notes,
       quizQuestionCount: quiz?.questionCount ?? 0,
-      usesDefaultRubric: type === 'project' && (!projectConfig || projectConfig.rubricCriteria.length === 0)
+      usesDefaultRubric: type === 'project' && (!projectConfig || projectConfig.rubricCriteria.length === 0),
+      externalUrl: form.externalUrl,
+      assessmentCode: form.assessmentCode
     });
     if (warnings.length > 0) {
       setPendingWarnings(warnings);

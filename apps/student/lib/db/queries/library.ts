@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { db, contentItems, programs, enrollments, batchCurriculum } from '@rms/db';
-import { eq, and, or, inArray, ilike, sql, desc, asc } from 'drizzle-orm';
+import { eq, ne, and, or, inArray, ilike, sql, desc, asc } from 'drizzle-orm';
 import type {
   ContentType,
   ContentItemMetadata,
@@ -114,8 +114,10 @@ export async function getLibraryItems(
       );
     }
 
+    // External tests are batch-scheduled and live on the Assessments page, not in the library.
     const baseWhereClauses = [
       eq(contentItems.isPublished, true),
+      ne(contentItems.contentType, 'external_test'),
       or(...entitlementConditions)!
     ];
 
@@ -190,6 +192,7 @@ export async function getLibraryItems(
     // 8. Fetch Available Topics across the student's authorized scope
     const topicAuthClauses = [
       eq(contentItems.isPublished, true),
+      ne(contentItems.contentType, 'external_test'),
       or(...entitlementConditions)!
     ];
 

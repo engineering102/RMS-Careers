@@ -13,7 +13,8 @@ export type DeadlineContentType =
   | 'dsa_sheet'
   | 'quiz'
   | 'project'
-  | 'resource';
+  | 'resource'
+  | 'external_test';
 
 export interface StudentDeadlineItem {
   id: number;
