@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
 import { getContentItem } from '@/lib/db/queries/content';
 import { getNextCurriculumItem } from '@/lib/services/resume-learning';
@@ -39,6 +39,11 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
   // Server-authoritative query (validates entitlement, throws notFound() if unauthorized)
   const item = await getContentItem(context.student.id, id, batchId);
+
+  // External tests are sat on another platform; their link, window and result live on Assessments.
+  if (item.contentType === 'external_test') {
+    redirect('/assessments#external-tests');
+  }
 
   const effectiveBatchId = batchId || item.relatedBatchContext?.batchId;
   const nextItem = effectiveBatchId

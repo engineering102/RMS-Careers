@@ -1,6 +1,7 @@
 // Things worth checking before publishing. These are warnings: publishing stays allowed, as it is today.
 import type { ContentTypeEnum } from '@rms/db';
 import { parseVideoUrl } from '../video-url';
+import { isExternalTestUrl } from '../external-test';
 
 export interface ReadinessInput {
   type: ContentTypeEnum;
@@ -12,6 +13,9 @@ export interface ReadinessInput {
   quizQuestionCount?: number;
   /** Projects with no rubric row fall back to the default rubric. */
   usesDefaultRubric?: boolean;
+  /** External tests. */
+  externalUrl?: string;
+  assessmentCode?: string;
 }
 
 export function publishWarnings(input: ReadinessInput): string[] {
@@ -34,6 +38,14 @@ export function publishWarnings(input: ReadinessInput): string[] {
       if (input.usesDefaultRubric) warnings.push('The project still uses the default rubric.');
       break;
     case 'dsa_sheet':
+      break;
+    case 'external_test':
+      if (!isExternalTestUrl(input.externalUrl ?? '')) {
+        warnings.push('There is no https test link, so students have nothing to open.');
+      }
+      if (!(input.assessmentCode ?? '').trim()) {
+        warnings.push('There is no assessment code, so imported results will not show on this test card.');
+      }
       break;
   }
   return warnings;

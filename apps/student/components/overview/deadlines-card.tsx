@@ -12,7 +12,8 @@ import {
   FolderGit2,
   Calendar,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react';
 import type { StudentDeadlineItem, DeadlineContentType } from '@/lib/db/queries/overview';
 import { formatDate, formatTime } from '@/lib/format/datetime';
@@ -47,6 +48,12 @@ function getContentTypeMeta(type: DeadlineContentType) {
         label: 'Lecture',
         icon: BookOpen,
         className: 'border-primary/30 bg-primary/10 text-primary'
+      };
+    case 'external_test':
+      return {
+        label: 'External Test',
+        icon: ExternalLink,
+        className: 'border-rose-500/30 bg-rose-500/10 text-rose-300'
       };
     default:
       return {
@@ -87,6 +94,8 @@ export function getDeadlineHref(item: StudentDeadlineItem): string {
       return buildDsaHref(item.slug, item.batchId);
     case 'quiz':
       return `/assessments?${batchParam}`;
+    case 'external_test':
+      return '/assessments#external-tests';
     case 'lecture':
     case 'project':
     default:

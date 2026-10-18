@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/queries';
 import { enrollmentLinkAvailability } from '@/lib/enrollment/link-availability';
 import { AddStudentsMenu } from './add-students-menu';
+import { ExportRosterButton } from './export-roster-button';
 import { requireAdminSession } from '@/lib/authz';
 import { summarizeRoster, type BatchRosterEntry } from '@/lib/batches/roster';
 import { formatDate } from '@/lib/utils/format-date';
@@ -129,9 +130,12 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
       </section>
 
       <section aria-labelledby="roster-heading" className="flex flex-col gap-3">
-        <h2 id="roster-heading" className="text-lg font-semibold">
-          Students
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="roster-heading" className="text-lg font-semibold">
+            Students
+          </h2>
+          <ExportRosterButton batchId={batch.id} disabled={summary.withAccess === 0} />
+        </div>
         {roster.length === 0 ? (
           <EmptyState
             icon={Users}

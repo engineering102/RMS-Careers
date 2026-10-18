@@ -11,9 +11,11 @@ import {
   quizAttempts,
   assignments,
   assignmentSubmissions,
-  studentDsaProgress
+  studentDsaProgress,
+  externalAssessmentRecords
 } from '@rms/db';
-import { eq, and, inArray, asc } from 'drizzle-orm';
+import { eq, and, inArray, asc, sql } from 'drizzle-orm';
+import { readExternalTestMetadata } from '@/lib/services/external-test';
 import { assertBatchEntitlement } from './entitlements';
 import type {
   ContentCompletionStatus,
@@ -98,6 +100,7 @@ export async function getBatchProgressSummary(
     const quizContentItemIds: string[] = [];
     const projectContentItemIds: string[] = [];
     const dsaSheetSlugs: string[] = [];
+    const externalTestCodes: string[] = [];
 
     for (const row of curriculumRows) {
       const type = row.contentType as ContentType;
@@ -111,6 +114,9 @@ export async function getBatchProgressSummary(
         const meta = (row.metadata as ContentItemMetadata) || {};
         const slug = (typeof meta.slug === 'string' ? meta.slug : row.slug) || '';
         if (slug) dsaSheetSlugs.push(slug);
+      } else if (type === 'external_test') {
+        const { codeKey } = readExternalTestMetadata(row.metadata);
+        if (codeKey) externalTestCodes.push(codeKey);
       }
     }
 
@@ -119,7 +125,8 @@ export async function getBatchProgressSummary(
       activityRecords,
       quizAttemptRecords,
       projectSubmissionRecords,
-      dsaProgressRecords
+      dsaProgressRecords,
+      externalResultRecords
     ] = await Promise.all([
       // Lectures/notes/resources completion from activities (global to student)
       lectureContentItemIds.length > 0
@@ -194,8 +201,32 @@ export async function getBatchProgressSummary(
                 inArray(studentDsaProgress.problemSlug, dsaSheetSlugs)
               )
             )
+        : Promise.resolve([]),
+
+      // External test results imported by an admin (batch-scoped, matched by assessment code)
+      externalTestCodes.length > 0
+        ? db
+            .select({
+              codeKey: sql<string>`lower(${externalAssessmentRecords.assessmentCode})`,
+              obtainedScore: externalAssessmentRecords.obtainedScore,
+              maxScore: externalAssessmentRecords.maxScore,
+              importedAt: externalAssessmentRecords.importedAt
+            })
+            .from(externalAssessmentRecords)
+            .where(
+              and(
+                eq(externalAssessmentRecords.studentId, studentId),
+                eq(externalAssessmentRecords.batchId, batchId),
+                inArray(sql`lower(${externalAssessmentRecords.assessmentCode})`, externalTestCodes)
+              )
+            )
         : Promise.resolve([])
     ]);
+
+    const externalResultMap = new Map<string, { obtainedScore: number; maxScore: number; importedAt: Date }>();
+    for (const r of externalResultRecords) {
+      externalResultMap.set(r.codeKey, { obtainedScore: r.obtainedScore, maxScore: r.maxScore, importedAt: r.importedAt });
+    }
 
     // 5. Index completion lookups in memory
     const lectureCompletedMap = new Map<string, { completedAt: Date }>();
@@ -325,6 +356,16 @@ export async function getBatchProgressSummary(
           status = 'completed';
           completedAt = dsa.completedAt;
           details = { problemSlug: slug };
+        }
+      } else if (type === 'external_test') {
+        // Completed once the result has been imported; there is nothing to do inside the portal.
+        const { codeKey } = readExternalTestMetadata(row.metadata);
+        const result = codeKey ? externalResultMap.get(codeKey) : undefined;
+        if (result) {
+          status = 'completed';
+          completedAt = result.importedAt;
+          score = result.obtainedScore;
+          maxScore = result.maxScore;
         }
       }
 

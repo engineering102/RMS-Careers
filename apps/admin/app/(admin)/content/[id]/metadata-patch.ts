@@ -1,4 +1,5 @@
 import { buildStudentMetadataPatch } from '@/lib/content/student-metadata';
+import { buildExternalTestMetadataPatch } from '@/lib/content/external-test';
 import type { ContentBuilderData } from './schema';
 
 /**
@@ -28,5 +29,13 @@ export function builderMetadataPatch(data: ContentBuilderData): Record<string, u
     case 'project':
     case 'quiz':
       return buildStudentMetadataPatch({ topic: data.topic });
+    case 'external_test':
+      return buildExternalTestMetadataPatch({
+        topic: data.topic,
+        externalProvider: data.externalProvider,
+        externalUrl: data.externalUrl,
+        assessmentCode: data.assessmentCode,
+        durationMinutes: data.durationMinutes
+      });
   }
 }

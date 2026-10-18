@@ -84,7 +84,8 @@ const CONTENT_TYPE_LABELS: Record<ContentTypeEnum, string> = {
   dsa_sheet: 'DSA Sheet',
   quiz: 'Assessment Quiz',
   project: 'Project Milestone',
-  resource: 'External Resource'
+  resource: 'External Resource',
+  external_test: 'External Test'
 };
 
 export function BatchCurriculumClient({

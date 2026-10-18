@@ -198,6 +198,18 @@ export async function updateContentAction(
       };
     }
 
+    // External tests keep their own metadata and student surface (Assessments), so they never change type.
+    if (
+      data.contentType &&
+      data.contentType !== existing.contentType &&
+      (data.contentType === 'external_test' || existing.contentType === 'external_test')
+    ) {
+      return {
+        success: false,
+        error: 'External tests cannot be converted to or from another content type.'
+      };
+    }
+
     // 5. Verify program exists if programId is changing and not null
     if (data.programId) {
       const program = await getProgramById(data.programId);
