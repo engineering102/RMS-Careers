@@ -17,6 +17,7 @@ vi.mock('@rms/db', async (importOriginal) => {
 });
 
 import { getBatchRoster } from '../db/queries/batches';
+import { buildRosterExportCsv, rosterExportFilename } from '../batches/roster';
 
 describe('getBatchRoster', () => {
   const original = process.env.POSTGRES_URL;
@@ -75,5 +76,53 @@ describe('getBatchRoster', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(getBatchRoster('b-1')).resolves.toEqual([]);
     spy.mockRestore();
+  });
+});
+
+describe('buildRosterExportCsv', () => {
+  const entry = (status: string, fullName: string, email: string) =>
+    ({ status, student: { id: 1, fullName, email, collegeRollNumber: null, branch: null, year: null } }) as never;
+
+  it('exports name,email for students with portal access only', () => {
+    const out = buildRosterExportCsv([
+      entry('active', 'Asha Rao', 'asha@college.edu'),
+      entry('confirmed', 'Bala K', 'bala@college.edu'),
+      entry('pending', 'Chitra P', 'chitra@college.edu'),
+      entry('dropped', 'Dev S', 'dev@college.edu')
+    ]);
+    expect(out.rowCount).toBe(2);
+    expect(out.csvContent.split('\n')).toEqual(['name,email', 'Asha Rao,asha@college.edu', 'Bala K,bala@college.edu']);
+  });
+
+  it('normalises and de-duplicates emails', () => {
+    const out = buildRosterExportCsv([
+      entry('active', 'Asha Rao', ' Asha@College.edu '),
+      entry('confirmed', 'Asha Rao', 'asha@college.edu')
+    ]);
+    expect(out.rowCount).toBe(1);
+    expect(out.csvContent).toBe('name,email\nAsha Rao,asha@college.edu');
+  });
+
+  it('quotes commas and neutralises spreadsheet formulas in names', () => {
+    const out = buildRosterExportCsv([
+      entry('active', 'Rao, Asha', 'asha@college.edu'),
+      entry('active', '=HYPERLINK("x")', 'bad@college.edu')
+    ]);
+    const [, first, second] = out.csvContent.split('\n');
+    expect(first).toBe('"Rao, Asha",asha@college.edu');
+    expect(second).toBe(`"'=HYPERLINK(""x"")",bad@college.edu`);
+  });
+
+  it('returns only the header when nobody has access', () => {
+    expect(buildRosterExportCsv([entry('pending', 'X', 'x@y.z')])).toEqual({ csvContent: 'name,email', rowCount: 0 });
+  });
+});
+
+describe('rosterExportFilename', () => {
+  it('slugifies the batch name and appends the date', () => {
+    expect(rosterExportFilename('CSE 2026 — Batch A', new Date('2026-10-18T05:00:00Z'))).toBe(
+      'cse-2026-batch-a-roster-2026-10-18.csv'
+    );
+    expect(rosterExportFilename('***', new Date('2026-10-18T05:00:00Z'))).toBe('batch-roster-2026-10-18.csv');
   });
 });

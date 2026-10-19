@@ -604,6 +604,8 @@ describe('Slice 12: Formal Timed Assessments', () => {
   const TEST_BATCH_ID = '22222222-2222-4222-8222-222222222222';
   const TEST_FORMAL_QUIZ_ID = '55555555-5555-4555-8555-555555555555';
   const TEST_FORMAL_CONTENT_ID = '66666666-6666-4666-8666-666666666666';
+  // Schedule window is relative to now so the assessment stays open regardless of run date.
+  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -658,8 +660,8 @@ describe('Slice 12: Formal Timed Assessments', () => {
         description: 'Comprehensive timed formal assessment on core web protocols and React.',
         timeLimitMinutes: 45,
         passingScorePercent: 70,
-        availableFrom: new Date('2026-10-01T00:00:00Z'),
-        dueAt: new Date('2026-10-15T23:59:59Z')
+        availableFrom: new Date(Date.now() - ONE_WEEK_MS),
+        dueAt: new Date(Date.now() + ONE_WEEK_MS)
       }
     ];
 
@@ -671,8 +673,8 @@ describe('Slice 12: Formal Timed Assessments', () => {
         timeLimitMinutes: 45,
         passingScorePercent: 70,
         showExplanations: 'after_deadline',
-        availableFrom: new Date('2026-10-01T00:00:00Z'),
-        dueAt: new Date('2026-10-15T23:59:59Z')
+        availableFrom: new Date(Date.now() - ONE_WEEK_MS),
+        dueAt: new Date(Date.now() + ONE_WEEK_MS)
       }
     ];
 
@@ -977,8 +979,8 @@ describe('Slice 12: Formal Timed Assessments', () => {
 
   describe('4. Post-Deadline Explanation Policy & XP', () => {
     it('suppresses explanations when batch deadline has not yet passed', async () => {
-      // Due date is in the future: 2026-10-15
-      mockBatchCurriculumRows[0].dueAt = new Date('2026-10-15T23:59:59Z');
+      // Due date is in the future
+      mockBatchCurriculumRows[0].dueAt = new Date(Date.now() + ONE_WEEK_MS);
 
       mockQuizAttempts = [
         {

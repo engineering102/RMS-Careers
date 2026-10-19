@@ -36,6 +36,13 @@
       "when": 1791200000000,
       "tag": "0004_multi_batch_central_content",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792300000000,
+      "tag": "0005_external_test_content_type",
+      "breakpoints": true
     }
   ]
 }

@@ -79,8 +79,11 @@ const PACKAGE_NON_DEPLOY = {
 
 /** Root-level files (outside every workspace project). First match wins. */
 const ROOT_CI_INFRA_GLOBS = ['.github/**', 'scripts/ci/**'];
+// tests/load/** is the k6 suite: run by hand or by load-test.yml against a separate target, never bundled into a
+// Worker and never part of ordinary CI (its pure helpers are unit-tested in scripts/ci/__tests__/load-test-lib).
 const ROOT_IGNORE_GLOBS = [
   'docs/**',
+  'tests/load/**',
   '**/*.md',
   '.agents/**',
   'skills-lock.json',

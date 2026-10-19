@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "k6 load-test scripts. Not a pnpm workspace member; run with k6 (see README.md)."
+}

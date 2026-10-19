@@ -4,7 +4,8 @@ export type ContentType =
   | 'dsa_sheet'
   | 'quiz'
   | 'project'
-  | 'resource';
+  | 'resource'
+  | 'external_test';
 
 export interface ContentItemMetadata {
   topic?: string;

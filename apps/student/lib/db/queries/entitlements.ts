@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { redirect, notFound } from 'next/navigation';
 import { db, students, users, userRoles, enrollments, programs, batches, colleges } from '@rms/db';
 import { eq, and } from 'drizzle-orm';
@@ -215,8 +216,13 @@ export async function getStudentEntitlementContext(
 /**
  * Server-side guard: Asserts that the current session belongs to an active, valid student.
  * Redirects unauthenticated users to /login and unauthorized roles to /login?error=Unauthorized.
+ *
+ * Memoized per request with React cache(): the dashboard layout and the page both call it, and each call is
+ * five sequential queries (measured: docs/audits/load-testing-2026-10.md). cache() scope is one server request
+ * and the function takes no arguments, deriving identity from that request's session, so results are never
+ * shared between users. Outside a React render (Server Actions) cache() does not memoize.
  */
-export async function requireStudentEntitlement(): Promise<StudentEntitlementContext> {
+export const requireStudentEntitlement = cache(async function requireStudentEntitlement(): Promise<StudentEntitlementContext> {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -234,7 +240,7 @@ export async function requireStudentEntitlement(): Promise<StudentEntitlementCon
   }
 
   return context;
-}
+});
 
 
 /**

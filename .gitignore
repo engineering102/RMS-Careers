@@ -51,3 +51,7 @@ apps/*/.open-next/
 e2e/test-results/
 e2e/playwright-report/
 e2e/reports/
+
+# load tests (tests/load): fixtures, action ids and results are local-only
+tests/load/fixtures/
+tests/load/results/

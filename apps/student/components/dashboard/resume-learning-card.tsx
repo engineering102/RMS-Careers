@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Trophy,
-  BookOpen
+  BookOpen,
+  ExternalLink
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,12 @@ function getContentTypeMeta(type?: ContentType) {
         label: 'Project',
         icon: FolderGit2,
         badgeClass: 'border-warning/30 bg-warning/10 text-warning'
+      };
+    case 'external_test':
+      return {
+        label: 'External Test',
+        icon: ExternalLink,
+        badgeClass: 'border-rose-500/30 bg-rose-500/10 text-rose-300'
       };
     case 'resource':
     default:
@@ -217,7 +224,9 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
   const targetHref =
     target.contentType === 'dsa_sheet'
       ? buildDsaHref(target.contentSlug, target.batchId)
-      : `/content/${encodeURIComponent(target.contentItemId)}?batchId=${encodeURIComponent(
+      : target.contentType === 'external_test'
+        ? '/assessments#external-tests'
+        : `/content/${encodeURIComponent(target.contentItemId)}?batchId=${encodeURIComponent(
           target.batchId || ''
         )}`;
 

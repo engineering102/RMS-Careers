@@ -1,0 +1,131 @@
+# Load test (manual only). THIS WORKFLOW DOES NOT DEPLOY, MIGRATE, OR TOUCH PRODUCTION.
+#
+#   preflight  unit tests of the k6 helpers + a dry run that validates the target (no request is sent)
+#   load       seeds synthetic accounts on the NonProd test DB, runs ONE scenario/profile with k6, uploads results
+#
+# Safety:
+#   * Manual trigger only (workflow_dispatch). Never on push/PR, so ordinary CI never depends on a load test.
+#   * One load test at a time repository-wide (concurrency group `load-test`, never cancelled mid-run).
+#   * Targets come from repository secrets LOAD_*_BASE_URL and must be a NON-production deployment whose database is
+#     the NonProd `test` branch. tests/load/lib/config.js refuses *.rms-careers.com, and this workflow never sets
+#     LOAD_ALLOW_PRODUCTION, so a production host fails the dry run before any traffic.
+#   * Write scenarios additionally need the `allow_writes` input. Accounts are synthetic (.test domain).
+#   * Secrets reach k6 through the environment only; k6 never runs with --http-debug; results hold metrics only.
+#   * A GitHub-hosted runner has 2-4 vCPUs: profiles above ~200 VUs will saturate it. run.mjs records the
+#     generator's CPU and marks such runs untrustworthy; use a larger self-hosted or distributed generator for them.
+name: Load test (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Scenario (tests/load/scenarios)
+        type: choice
+        default: student-browse
+        options: [public-web, student-browse, auth-burst, authz-boundaries, admin-read, practice-quiz, formal-assessment]
+      profile:
+        description: Load profile (tests/load/lib/profiles.js). Start with smoke; climb only after the previous one passed.
+        type: choice
+        default: smoke
+        options: [smoke, baseline, intermediate, peak, target, soak, spike]
+      accounts:
+        description: Synthetic accounts to seed (>= peak VUs of the profile)
+        type: string
+        default: '50'
+      allow_writes:
+        description: Allow write scenarios (practice-quiz, formal-assessment) on the NonProd target
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-test
+  cancel-in-progress: false
+
+env:
+  POSTGRES_URL: ''
+  DATABASE_URL: ''
+
+jobs:
+  preflight:
+    name: load-test preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Unit tests of the k6 helpers
+        run: node --test scripts/ci/__tests__/load-test-lib.test.mjs
+      - name: Validate target and plan (no traffic)
+        env:
+          WEB_BASE_URL: ${{ secrets.LOAD_WEB_BASE_URL }}
+          STUDENT_BASE_URL: ${{ secrets.LOAD_STUDENT_BASE_URL }}
+          ADMIN_BASE_URL: ${{ secrets.LOAD_ADMIN_BASE_URL }}
+          LOAD_ALLOW_WRITES: ${{ inputs.allow_writes && '1' || '' }}
+        run: node tests/load/run.mjs --scenario="${{ inputs.scenario }}" --profile="${{ inputs.profile }}" --dry-run
+
+  load:
+    name: k6 ${{ inputs.scenario }} / ${{ inputs.profile }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # k6 from Grafana's signed apt repository; the key is pinned by its full fingerprint.
+      - name: Install k6
+        run: |
+          set -euo pipefail
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update -q
+          sudo apt-get install -y -q k6
+          k6 version
+      # Guarded seeder: --target=test only, endpoint-pinned (packages/db/src/guard-env.ts); the fixture holds no secrets.
+      - name: Seed synthetic accounts (NonProd test DB)
+        if: inputs.scenario != 'public-web'
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_DATABASE_ENDPOINT: ${{ secrets.TEST_DATABASE_ENDPOINT }}
+          LOAD_TEST_STUDENT_PASSWORD: ${{ secrets.LOAD_TEST_STUDENT_PASSWORD }}
+          ACCOUNTS: ${{ inputs.accounts }}
+        run: pnpm --filter @rms/student load:seed:test -- --count="$ACCOUNTS"
+      - name: Run k6
+        env:
+          WEB_BASE_URL: ${{ secrets.LOAD_WEB_BASE_URL }}
+          STUDENT_BASE_URL: ${{ secrets.LOAD_STUDENT_BASE_URL }}
+          ADMIN_BASE_URL: ${{ secrets.LOAD_ADMIN_BASE_URL }}
+          LOAD_TEST_STUDENT_PASSWORD: ${{ secrets.LOAD_TEST_STUDENT_PASSWORD }}
+          LOAD_ADMIN_USERNAME: ${{ secrets.LOAD_ADMIN_USERNAME }}
+          LOAD_ADMIN_PASSWORD: ${{ secrets.LOAD_ADMIN_PASSWORD }}
+          LOAD_ACTION_IDS_JSON: ${{ secrets.LOAD_ACTION_IDS_JSON }}
+          LOAD_ALLOW_WRITES: ${{ inputs.allow_writes && '1' || '' }}
+        run: |
+          set -euo pipefail
+          if [ -n "${LOAD_ACTION_IDS_JSON:-}" ]; then
+            mkdir -p tests/load/fixtures
+            printf '%s' "$LOAD_ACTION_IDS_JSON" > tests/load/fixtures/action-ids.local.json
+            export LOAD_ACTION_IDS=tests/load/fixtures/action-ids.local.json
+          fi
+          node tests/load/run.mjs --scenario="${{ inputs.scenario }}" --profile="${{ inputs.profile }}"
+      - name: Job summary
+        if: always()
+        run: cat tests/load/results/*.summary.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "No k6 summary was produced." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload results (metrics only)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: load-test-${{ inputs.scenario }}-${{ inputs.profile }}-${{ github.run_id }}
+          path: tests/load/results/
+          if-no-files-found: warn
+          retention-days: 30

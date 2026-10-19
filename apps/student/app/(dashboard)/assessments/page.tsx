@@ -6,14 +6,16 @@ import {
 } from '@/lib/db/queries/assessments';
 import { getStudentProjectAssignments } from '@/lib/db/queries/projects';
 import { getStudentExternalAssessments } from '@/lib/db/queries/external-assessments';
+import { getStudentExternalTests } from '@/lib/db/queries/external-tests';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { AssessmentsHeader } from '@/components/assessments/assessments-header';
 import { PracticeQuizCard } from '@/components/assessments/practice-quiz-card';
 import { FormalAssessmentCard } from '@/components/assessments/formal-assessment-card';
 import { ProjectAssignmentCard } from '@/components/projects/project-assignment-card';
 import { ExternalAssessmentCard } from '@/components/assessments/external-assessment-card';
+import { ExternalTestCard } from '@/components/assessments/external-test-card';
 import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardCheck, Timer, FolderGit2, Award } from 'lucide-react';
+import { ClipboardCheck, Timer, FolderGit2, Award, ExternalLink } from 'lucide-react';
 
 export const metadata = {
   title: 'Assessments & Practice Checks — RMS Student Portal',
@@ -27,12 +29,13 @@ export default async function AssessmentsPage() {
     return <EmptyEnrollmentView context={context} />;
   }
 
-  const [formalAssessments, practiceQuizzes, projectAssignments, externalAssessments] =
+  const [formalAssessments, practiceQuizzes, projectAssignments, externalAssessments, externalTests] =
     await Promise.all([
       getStudentFormalAssessments(context.student.id),
       getStudentPracticeQuizzes(context.student.id),
       getStudentProjectAssignments(context.student.id),
-      getStudentExternalAssessments(context.student.id)
+      getStudentExternalAssessments(context.student.id),
+      getStudentExternalTests(context.student.id)
     ]);
 
   return (
@@ -85,6 +88,33 @@ export default async function AssessmentsPage() {
           </div>
         )}
       </div>
+
+      {/* 2b. External (proctored) tests sat on a partner platform; hidden when the batch has none */}
+      {externalTests.length > 0 && (
+        <div id="external-tests" className="space-y-4 scroll-mt-24">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-rose-400" />
+                <span>External Tests</span>
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Proctored tests on a partner platform. Open the link during the window; your score appears here once imported.
+              </p>
+            </div>
+
+            <span className="text-xs text-muted-foreground font-mono">
+              {externalTests.length} {externalTests.length === 1 ? 'test' : 'tests'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {externalTests.map((test) => (
+              <ExternalTestCard key={test.placementId} test={test} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 3. Practice Knowledge Checks Section */}
       <div className="space-y-4">

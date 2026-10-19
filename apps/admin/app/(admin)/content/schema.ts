@@ -6,7 +6,8 @@ export const contentTypeSchema = z.enum([
   'dsa_sheet',
   'quiz',
   'project',
-  'resource'
+  'resource',
+  'external_test'
 ]);
 
 export const createContentSchema = z.object({

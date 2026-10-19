@@ -25,6 +25,9 @@ const form = (patch: Partial<BuilderForm> = {}): BuilderForm => ({
   notes: 'Some notes',
   durationMinutes: '20',
   rubric: [{ key: 'k1', title: 'Correctness', maxPoints: '50', description: '' }],
+  externalProvider: 'QwikTest',
+  externalUrl: 'https://rms-careers.qwiktest.in/assessment-1',
+  assessmentCode: 'QT-CSE26-20261025-apt',
   ...patch
 });
 
@@ -103,6 +106,29 @@ describe('builderMetadataPatch', () => {
     expect(parse('dsa_sheet')).toEqual({ topic: 'Arrays', slug: 'sliding-window' });
   });
 
+  it('writes external test keys without touching lecture or reading keys', () => {
+    expect(parse('external_test')).toEqual({
+      topic: 'Arrays',
+      externalProvider: 'QwikTest',
+      externalUrl: 'https://rms-careers.qwiktest.in/assessment-1',
+      assessmentCode: 'QT-CSE26-20261025-apt',
+      durationMinutes: 20
+    });
+    expect(parse('external_test', { externalUrl: '', assessmentCode: '' })).toMatchObject({
+      externalUrl: null,
+      assessmentCode: null
+    });
+  });
+
+  it('rejects external test links that are not https, and malformed assessment codes', () => {
+    const bad = (patch: Partial<BuilderForm>) =>
+      contentBuilderSchema.safeParse(toBuilderInput(ID, 'external_test', form(patch))).success;
+    expect(bad({ externalUrl: 'http://rms-careers.qwiktest.in/a' })).toBe(false);
+    expect(bad({ externalUrl: 'javascript:alert(1)' })).toBe(false);
+    expect(bad({ assessmentCode: 'QT 2026/apt' })).toBe(false);
+    expect(bad({ assessmentCode: 'x'.repeat(101) })).toBe(false);
+  });
+
   it('rejects unplayable lecture links', () => {
     expect(() => parse('lecture', { videoUrl: 'https://www.youtube.com/channel/UC123' })).toThrow(InvalidVideoUrlError);
   });
@@ -116,6 +142,10 @@ describe('publishWarnings', () => {
     expect(publishWarnings({ ...base, type: 'notes' })).toHaveLength(1);
     expect(publishWarnings({ ...base, type: 'quiz', quizQuestionCount: 0 })).toHaveLength(1);
     expect(publishWarnings({ ...base, type: 'project', usesDefaultRubric: true })).toHaveLength(2);
+    expect(publishWarnings({ ...base, type: 'external_test' })).toHaveLength(2);
+    expect(
+      publishWarnings({ ...base, type: 'external_test', externalUrl: 'http://x.io/t', assessmentCode: 'QT-1' })
+    ).toHaveLength(1);
   });
 
   it('is quiet for ready items', () => {
@@ -123,6 +153,14 @@ describe('publishWarnings', () => {
     expect(publishWarnings({ ...base, type: 'resource', resourceLink: 'https://x.io' })).toEqual([]);
     expect(publishWarnings({ ...base, type: 'quiz', quizQuestionCount: 3 })).toEqual([]);
     expect(publishWarnings({ ...base, type: 'project', description: 'Build it', usesDefaultRubric: false })).toEqual([]);
+    expect(
+      publishWarnings({
+        ...base,
+        type: 'external_test',
+        externalUrl: 'https://rms-careers.qwiktest.in/assessment-1',
+        assessmentCode: 'QT-1'
+      })
+    ).toEqual([]);
   });
 });
 

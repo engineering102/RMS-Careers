@@ -10,6 +10,7 @@ import type { Program, ContentTypeEnum } from '@rms/db';
 import type { QuizWithDetails } from '@/lib/db/queries';
 import { embedUrlFor, parseVideoUrl } from '@/lib/content/video-url';
 import { contentTypeLabel } from '@/lib/content/types/registry';
+import { isExternalTestUrl } from '@/lib/content/external-test';
 import type { BuilderForm } from './builder-form';
 
 interface PreviewProps {
@@ -23,7 +24,8 @@ const TYPE_PREVIEWS: Record<ContentTypeEnum, React.ComponentType<PreviewProps>> 
   resource: ReadingPreview,
   project: ProjectPreview,
   quiz: QuizPreview,
-  dsa_sheet: DsaSheetPreview
+  dsa_sheet: DsaSheetPreview,
+  external_test: ExternalTestPreview
 };
 
 interface StudentPreviewProps {
@@ -160,6 +162,30 @@ function ReadingPreview({ form }: PreviewProps) {
         )
       )}
       <InertButton icon={CheckCircle2}>Mark as complete</InertButton>
+    </div>
+  );
+}
+
+function ExternalTestPreview({ form }: PreviewProps) {
+  const link = form.externalUrl.trim();
+  const provider = form.externalProvider.trim() || 'the test platform';
+  return (
+    <div className="space-y-3">
+      {form.description.trim() && (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{form.description}</p>
+      )}
+      {isExternalTestUrl(link) ? (
+        <div className="space-y-1">
+          <InertButton icon={ExternalLink}>Start test on {provider}</InertButton>
+          <p className="break-all font-mono text-[11px] text-muted-foreground">{link}</p>
+        </div>
+      ) : (
+        <PreviewNote icon={ExternalLink}>No https test link yet. Students would have nothing to open.</PreviewNote>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Shown on the student Assessments page. The score appears there once results are imported
+        {form.assessmentCode.trim() ? ` under ${form.assessmentCode.trim()}` : ' with a matching assessment code'}.
+      </p>
     </div>
   );
 }

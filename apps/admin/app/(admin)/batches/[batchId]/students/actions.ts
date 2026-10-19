@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/authz';
-import { getBatchById, getProgramById, getProgramEnrollmentCount } from '@/lib/db/queries';
+import { getBatchById, getBatchRoster, getProgramById, getProgramEnrollmentCount } from '@/lib/db/queries';
+import { buildRosterExportCsv, rosterExportFilename } from '@/lib/batches/roster';
 import { validateImportRows } from '@/lib/csv/validator';
 import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
 import { sendNewEnrollmentEmails } from '@/lib/services/enrollment-emails';
@@ -153,5 +154,33 @@ export async function addStudentToBatchAction(
   } catch (error) {
     console.error('Error in addStudentToBatchAction:', error);
     return { success: false, error: 'An unexpected error occurred while adding the student.' };
+  }
+}
+
+export type ExportBatchRosterResult =
+  | { success: true; data: { filename: string; csvContent: string; rowCount: number } }
+  | { success: false; error: string };
+
+/**
+ * Downloads the batch's students with portal access as `name,email` CSV, the format external
+ * assessment platforms (QwikTest) take for a test's candidate list. Read-only.
+ */
+export async function exportBatchRosterCsvAction(batchId: string): Promise<ExportBatchRosterResult> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+    if (typeof batchId !== 'string' || !batchId) return { success: false, error: 'Invalid request.' };
+
+    const batch = await getBatchById(batchId);
+    if (!batch) return { success: false, error: 'Batch not found.' };
+
+    const { csvContent, rowCount } = buildRosterExportCsv(await getBatchRoster(batch.id));
+    if (rowCount === 0) {
+      return { success: false, error: 'No students with portal access in this batch to export.' };
+    }
+    return { success: true, data: { filename: rosterExportFilename(batch.name), csvContent, rowCount } };
+  } catch (error) {
+    console.error('Error in exportBatchRosterCsvAction:', error instanceof Error ? error.message : 'unknown');
+    return { success: false, error: 'Could not export the roster. Please try again.' };
   }
 }
