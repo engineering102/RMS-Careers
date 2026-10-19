@@ -18,18 +18,22 @@ export default function BatchWorkspaceLoading() {
         <div className="h-8 w-32 rounded bg-secondary/60" />
       </div>
 
-      {/* Week strip skeleton */}
-      <div className="flex gap-1.5">
-        {Array.from({ length: 6 }).map((_, idx) => (
-          <div key={idx} className="h-8 w-12 rounded-md border border-border bg-card" />
-        ))}
-      </div>
-
-      {/* Selected week skeleton: header, then content-type sections with the first open */}
+      {/* Selected week skeleton: navigator (ring, title, arrows, journey rail), then sections with the first open */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-4">
-          <div className="h-5 w-20 rounded bg-secondary" />
-          <div className="ml-auto h-3 w-24 rounded bg-secondary/60" />
+        <div className="space-y-4 px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full border-[3.5px] border-secondary" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-24 rounded bg-secondary/60" />
+              <div className="h-5 w-48 max-w-full rounded bg-secondary" />
+            </div>
+            <div className="h-9 w-[4.5rem] rounded-lg border border-border" />
+          </div>
+          <div className="flex gap-1">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="h-1.5 flex-1 rounded-full bg-secondary" />
+            ))}
+          </div>
         </div>
         {Array.from({ length: 3 }).map((_, sectionIdx) => (
           <div key={sectionIdx} className="border-t border-border first:border-t-0">

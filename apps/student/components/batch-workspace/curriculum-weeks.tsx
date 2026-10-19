@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { SectionAccordion } from './section-accordion';
+import { WeekNavigator } from './week-navigator';
 import {
   currentWeekNumber,
   defaultOpenSections,
   groupWeekSections,
   initialWeekIndex,
+  weekTopic,
   type WeekSectionKey
 } from '@/lib/batch-workspace/week-pages';
 import type { CurriculumWeek } from '@/lib/types/batch-workspace';
@@ -23,21 +24,19 @@ interface CurriculumWeeksProps {
 export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) {
   const currentWeek = useMemo(() => currentWeekNumber(weeks), [weeks]);
   const [weekIndex, setWeekIndex] = useState(() => initialWeekIndex(weeks, requestedWeek));
-  const week = weeks[Math.min(weekIndex, weeks.length - 1)];
+  const safeIndex = Math.min(weekIndex, weeks.length - 1);
+  const week = weeks[safeIndex];
   const sections = useMemo(() => groupWeekSections(week), [week]);
   const [openSections, setOpenSections] = useState<Set<WeekSectionKey>>(() => defaultOpenSections(sections));
-  const stripRef = useRef<HTMLDivElement>(null);
 
-  // A topic shared by every item is shown once under the week title instead of on each row.
-  const topics = new Set(week.items.map((item) => item.metadata.topic || ''));
-  const sharedTopic = topics.size === 1 ? [...topics][0] : '';
-  const isWeekComplete = week.totalCount > 0 && week.completedCount === week.totalCount;
-  const weekPercent = week.totalCount > 0 ? Math.round((week.completedCount / week.totalCount) * 100) : 0;
+  const sharedTopic = weekTopic(week);
   const allOpen = sections.length > 0 && sections.every((s) => openSections.has(s.key));
+  const prevWeek = safeIndex > 0 ? weeks[safeIndex - 1] : null;
+  const nextWeek = safeIndex < weeks.length - 1 ? weeks[safeIndex + 1] : null;
 
   const goToWeek = (index: number) => {
     const next = Math.min(Math.max(0, index), weeks.length - 1);
-    if (next === weekIndex) return;
+    if (next === safeIndex) return;
     setWeekIndex(next);
     setOpenSections(defaultOpenSections(groupWeekSections(weeks[next])));
     // Keep the week in the URL so a reload or shared link returns to it, without a server round-trip.
@@ -45,17 +44,6 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
     url.searchParams.set('week', String(weeks[next].weekNumber));
     window.history.replaceState(window.history.state, '', url);
   };
-
-  // Keep the selected week's chip in view in the scrollable strip (horizontally only, never scrolling the page).
-  useEffect(() => {
-    const strip = stripRef.current;
-    const chip = strip?.querySelector<HTMLElement>('[aria-current="step"]');
-    if (!strip || !chip) return;
-    const left = chip.offsetLeft - strip.offsetLeft;
-    if (left < strip.scrollLeft || left + chip.offsetWidth > strip.scrollLeft + strip.clientWidth) {
-      strip.scrollLeft = left - (strip.clientWidth - chip.offsetWidth) / 2;
-    }
-  }, [weekIndex]);
 
   const toggleSection = (key: WeekSectionKey) => {
     setOpenSections((prev) => {
@@ -67,85 +55,27 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
   };
 
   return (
-    <div className="space-y-4">
-      {/* Week strip: one chip per week, a check once the week is done */}
-      {weeks.length > 1 && (
-        <nav aria-label="Curriculum weeks">
-          <div ref={stripRef} className="flex gap-1.5 overflow-x-auto pb-1">
-            {weeks.map((w, idx) => {
-              const done = w.totalCount > 0 && w.completedCount === w.totalCount;
-              const selected = idx === weekIndex;
-              return (
-                <button
-                  key={w.weekNumber}
-                  type="button"
-                  onClick={() => goToWeek(idx)}
-                  aria-current={selected ? 'step' : undefined}
-                  aria-label={`Week ${w.weekNumber}${done ? ', completed' : ''}${w.weekNumber === currentWeek ? ', current' : ''}`}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-3 text-xs font-medium tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    selected
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : done
-                      ? 'border-success/30 bg-success/5 text-success hover:bg-success/10'
-                      : 'border-border bg-card text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
-                  }`}
-                >
-                  {done && <Check className="h-3 w-3" strokeWidth={3} aria-hidden />}
-                  W{w.weekNumber}
-                  {w.weekNumber === currentWeek && !selected && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-      )}
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <WeekNavigator
+        weeks={weeks}
+        weekIndex={safeIndex}
+        currentWeek={currentWeek}
+        onSelect={goToWeek}
+        actions={
+          <button
+            type="button"
+            onClick={() => setOpenSections(allOpen ? new Set() : new Set(sections.map((s) => s.key)))}
+            aria-label={allOpen ? 'Collapse all sections' : 'Expand all sections'}
+            title={allOpen ? 'Collapse all' : 'Expand all'}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+          </button>
+        }
+      />
 
-      {/* The selected week */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold tracking-tight text-foreground">Week {week.weekNumber}</h2>
-              {week.weekNumber === currentWeek && !isWeekComplete && (
-                <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
-                  Current
-                </span>
-              )}
-              {isWeekComplete && (
-                <span className="rounded-full border border-success/30 bg-success/10 px-1.5 text-[10px] font-semibold text-success">
-                  Completed
-                </span>
-              )}
-            </div>
-            {sharedTopic && <p className="mt-0.5 truncate text-xs text-muted-foreground">{sharedTopic}</p>}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="h-1.5 w-24 overflow-hidden rounded-full bg-secondary" aria-hidden>
-              <span
-                className={`block h-full rounded-full ${isWeekComplete ? 'bg-success' : 'bg-primary'}`}
-                style={{ width: `${weekPercent}%` }}
-              />
-            </span>
-            <span className="text-xs font-medium tabular-nums text-muted-foreground">
-              {week.completedCount} / {week.totalCount} done
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              onClick={() => setOpenSections(allOpen ? new Set() : new Set(sections.map((s) => s.key)))}
-              aria-label={allOpen ? 'Collapse all sections' : 'Expand all sections'}
-              title={allOpen ? 'Collapse all' : 'Expand all'}
-            >
-              {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </div>
-
+      {/* key: remount on week change so the new week fades in instead of swapping rows in place */}
+      <div key={week.weekNumber} className="animate-in fade-in-0 duration-200 motion-reduce:animate-none">
         {sections.map((section) => (
           <SectionAccordion
             key={section.key}
@@ -158,36 +88,49 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
         ))}
       </div>
 
-      {/* Previous / next week */}
-      {weeks.length > 1 && (
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={weekIndex <= 0}
-            onClick={() => goToWeek(weekIndex - 1)}
-            className="gap-1.5 text-xs"
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-            {weekIndex > 0 ? `Week ${weeks[weekIndex - 1].weekNumber}` : 'Previous'}
-          </Button>
-          <span className="text-xs tabular-nums text-muted-foreground" aria-live="polite">
-            {weekIndex + 1} of {weeks.length}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={weekIndex >= weeks.length - 1}
-            onClick={() => goToWeek(weekIndex + 1)}
-            className="gap-1.5 text-xs"
-          >
-            {weekIndex < weeks.length - 1 ? `Week ${weeks[weekIndex + 1].weekNumber}` : 'Next'}
-            <ChevronRight className="h-4 w-4" aria-hidden />
-          </Button>
+      {/* Previous / up next: the neighbouring weeks, named with their topic */}
+      {(prevWeek || nextWeek) && (
+        <div className="grid grid-cols-2 border-t border-border">
+          {prevWeek ? <WeekLink week={prevWeek} direction="prev" onClick={() => goToWeek(safeIndex - 1)} /> : <span />}
+          {nextWeek && <WeekLink week={nextWeek} direction="next" onClick={() => goToWeek(safeIndex + 1)} />}
         </div>
       )}
     </div>
+  );
+}
+
+function WeekLink({ week, direction, onClick }: { week: CurriculumWeek; direction: 'prev' | 'next'; onClick: () => void }) {
+  const topic = weekTopic(week);
+  const isNext = direction === 'next';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 ${
+        isNext ? 'col-start-2 justify-end border-l border-border text-right' : 'text-left'
+      }`}
+    >
+      {!isNext && (
+        <ArrowLeft
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+          aria-hidden
+        />
+      )}
+      <span className="min-w-0">
+        <span className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          {isNext ? 'Up next' : 'Previous'}
+        </span>
+        <span className="block truncate text-sm font-semibold text-foreground">
+          Week {week.weekNumber}
+          {topic && <span className="hidden font-normal text-muted-foreground sm:inline"> · {topic}</span>}
+        </span>
+      </span>
+      {isNext && (
+        <ArrowRight
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          aria-hidden
+        />
+      )}
+    </button>
   );
 }
