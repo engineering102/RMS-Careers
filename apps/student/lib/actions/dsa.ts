@@ -5,6 +5,7 @@ import { db, studentDsaProgress } from '@rms/db';
 import { eq, and } from 'drizzle-orm';
 import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
 import { awardActivityXp } from '@/lib/services/xp-ledger';
+import { getXpAttributionBatchId } from '@/lib/services/xp-attribution';
 import { getDsaQuestionBySlug } from '@/lib/data/dsa-sheets';
 import type { RecordDsaProblemInput } from '@/lib/types/dsa';
 
@@ -57,9 +58,12 @@ export async function recordDsaProblemSolved(
 
     const sanitizedNotes = notes && notes.trim().length > 0 ? notes.trim() : null;
 
-    // 4. XP is attributed to a batch only when the student currently has access to it.
-    const verifiedBatchId =
-      batchId && UUID_REGEX.test(batchId) && (await hasBatchAccess(studentId, batchId)) ? batchId : null;
+    // 4. XP is attributed to the requested batch when the student has access to it, else to the
+    // active cohort, so batch leaderboards see it even when the page was opened without ?batchId.
+    const verifiedBatchId = await getXpAttributionBatchId(
+      context.activeBatches,
+      batchId && UUID_REGEX.test(batchId) && (await hasBatchAccess(studentId, batchId)) ? batchId : null
+    );
 
     // 5. Check if problem was already solved by this student
     const [existing] = await db

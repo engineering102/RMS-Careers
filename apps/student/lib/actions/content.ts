@@ -5,6 +5,7 @@ import { db, enrollments } from '@rms/db';
 import { eq, and } from 'drizzle-orm';
 import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
 import { awardActivityXp } from '@/lib/services/xp-ledger';
+import { getXpAttributionBatchId } from '@/lib/services/xp-attribution';
 import { getContentItem } from '@/lib/db/queries/content';
 
 export type ActionResult<T = unknown> =
@@ -66,6 +67,9 @@ export async function markLectureWatched(
       }
       verifiedBatchId = batchId;
     }
+    // No batch context (e.g. opened from the library): attribute to the active cohort so batch
+    // leaderboards still count the XP.
+    verifiedBatchId = await getXpAttributionBatchId(context.activeBatches, verifiedBatchId);
 
     // 5. Idempotent, race-safe completion + XP (ledger and student_stats move together; audit F-07).
     const award = await awardActivityXp({
