@@ -1,16 +1,19 @@
-// DSA Sheet: the student DSA Practice Center's single sheet, 150 problems in day-by-day roadmap order (source:
+// DSA Sheet: the DSA Practice catalog's original sheet, 150 problems in day-by-day roadmap order (source:
 // LeetCode_150_Roadmap.xlsx). It replaced the earlier curated starter sheets; every problem from those is here under
 // the same slug, so existing progress and XP carry over. Titles, difficulty, pattern and problem links come from the
 // roadmap; summaries, hints, approaches and complexities are original RMS Careers write-ups. The full statement,
 // examples and constraints live on LeetCode (externalUrl). Keep problem slugs stable: they key student progress and
 // XP rewards.
 import type { DSASheet, DSAQuestion } from '@/lib/types/dsa';
+import { EXTRA_DSA_QUESTIONS } from './dsa-problem-bank';
+import { CURATED_SHEET_DEFINITIONS, resolveSheet } from './dsa-curated-sheets';
 
 export const DSA_SHEET: DSASheet = {
   id: 'sheet-dsa',
   slug: 'dsa-sheet',
   title: 'DSA Sheet',
   shortDescription: '150 core interview problems across 18 patterns, in day-by-day roadmap order.',
+  category: 'general',
   description:
     'A structured path through 150 widely practised interview problems, grouped by pattern from arrays and hashing through trees, graphs and dynamic programming to bit manipulation. Each problem has a short summary, two hints, an approach outline and the target complexity; open it on LeetCode for the full statement, examples and constraints.',
   // About one focused hour per problem.
@@ -2949,7 +2952,16 @@ export const DSA_SHEET: DSASheet = {
   ]
 };
 
-export const STUDENT_DSA_SHEETS: DSASheet[] = [DSA_SHEET];
+/** Every problem any sheet can list, keyed by slug: the DSA Sheet's problems plus the extra problem bank. */
+export const DSA_PROBLEM_BANK: ReadonlyMap<string, DSAQuestion> = new Map(
+  [...DSA_SHEET.questions, ...EXTRA_DSA_QUESTIONS].map((q) => [q.slug, q])
+);
+
+/** The DSA Practice catalog, in display order. The DSA Sheet stays first; curated sheets follow. */
+export const STUDENT_DSA_SHEETS: DSASheet[] = [
+  DSA_SHEET,
+  ...CURATED_SHEET_DEFINITIONS.map((definition) => resolveSheet(definition, DSA_PROBLEM_BANK))
+];
 
 export function getAllDsaSheets(): DSASheet[] {
   return STUDENT_DSA_SHEETS;
@@ -2959,6 +2971,7 @@ export function getDsaSheetBySlug(slug: string): DSASheet | null {
   return STUDENT_DSA_SHEETS.find((s) => s.slug === slug) || null;
 }
 
+/** A problem by its progress slug, with the first sheet (in catalog order) that lists it. */
 export function getDsaQuestionBySlug(problemSlug: string): { question: DSAQuestion; sheet: DSASheet } | null {
   for (const sheet of STUDENT_DSA_SHEETS) {
     const question = sheet.questions.find((q) => q.slug === problemSlug);

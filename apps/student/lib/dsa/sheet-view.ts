@@ -1,6 +1,6 @@
-// Pure view helpers for the DSA sheet (filtering, per-topic progress, random pick).
+// Pure view helpers for DSA Practice: the sheet catalog, and a selected sheet's filtering, pattern groups and links.
 // Kept free of React so the sheet behaviour can be unit tested.
-import type { DSAQuestion, DSASheet, Difficulty, StudentProblemProgress } from '@/lib/types/dsa';
+import type { DSAQuestion, DSASheet, Difficulty, DsaSheetCategory, StudentProblemProgress } from '@/lib/types/dsa';
 
 export type StatusFilter = 'all' | 'solved' | 'unsolved';
 
@@ -33,39 +33,17 @@ export function matchesFilters(question: DSAQuestion, filters: SheetFilters, pro
   return true;
 }
 
-export interface SheetView {
-  sheet: DSASheet;
-  /** Questions that pass the filters, in catalogue order. */
-  questions: DSAQuestion[];
-  /** Progress over the whole topic, independent of filters. */
-  solvedCount: number;
-  totalCount: number;
-}
-
-/** Topics with their visible questions; topics with no matches are dropped only while filtering. */
-export function buildSheetViews(sheets: DSASheet[], filters: SheetFilters, progressMap: ProgressMap): SheetView[] {
-  const filtering = hasActiveFilters(filters);
-  return sheets
-    .map((sheet) => ({
-      sheet,
-      questions: sheet.questions.filter((q) => matchesFilters(q, filters, progressMap)),
-      solvedCount: sheet.questions.filter((q) => isSolved(progressMap, q.slug)).length,
-      totalCount: sheet.questions.length
-    }))
-    .filter((view) => !filtering || view.questions.length > 0);
-}
-
 export function percentOf(part: number, total: number): number {
   return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
-/** A random unsolved question from the visible topics, or null when everything visible is solved. */
+/** A random unsolved question from the visible ones, or null when everything visible is solved. */
 export function pickRandomUnsolved(
-  views: SheetView[],
+  visible: DSAQuestion[],
   progressMap: ProgressMap,
   random: () => number = Math.random
 ): DSAQuestion | null {
-  const pool = views.flatMap((v) => v.questions).filter((q) => !isSolved(progressMap, q.slug));
+  const pool = visible.filter((q) => !isSolved(progressMap, q.slug));
   if (pool.length === 0) return null;
   return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
 }
@@ -79,29 +57,25 @@ export function buildDsaHref(slug?: string | null, batchId?: string | null): str
   return query ? `/dsa?${query}` : '/dsa';
 }
 
-/**
- * The question a deep link points at. Batch curriculum DSA items link with the problem slug
- * (`/dsa?sheet=<problem-slug>`), so the slug may name a single problem rather than a topic.
- */
-export function findDeepLinkedQuestion(sheets: DSASheet[], deepLinkSlug?: string): DSAQuestion | null {
-  if (!deepLinkSlug) return null;
-  for (const sheet of sheets) {
-    const question = sheet.questions.find((q) => q.slug === deepLinkSlug);
-    if (question) return question;
-  }
-  return null;
+/** A selected sheet's route, optionally opening one problem and attributing XP to a batch. */
+export function buildSheetHref(sheetSlug: string, options: { problem?: string | null; batchId?: string | null } = {}): string {
+  const params = new URLSearchParams();
+  if (options.problem) params.set('problem', options.problem);
+  if (options.batchId) params.set('batchId', options.batchId);
+  const query = params.toString();
+  return `/dsa/${encodeURIComponent(sheetSlug)}${query ? `?${query}` : ''}`;
 }
 
 /**
- * Topics open on first load: the deep-linked topic (or the topic holding the deep-linked problem),
- * otherwise the first one with unsolved work.
+ * Where a `/dsa?sheet=<slug>` link (from the batch curriculum, deadlines, resume card or library) now lives: a sheet
+ * slug opens that sheet; a problem slug opens the first sheet (in catalog order) that lists it, with the problem open.
+ * Null when the slug matches neither, so the catalog shows.
  */
-export function initialOpenSheets(sheets: DSASheet[], progressMap: ProgressMap, deepLinkSlug?: string): string[] {
-  if (deepLinkSlug && sheets.some((s) => s.slug === deepLinkSlug)) return [deepLinkSlug];
-  const linkedSheet = deepLinkSlug && sheets.find((s) => s.questions.some((q) => q.slug === deepLinkSlug));
-  if (linkedSheet) return [linkedSheet.slug];
-  const firstOpen = sheets.find((s) => s.questions.some((q) => !isSolved(progressMap, q.slug)));
-  return firstOpen ? [firstOpen.slug] : sheets.slice(0, 1).map((s) => s.slug);
+export function resolveLegacyDsaLink(sheets: DSASheet[], slug?: string, batchId?: string): string | null {
+  if (!slug) return null;
+  if (sheets.some((s) => s.slug === slug)) return buildSheetHref(slug, { batchId });
+  const home = sheets.find((s) => s.questions.some((q) => q.slug === slug));
+  return home ? buildSheetHref(home.slug, { problem: slug, batchId }) : null;
 }
 
 export interface PatternGroup {
@@ -141,4 +115,59 @@ export function groupByPattern(sheet: DSASheet, visible: DSAQuestion[], progress
 /** DOM id of a pattern group, for the pattern jump chips. */
 export function patternAnchorId(sheetSlug: string, pattern: string): string {
   return `dsa-${sheetSlug}-${pattern.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+}
+
+/**
+ * Patterns open on first load: the one holding the deep-linked problem, otherwise the first with unsolved work
+ * (or the first pattern when everything is solved). Opening one keeps a long sheet short.
+ */
+export function initialOpenPatterns(sheet: DSASheet, progressMap: ProgressMap, deepLinkSlug?: string): string[] {
+  const linked = deepLinkSlug && sheet.questions.find((q) => q.slug === deepLinkSlug);
+  if (linked) return [linked.pattern];
+  const firstOpen = sheet.questions.find((q) => !isSolved(progressMap, q.slug));
+  return firstOpen ? [firstOpen.pattern] : sheet.questions.slice(0, 1).map((q) => q.pattern);
+}
+
+export interface SheetProgress {
+  solved: number;
+  total: number;
+  percent: number;
+}
+
+/** Progress over every problem in a sheet (a problem listed in several sheets counts in each). */
+export function sheetProgress(sheet: DSASheet, progressMap: ProgressMap): SheetProgress {
+  const solved = sheet.questions.filter((q) => isSolved(progressMap, q.slug)).length;
+  return { solved, total: sheet.questions.length, percent: percentOf(solved, sheet.questions.length) };
+}
+
+export const SHEET_CATEGORY_LABELS: Record<DsaSheetCategory, string> = {
+  general: 'General DSA',
+  interview: 'Interview Preparation',
+  company: 'Company Specific'
+};
+
+/** What a catalog card shows; built on the server so the catalog does not ship every problem to the browser. */
+export interface SheetCardData {
+  slug: string;
+  title: string;
+  shortDescription: string;
+  category: DsaSheetCategory;
+  company?: string;
+  patternCount: number;
+  totalProblems: number;
+  solvedCount: number;
+  percentage: number;
+}
+
+export function filterSheetCards(
+  cards: SheetCardData[],
+  query: string,
+  category: DsaSheetCategory | 'all'
+): SheetCardData[] {
+  const q = query.trim().toLowerCase();
+  return cards.filter(
+    (card) =>
+      (category === 'all' || card.category === category) &&
+      (!q || [card.title, card.company ?? '', card.shortDescription].join(' ').toLowerCase().includes(q))
+  );
 }

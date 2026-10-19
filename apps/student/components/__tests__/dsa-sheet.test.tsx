@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ProblemRow } from '../dsa/problem-row';
-import { SheetSection } from '../dsa/sheet-section';
+import { PatternAccordion } from '../dsa/pattern-accordion';
 import type { DSAQuestion } from '@/lib/types/dsa';
 
 const QUESTION: DSAQuestion = {
@@ -55,15 +55,18 @@ describe('DSA sheet rows', () => {
     expect(html).toContain('Solved 12 Oct');
   });
 
-  it('renders a collapsible topic header with progress and hides rows when collapsed', () => {
-    const view = { sheet: { id: 's', slug: 'arrays', title: 'Arrays', shortDescription: '', description: '', estimatedHours: 1, patternCount: 1, questions: [QUESTION] }, questions: [QUESTION], solvedCount: 0, totalCount: 1 };
-    const props = { view, progressMap: {}, savingSlug: null, onToggle: noop, onSelect: noop, onQuickSolve: noop };
-    const closed = renderToStaticMarkup(<SheetSection {...props} isOpen={false} />);
+  it('renders a pattern accordion header with its progress and hides rows when collapsed', () => {
+    const group = { pattern: 'Hashing', questions: [QUESTION], positions: { 'two-sum': 5 }, solvedCount: 0, totalCount: 1 };
+    const props = { sheetSlug: 'blind-75', group, filtering: false, progressMap: {}, savingSlug: null, onToggle: noop, onSelect: noop, onQuickSolve: noop };
+    const closed = renderToStaticMarkup(<PatternAccordion {...props} isOpen={false} />);
     expect(closed).toContain('aria-expanded="false"');
-    expect(closed).toContain('0/1');
+    expect(closed).toContain('aria-controls="dsa-blind-75-hashing-panel"');
+    expect(closed).toContain('id="dsa-blind-75-hashing-panel"');
+    expect(closed).toContain('0 / 1 solved');
     expect(closed).not.toContain('Two Sum');
-    const open = renderToStaticMarkup(<SheetSection {...props} isOpen />);
+    const open = renderToStaticMarkup(<PatternAccordion {...props} isOpen />);
     expect(open).toContain('aria-expanded="true"');
     expect(open).toContain('Two Sum');
+    expect(open).toContain('#5');
   });
 });

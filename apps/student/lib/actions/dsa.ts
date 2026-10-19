@@ -87,7 +87,7 @@ export async function recordDsaProblemSolved(
         })
         .where(eq(studentDsaProgress.id, existing.id));
 
-      revalidatePath('/dsa');
+      revalidatePath('/dsa', 'layout');
       return {
         success: true,
         data: { isNewlySolved: false, xpAwarded: 0 },
@@ -146,7 +146,7 @@ export async function recordDsaProblemSolved(
     const xpAwarded = award.xpAwarded;
 
     // Revalidate paths for instant client freshness
-    revalidatePath('/dsa');
+    revalidatePath('/dsa', 'layout');
     revalidatePath('/overview');
     if (verifiedBatchId) {
       revalidatePath(`/batches/${verifiedBatchId}`);

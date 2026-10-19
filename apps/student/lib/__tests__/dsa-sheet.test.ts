@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { DSA_SHEET, STUDENT_DSA_SHEETS, getDsaQuestionBySlug, getDsaSheetBySlug } from '../data/dsa-sheets';
+import {
+  DSA_PROBLEM_BANK,
+  DSA_SHEET,
+  STUDENT_DSA_SHEETS,
+  getDsaQuestionBySlug,
+  getDsaSheetBySlug
+} from '../data/dsa-sheets';
+import { EXTRA_DSA_QUESTIONS } from '../data/dsa-problem-bank';
+import { CURATED_SHEET_DEFINITIONS, resolveSheet } from '../data/dsa-curated-sheets';
 
 const questions = DSA_SHEET.questions;
 const leetcodeSlug = (url: string | undefined) => url?.match(/^https:\/\/leetcode\.com\/problems\/([a-z0-9-]+)\/$/)?.[1];
@@ -52,8 +60,65 @@ describe('DSA Sheet', () => {
 });
 
 describe('Student DSA catalog', () => {
-  it('is exactly the DSA Sheet', () => {
-    expect(STUDENT_DSA_SHEETS).toEqual([DSA_SHEET]);
+  it('lists the DSA Sheet first, then Blind 75 and LeetCode 150, with unique slugs', () => {
+    expect(STUDENT_DSA_SHEETS.map((s) => s.slug)).toEqual(['dsa-sheet', 'blind-75', 'leetcode-150']);
+    expect(STUDENT_DSA_SHEETS[0]).toBe(DSA_SHEET);
+    for (const sheet of STUDENT_DSA_SHEETS) {
+      // A sheet slug that is also a problem slug would make /dsa?sheet=<slug> ambiguous.
+      expect(DSA_PROBLEM_BANK.has(sheet.slug), sheet.slug).toBe(false);
+    }
+  });
+
+  it('Blind 75 and LeetCode 150 list 75 and 150 distinct problems from the shared bank', () => {
+    const blind = getDsaSheetBySlug('blind-75')!;
+    const lc150 = getDsaSheetBySlug('leetcode-150')!;
+    expect(blind.questions).toHaveLength(75);
+    expect(new Set(blind.questions.map((q) => q.slug)).size).toBe(75);
+    expect(blind.patternCount).toBe(10);
+    expect(lc150.questions).toHaveLength(150);
+    expect(new Set(lc150.questions.map((q) => q.slug)).size).toBe(150);
+    expect(lc150.patternCount).toBe(23);
+    for (const sheet of [blind, lc150]) {
+      expect(sheet.category).toBe('interview');
+      expect(sheet.estimatedHours).toBe(sheet.questions.length);
+      for (const q of sheet.questions) {
+        // Same record (title, difficulty, link) as the bank; only the pattern is the sheet's own grouping.
+        const { pattern: _pattern, ...record } = q;
+        const { pattern: _bankPattern, ...bankRecord } = DSA_PROBLEM_BANK.get(q.slug)!;
+        expect(record, q.slug).toEqual(bankRecord);
+      }
+    }
+  });
+
+  it('keeps each pattern of every sheet as one contiguous run (one accordion per pattern)', () => {
+    for (const sheet of STUDENT_DSA_SHEETS) {
+      const runs = sheet.questions.map((q) => q.pattern).filter((p, i, all) => i === 0 || all[i - 1] !== p);
+      expect(new Set(runs).size, sheet.slug).toBe(runs.length);
+      expect(runs.length, sheet.slug).toBe(sheet.patternCount);
+    }
+  });
+
+  it('extra bank problems are new problems with the same original-content rules', () => {
+    const roadmapSlugs = new Set(DSA_SHEET.questions.map((q) => q.slug));
+    expect(new Set(EXTRA_DSA_QUESTIONS.map((q) => q.slug)).size).toBe(EXTRA_DSA_QUESTIONS.length);
+    const used = new Set(STUDENT_DSA_SHEETS.flatMap((s) => s.questions.map((q) => q.slug)));
+    for (const q of EXTRA_DSA_QUESTIONS) {
+      expect(roadmapSlugs.has(q.slug), q.slug).toBe(false);
+      expect(used.has(q.slug), `${q.slug} is in no sheet`).toBe(true);
+      expect(leetcodeSlug(q.externalUrl), q.slug).toBe(q.slug);
+      expect(q.id).toBe(`q-${q.slug}`);
+      expect(q.problemStatement.length, q.slug).toBeGreaterThanOrEqual(40);
+      expect(q.hints, q.slug).toHaveLength(2);
+      expect(q.approach.trim(), q.slug).not.toBe('');
+      expect(q.examples, q.slug).toEqual([]);
+      expect(q.constraints, q.slug).toEqual([]);
+    }
+  });
+
+  it('refuses a sheet definition that names an unknown problem', () => {
+    const [definition] = CURATED_SHEET_DEFINITIONS;
+    const broken = { ...definition, groups: [{ pattern: 'X', slugs: ['not-a-problem'] }] };
+    expect(() => resolveSheet(broken, DSA_PROBLEM_BANK)).toThrow(/not-a-problem/);
   });
 
   it('keeps every slug students may already have progress on from the earlier curated sheets', () => {
@@ -83,6 +148,13 @@ describe('Student DSA catalog', () => {
       slugsByUrl.set(key, (slugsByUrl.get(key) ?? new Set()).add(q.slug));
     }
     expect([...slugsByUrl].filter(([, slugs]) => slugs.size > 1)).toEqual([]);
+  });
+
+  it('resolves shared problems to the DSA Sheet and bank-only problems to the first sheet listing them', () => {
+    expect(getDsaQuestionBySlug('two-sum')?.sheet.slug).toBe('dsa-sheet');
+    expect(getDsaQuestionBySlug('meeting-rooms')?.sheet.slug).toBe('blind-75');
+    expect(getDsaQuestionBySlug('merge-sorted-array')?.sheet.slug).toBe('leetcode-150');
+    expect(getDsaQuestionBySlug('merge-sorted-array')?.question.difficulty).toBe('easy');
   });
 
   it('resolves problems by their progress slug, which can differ from the LeetCode URL slug', () => {
