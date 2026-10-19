@@ -279,6 +279,33 @@ describe('Slice 5: Server-Side Entitlement Guards', () => {
     expect(context.hasActiveEntitlement).toBe(true);
   });
 
+  // requireStudentEntitlement is wrapped in React cache(). cache() memoizes only inside one React server render;
+  // these calls run outside a render, exactly like Server Actions, so every call must re-resolve the session and
+  // the database, and a later caller (another user) must never receive an earlier caller's context.
+  it('does not memoize across calls outside a render (Server Actions, other users)', async () => {
+    vi.mocked(auth).mockClear();
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: userId, role: 'student' } } as any);
+    const first = await requireStudentEntitlement();
+    expect(first.student?.fullName).toBe('Aarav Patel');
+
+    mockStudents = [{ ...mockStudents[0], id: 202, userId: 'user-other', fullName: 'Other Student', email: 'other@rms-careers.local' }];
+    mockUsers = [{ ...mockUsers[0], id: 'user-other', email: 'other@rms-careers.local' }];
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'user-other', role: 'student' } } as any);
+    const second = await requireStudentEntitlement();
+
+    expect(auth).toHaveBeenCalledTimes(2);
+    expect(second.student?.fullName).toBe('Other Student');
+    expect(second.student?.id).toBe(202);
+  });
+
+  it('re-evaluates a session that lost access instead of returning a stale success', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: userId, role: 'student' } } as any);
+    await expect(requireStudentEntitlement()).resolves.toMatchObject({ isStudent: true });
+
+    vi.mocked(auth).mockResolvedValueOnce(null as any);
+    await expect(requireStudentEntitlement()).rejects.toThrow('REDIRECT:/login');
+  });
+
   it('assertBatchEntitlement succeeds when student is enrolled in target batch', async () => {
     mockEnrollments[0].enrollmentStatus = 'active';
     const result = await assertBatchEntitlement(101, 'batch-101');

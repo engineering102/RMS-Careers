@@ -15,7 +15,9 @@
     "test:int": "vitest run -c vitest.int.config.ts",
     "student:seed:test": "tsx scripts/seed-student.ts --target=test",
     "student:verify-seed": "tsx scripts/verify-seed.ts --target=development",
-    "student:verify-seed:test": "tsx scripts/verify-seed.ts --target=test"
+    "student:verify-seed:test": "tsx scripts/verify-seed.ts --target=test",
+    "load:seed:test": "tsx scripts/seed-load-test.ts --target=test",
+    "load:cleanup:test": "tsx scripts/seed-load-test.ts --target=test --cleanup"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.5",
