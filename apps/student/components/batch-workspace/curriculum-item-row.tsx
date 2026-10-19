@@ -9,11 +9,11 @@ import {
   FolderGit2,
   Bookmark,
   ExternalLink,
-  CheckCircle2,
   Clock,
   Lock,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Check
 } from 'lucide-react';
 import type { CurriculumItem } from '@/lib/types/batch-workspace';
 import type { ContentType } from '@/lib/types/library';
@@ -24,6 +24,8 @@ interface CurriculumItemRowProps {
   item: CurriculumItem;
   /** False when the week header already shows the topic shared by every item in the week. */
   showTopic?: boolean;
+  /** False when the section holds a single content type, so the type badge would repeat its heading. */
+  showType?: boolean;
 }
 
 function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?: string, slug?: string) {
@@ -126,15 +128,16 @@ function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
   }
 }
 
-export function CurriculumItemRow({ item, showTopic = true }: CurriculumItemRowProps) {
+export function CurriculumItemRow({ item, showTopic = true, showType = true }: CurriculumItemRowProps) {
   const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId, item.slug);
   const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
   const dueInfo = formatRelativeDue(item.dueAt, item.isCompleted);
 
   // One status chip, only when there is something to say (a plain not-started item needs none).
+  // Completed items carry the row's check mark instead of a chip.
   const status = item.isCompleted
-    ? { label: 'Completed', icon: CheckCircle2, className: 'border-success/30 bg-success/10 text-success' }
+    ? null
     : item.status === 'needs_revision'
     ? { label: 'Needs revision', icon: AlertCircle, className: 'border-destructive/30 bg-destructive/10 text-destructive' }
     : item.status === 'in_review'
@@ -165,64 +168,70 @@ export function CurriculumItemRow({ item, showTopic = true }: CurriculumItemRowP
     ? 'View'
     : meta.actionLabel;
 
+  // A list row inside a section panel, styled like a DSA problem row.
   return (
     <div
-      className={`group relative flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-4.5 transition-colors ${
+      className={`flex flex-col gap-3 border-t border-border px-3 py-3 transition-colors first:border-t-0 sm:flex-row sm:items-center sm:gap-4 ${
         item.isCompleted
-          ? 'border-success/25 bg-success/[0.04]'
+          ? 'bg-success/5'
           : item.status === 'needs_revision' || item.isOverdue
-          ? 'border-destructive/30 bg-destructive/5'
-          : item.status === 'in_review'
-          ? 'border-warning/30 bg-warning/5'
+          ? 'bg-destructive/5'
           : item.isLocked
-          ? 'border-border/60 bg-card/20'
-          : 'border-border bg-card/50 hover:border-input hover:bg-card/80'
+          ? ''
+          : 'hover:bg-secondary/60'
       }`}
     >
-      {/* Icon */}
-      <div
-        className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border sm:flex ${
-          item.isCompleted
-            ? 'border-success/30 bg-success/10 text-success'
-            : item.isLocked
-            ? 'border-border bg-secondary/60 text-muted-foreground'
-            : 'border-input/60 bg-secondary/80 text-foreground/80'
-        }`}
-        aria-hidden="true"
-      >
-        {item.isLocked ? <Lock className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-      </div>
-
-      {/* Title, facts, description */}
-      <div className={`min-w-0 flex-1 space-y-1.5 ${item.isLocked ? 'opacity-75' : ''}`}>
-        <h4 className="text-sm font-semibold leading-snug text-foreground line-clamp-2">{item.title}</h4>
-
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-          <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
-            <Icon className="mr-1 h-3 w-3 sm:hidden" aria-hidden="true" />
-            {meta.label}
-          </Badge>
-          <span className={item.isRequired ? 'font-medium text-warning' : ''}>
-            {item.isRequired ? 'Required' : 'Optional'}
+      <div className={`flex min-w-0 flex-1 items-start gap-3 ${item.isLocked ? 'opacity-75' : ''}`}>
+        {/* Status mark: a filled check once done, a lock until it opens, the content type otherwise */}
+        {item.isCompleted ? (
+          <span
+            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-success bg-success text-success-foreground"
+            role="img"
+            aria-label="Completed"
+          >
+            <Check className="h-3.5 w-3.5" strokeWidth={3} />
           </span>
-          {item.isArchived && <span>· Archived</span>}
-          {duration ? (
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden="true">·</span>
-              <Clock className="h-3 w-3" aria-hidden="true" />
-              {duration} min
-            </span>
-          ) : null}
-          {showTopic && item.metadata.topic && <span className="truncate">· {item.metadata.topic}</span>}
-        </div>
-
-        {item.description && (
-          <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2">{item.description}</p>
+        ) : (
+          <span
+            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-input text-muted-foreground"
+            aria-hidden="true"
+          >
+            {item.isLocked ? <Lock className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
+          </span>
         )}
+
+        {/* Title, facts, description */}
+        <div className="min-w-0 flex-1 space-y-1">
+          <h4 className="text-sm font-medium leading-snug text-foreground line-clamp-2">{item.title}</h4>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+            {showType && (
+              <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
+                {meta.label}
+              </Badge>
+            )}
+            <span className={item.isRequired ? 'font-medium text-warning' : ''}>
+              {item.isRequired ? 'Required' : 'Optional'}
+            </span>
+            {item.isArchived && <span>· Archived</span>}
+            {duration ? (
+              <span className="inline-flex items-center gap-1">
+                <span aria-hidden="true">·</span>
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                {duration} min
+              </span>
+            ) : null}
+            {showTopic && item.metadata.topic && <span className="truncate">· {item.metadata.topic}</span>}
+          </div>
+
+          {item.description && (
+            <p className="text-xs leading-relaxed text-muted-foreground line-clamp-1">{item.description}</p>
+          )}
+        </div>
       </div>
 
       {/* Status + action */}
-      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 pt-3 sm:w-44 sm:flex-col sm:items-end sm:justify-center sm:gap-2 sm:border-t-0 sm:pt-0">
+      <div className="flex shrink-0 items-center justify-between gap-3 pl-8 sm:justify-end sm:pl-0">
         {status ? (
           <span
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${status.className}`}
@@ -231,7 +240,7 @@ export function CurriculumItemRow({ item, showTopic = true }: CurriculumItemRowP
             {status.label}
           </span>
         ) : (
-          <span className="hidden sm:block" aria-hidden="true" />
+          <span aria-hidden="true" />
         )}
 
         {!item.isLocked && (
