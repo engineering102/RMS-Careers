@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CategoryCard, CATEGORY_THEMES } from '../library/category-card';
+import { ContentCard } from '../library/content-card';
 import {
   formatCategoryCount,
   getLibraryCategory,
@@ -49,5 +50,49 @@ describe('My Library categories', () => {
     expect(html).not.toContain('href=');
     expect(html).toContain('aria-disabled="true"');
     expect(html).toContain('Nothing here yet');
+  });
+});
+
+describe('My Library item cards', () => {
+  const base = {
+    id: 'item-1',
+    programId: 1,
+    programName: 'Fullstack Engineering',
+    programCode: 'FSE',
+    description: 'Two pointers walkthrough',
+    topic: 'Arrays',
+    isPublished: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  it('uses the category theme and links the whole card to the item', () => {
+    const html = renderToStaticMarkup(
+      <ContentCard
+        item={{
+          ...base,
+          title: 'Sliding Window',
+          slug: 'sliding-window',
+          contentType: 'lecture',
+          metadata: { durationMinutes: 45, difficulty: 'intermediate' }
+        }}
+      />
+    );
+    expect(html).toContain('href="/content/item-1"');
+    expect(html).toContain(CATEGORY_THEMES.lecture.iconTile);
+    expect(html).toContain('Watch Lecture');
+    expect(html).toContain('45 min');
+    expect(html).toContain('Intermediate');
+    expect(html).toContain('Arrays');
+  });
+
+  it('routes DSA sheets to the practice page', () => {
+    const html = renderToStaticMarkup(
+      <ContentCard
+        item={{ ...base, title: 'Blind 75', slug: 'blind-75', contentType: 'dsa_sheet', metadata: {} }}
+      />
+    );
+    expect(html).toContain('href="/dsa?sheet=blind-75"');
+    expect(html).toContain(CATEGORY_THEMES.dsa_sheet.iconTile);
   });
 });
