@@ -14,6 +14,7 @@ import {
   sanitizeResponses
 } from '@/lib/services/assessment-policy';
 import { awardActivityXp } from '@/lib/services/xp-ledger';
+import { getXpAttributionBatchId } from '@/lib/services/xp-attribution';
 import type {
   SubmitPracticeQuizInput,
   PracticeQuizSubmissionResult,
@@ -73,9 +74,12 @@ export async function submitPracticeQuizAttempt(
 
     const authoritativeQuizId = quizRunnerData.id;
 
-    // XP is attributed to a batch only when the student currently has access to it.
-    const verifiedBatchId =
-      batchId && UUID_REGEX.test(batchId) && (await hasBatchAccess(studentId, batchId)) ? batchId : null;
+    // XP is attributed to the requested batch when the student has access to it, else to the
+    // active cohort, so batch leaderboards see it even when the page was opened without ?batchId.
+    const verifiedBatchId = await getXpAttributionBatchId(
+      context.activeBatches,
+      batchId && UUID_REGEX.test(batchId) && (await hasBatchAccess(studentId, batchId)) ? batchId : null
+    );
 
     const dbQuestions = await db
       .select({
