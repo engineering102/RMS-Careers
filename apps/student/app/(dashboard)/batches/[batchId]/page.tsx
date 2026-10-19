@@ -3,7 +3,7 @@ import { getBatchWorkspace } from '@/lib/db/queries/batch-workspace';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { BatchHeader } from '@/components/batch-workspace/batch-header';
 import { WorkspaceSubnav } from '@/components/batch-workspace/workspace-subnav';
-import { WeekSection } from '@/components/batch-workspace/week-section';
+import { CurriculumWeeks } from '@/components/batch-workspace/curriculum-weeks';
 import { BatchWorkspaceEmptyState } from '@/components/batch-workspace/batch-workspace-empty-state';
 
 export const metadata = {
@@ -15,9 +15,12 @@ interface BatchWorkspacePageProps {
   params: Promise<{
     batchId: string;
   }>;
+  searchParams: Promise<{
+    week?: string;
+  }>;
 }
 
-export default async function BatchWorkspacePage({ params }: BatchWorkspacePageProps) {
+export default async function BatchWorkspacePage({ params, searchParams }: BatchWorkspacePageProps) {
   const context = await requireStudentEntitlement();
 
   if (!context.hasActiveEntitlement || !context.student) {
@@ -25,6 +28,7 @@ export default async function BatchWorkspacePage({ params }: BatchWorkspacePageP
   }
 
   const { batchId } = await params;
+  const requestedWeek = Number.parseInt((await searchParams).week ?? '', 10);
 
   // Server-authoritative query (validates batch entitlement, throws notFound() if unauthorized)
   const data = await getBatchWorkspace(context.student.id, batchId);
@@ -45,15 +49,14 @@ export default async function BatchWorkspacePage({ params }: BatchWorkspacePageP
       {/* 2. Workspace Navigation */}
       <WorkspaceSubnav batchId={batchId} activeTab="curriculum" />
 
-      {/* 3. Chronological Weekly Curriculum Timeline or Empty State */}
+      {/* 3. Weekly Curriculum (one week per page, content-type sections) or Empty State */}
       {data.weeks.length === 0 ? (
         <BatchWorkspaceEmptyState />
       ) : (
-        <div className="space-y-10 pt-2">
-          {data.weeks.map((week) => (
-            <WeekSection key={week.weekNumber} week={week} />
-          ))}
-        </div>
+        <CurriculumWeeks
+          weeks={data.weeks}
+          requestedWeek={Number.isFinite(requestedWeek) ? requestedWeek : null}
+        />
       )}
     </div>
   );

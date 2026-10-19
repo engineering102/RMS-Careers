@@ -17,7 +17,7 @@ import {
 } from '@rms/db';
 import { eq, and, sql, asc } from 'drizzle-orm';
 import { assertBatchEntitlement } from './entitlements';
-import { getBatchProgressSummary } from './progress';
+import { resolveBatchProgressSummary } from './progress';
 import type { ContentType, ContentItemMetadata } from '@/lib/types/library';
 import type {
   CurriculumItem,
@@ -51,49 +51,80 @@ export async function getBatchWorkspace(
     notFound();
   }
 
-  // 1. Authorize: Throws 404 via Next.js notFound() if student is not actively/confirmed/completed enrolled in batchId
-  const entitlement = await assertBatchEntitlement(studentId, batchId);
-
   try {
-    // 2. Query Batch and Program details
-    const [batchRecord] = await db
-      .select({
-        id: batches.id,
-        name: batches.name,
-        programId: batches.programId,
-        programName: programs.name,
-        programCode: programs.code,
-        startDate: batches.startDate,
-        endDate: batches.endDate,
-        collegeName: colleges.name
-      })
-      .from(batches)
-      .innerJoin(programs, eq(programs.id, batches.programId))
-      .leftJoin(colleges, eq(colleges.id, batches.collegeId))
-      .where(eq(batches.id, batchId))
-      .limit(1);
+    // One round-trip for everything keyed only by (student, batch). The entitlement check runs alongside the
+    // reads; nothing is returned unless it passes, and its notFound() rejects the whole Promise.all.
+    const [entitlement, [batchRecord], enrollmentRows, curriculumRows] = await Promise.all([
+      assertBatchEntitlement(studentId, batchId),
+      db
+        .select({
+          id: batches.id,
+          name: batches.name,
+          programId: batches.programId,
+          programName: programs.name,
+          programCode: programs.code,
+          startDate: batches.startDate,
+          endDate: batches.endDate,
+          collegeName: colleges.name
+        })
+        .from(batches)
+        .innerJoin(programs, eq(programs.id, batches.programId))
+        .leftJoin(colleges, eq(colleges.id, batches.collegeId))
+        .where(eq(batches.id, batchId))
+        .limit(1),
+      // All active enrolled batches for this student (for cohort switching context)
+      db
+        .select({
+          batchId: batches.id,
+          batchName: batches.name,
+          programCode: programs.code,
+          programName: programs.name
+        })
+        .from(enrollments)
+        .innerJoin(batches, eq(batches.id, enrollments.batchId))
+        .innerJoin(programs, eq(programs.id, enrollments.programId))
+        .where(
+          and(
+            eq(enrollments.studentId, studentId),
+            enrollmentGrantsAccess()
+          )
+        ),
+      // Chronological batch curriculum
+      db
+        .select({
+          id: batchCurriculum.id,
+          batchId: batchCurriculum.batchId,
+          contentItemId: batchCurriculum.contentItemId,
+          weekNumber: batchCurriculum.weekNumber,
+          sequenceOrder: batchCurriculum.sequenceOrder,
+          isRequired: batchCurriculum.isRequired,
+          availableFrom: batchCurriculum.availableFrom,
+          dueAt: batchCurriculum.dueAt,
+          title: contentItems.title,
+          slug: contentItems.slug,
+          contentType: contentItems.contentType,
+          description: contentItems.description,
+          metadata: contentItems.metadata,
+          isPublished: contentItems.isPublished
+        })
+        .from(batchCurriculum)
+        .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
+        .where(
+          and(
+            eq(batchCurriculum.batchId, batchId),
+            eq(contentItems.isPublished, true)
+          )
+        )
+        .orderBy(
+          asc(batchCurriculum.weekNumber),
+          asc(batchCurriculum.sequenceOrder),
+          asc(batchCurriculum.id)
+        )
+    ]);
 
     if (!batchRecord) {
       notFound();
     }
-
-    // 3. Query all active enrolled batches for this student (for cohort switching context)
-    const enrollmentRows = await db
-      .select({
-        batchId: batches.id,
-        batchName: batches.name,
-        programCode: programs.code,
-        programName: programs.name
-      })
-      .from(enrollments)
-      .innerJoin(batches, eq(batches.id, enrollments.batchId))
-      .innerJoin(programs, eq(programs.id, enrollments.programId))
-      .where(
-        and(
-          eq(enrollments.studentId, studentId),
-          enrollmentGrantsAccess()
-        )
-      );
 
     const activeEnrolledBatches: EnrolledBatchSummary[] = enrollmentRows.map((r) => ({
       batchId: r.batchId,
@@ -102,40 +133,13 @@ export async function getBatchWorkspace(
       programName: r.programName
     }));
 
-    // 4. Query chronological batch curriculum
-    const curriculumRows = await db
-      .select({
-        id: batchCurriculum.id,
-        batchId: batchCurriculum.batchId,
-        contentItemId: batchCurriculum.contentItemId,
-        weekNumber: batchCurriculum.weekNumber,
-        sequenceOrder: batchCurriculum.sequenceOrder,
-        isRequired: batchCurriculum.isRequired,
-        availableFrom: batchCurriculum.availableFrom,
-        dueAt: batchCurriculum.dueAt,
-        title: contentItems.title,
-        slug: contentItems.slug,
-        contentType: contentItems.contentType,
-        description: contentItems.description,
-        metadata: contentItems.metadata,
-        isPublished: contentItems.isPublished
-      })
-      .from(batchCurriculum)
-      .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
-      .where(
-        and(
-          eq(batchCurriculum.batchId, batchId),
-          eq(contentItems.isPublished, true)
-        )
-      )
-      .orderBy(
-        asc(batchCurriculum.weekNumber),
-        asc(batchCurriculum.sequenceOrder),
-        asc(batchCurriculum.id)
-      );
-
-    // 5. Query canonical progress summary via unified resolver
-    const progressSummary = await getBatchProgressSummary(studentId, batchId);
+    // Second (and last) round-trip: completion sources, resolved against the curriculum rows fetched above.
+    const progressSummary = await resolveBatchProgressSummary(
+      studentId,
+      batchId,
+      entitlement.batchName,
+      curriculumRows
+    );
 
     // 6. Map and group curriculum items by weekNumber
     const now = new Date();
