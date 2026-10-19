@@ -1,150 +1,151 @@
-import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Video,
-  FileText,
-  Code2,
-  HelpCircle,
-  FolderGit2,
-  Bookmark,
-  Clock,
-  ExternalLink,
-  CheckCircle2
-} from 'lucide-react';
+import { ArrowRight, Clock, Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CATEGORY_THEMES } from '@/components/library/category-card';
+import type { LibraryCategoryType } from '@/lib/data/library-categories';
 import type { LibraryItem, ContentType } from '@/lib/types/library';
 
 interface ContentCardProps {
   item: LibraryItem;
 }
 
-function getContentTypeMeta(type: ContentType, itemId?: string, slug?: string) {
+export function getContentTypeMeta(type: ContentType, itemId?: string, slug?: string) {
   const contentHref = itemId ? `/content/${itemId}` : '/library';
 
   switch (type) {
     case 'lecture':
-      return {
-        label: 'Lecture',
-        icon: Video,
-        badgeClass: 'border-primary/30 bg-primary/10 text-primary',
-        actionLabel: 'Watch Lecture',
-        defaultHref: contentHref
-      };
+      return { label: 'Lecture', actionLabel: 'Watch Lecture', defaultHref: contentHref };
     case 'notes':
-      return {
-        label: 'Notes',
-        icon: FileText,
-        badgeClass: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
-        actionLabel: 'Read Notes',
-        defaultHref: contentHref
-      };
+      return { label: 'Notes', actionLabel: 'Read Notes', defaultHref: contentHref };
     case 'dsa_sheet':
       return {
         label: 'DSA Practice',
-        icon: Code2,
-        badgeClass: 'border-success/30 bg-success/10 text-success',
         actionLabel: 'Open DSA Sheet',
         defaultHref: slug ? `/dsa?sheet=${encodeURIComponent(slug)}` : '/dsa'
       };
     case 'quiz':
-      return {
-        label: 'Quiz',
-        icon: HelpCircle,
-        badgeClass: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
-        actionLabel: 'Take Quiz',
-        defaultHref: '/assessments'
-      };
+      return { label: 'Quiz', actionLabel: 'Take Quiz', defaultHref: '/assessments' };
     case 'project':
-      return {
-        label: 'Project',
-        icon: FolderGit2,
-        badgeClass: 'border-warning/30 bg-warning/10 text-warning',
-        actionLabel: 'View Project',
-        defaultHref: '/assessments'
-      };
+      return { label: 'Project', actionLabel: 'View Project', defaultHref: '/assessments' };
     case 'resource':
     default:
-      return {
-        label: 'Resource',
-        icon: Bookmark,
-        badgeClass: 'border-input bg-secondary text-foreground/80',
-        actionLabel: 'Open Resource',
-        defaultHref: contentHref
-      };
+      return { label: 'Resource', actionLabel: 'Open Resource', defaultHref: contentHref };
   }
 }
 
+const DIFFICULTY_STYLES: Record<string, { label: string; dot: string }> = {
+  beginner: { label: 'Beginner', dot: 'bg-emerald-500' },
+  intermediate: { label: 'Intermediate', dot: 'bg-amber-500' },
+  advanced: { label: 'Advanced', dot: 'bg-rose-500' }
+};
+
+const metaChipClass =
+  'inline-flex items-center gap-1 rounded-md border border-foreground/[0.08] bg-background/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur';
+
 export function ContentCard({ item }: ContentCardProps) {
   const meta = getContentTypeMeta(item.contentType, item.id, item.slug);
-  const Icon = meta.icon;
+  const themeKey: LibraryCategoryType =
+    item.contentType in CATEGORY_THEMES ? (item.contentType as LibraryCategoryType) : 'resource';
+  const theme = CATEGORY_THEMES[themeKey];
+  const Icon = theme.icon;
   const duration = item.metadata.durationMinutes;
+  const difficulty = item.metadata.difficulty ? DIFFICULTY_STYLES[item.metadata.difficulty] : null;
 
   return (
-    <Card className="group flex flex-col justify-between overflow-hidden border-border bg-card/60 hover:border-input hover:bg-card/80 transition-all duration-200">
-      <CardContent className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-        <div className="space-y-3">
-          {/* Header Row: Content Type & Topic Badges */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`text-xs py-0.5 px-2 font-medium ${meta.badgeClass}`}>
-                <Icon className="h-3 w-3 mr-1" />
-                {meta.label}
-              </Badge>
-              {item.topic && (
-                <span className="rounded bg-secondary/80 px-2 py-0.5 text-[11px] font-medium text-foreground/80 border border-input/60">
-                  {item.topic}
-                </span>
-              )}
-            </div>
+    <Link
+      href={meta.defaultHref}
+      aria-label={`${meta.actionLabel}: ${item.title}`}
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-2xl border p-5 shadow-sm',
+        'transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:transform-none',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        theme.surface,
+        theme.ring
+      )}
+    >
+      {/* Decorative glow + hairline highlight */}
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full opacity-40 blur-3xl transition-opacity duration-300 group-hover:opacity-90',
+          theme.glow
+        )}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/20"
+      />
 
-            <span className="flex items-center gap-1 text-[11px] font-medium text-success">
-              <CheckCircle2 className="h-3 w-3" />
-              Accessible
-            </span>
-          </div>
-
-          {/* Title & Description */}
-          <div>
-            <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-              {item.title}
-            </h3>
-            {item.description ? (
-              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                {item.description}
-              </p>
-            ) : (
-              <p className="mt-1.5 text-xs text-muted-foreground italic">No description provided.</p>
+      {/* Type + topic */}
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-md ring-1 ring-inset ring-white/20',
+              theme.iconTile
             )}
-          </div>
-        </div>
-
-        {/* Footer Meta & Action */}
-        <div className="pt-3 border-t border-border/80 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground/80">{item.programCode || 'RMS'}</span>
-            {duration ? (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-3 w-3 text-muted-foreground" />
-                {duration}m
-              </span>
-            ) : null}
-          </div>
-
-          <Button
-            asChild
-            size="sm"
-            variant="ghost"
-            className="text-xs text-primary hover:text-primary hover:bg-primary/10 px-2.5 h-8 gap-1.5"
           >
-            <Link href={meta.defaultHref}>
-              <span>{meta.actionLabel}</span>
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-          </Button>
+            <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+          </div>
+          <span
+            className={cn('truncate text-[11px] font-semibold uppercase tracking-widest', theme.accent)}
+          >
+            {meta.label}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+        {item.topic && (
+          <span className="max-w-[45%] truncate rounded-full border border-foreground/[0.08] bg-background/60 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
+            {item.topic}
+          </span>
+        )}
+      </div>
+
+      {/* Title & description */}
+      <div className="relative mt-4 flex-1">
+        <h3 className="text-base font-semibold leading-snug tracking-tight text-foreground line-clamp-2">
+          {item.title}
+        </h3>
+        {item.description ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+            {item.description}
+          </p>
+        ) : (
+          <p className="mt-1.5 text-xs italic text-muted-foreground">No description provided.</p>
+        )}
+      </div>
+
+      {/* Meta chips */}
+      <div className="relative mt-4 flex flex-wrap items-center gap-1.5">
+        <span className={metaChipClass}>
+          <Layers className="h-3 w-3" />
+          {item.programCode || 'RMS'}
+        </span>
+        {duration ? (
+          <span className={metaChipClass}>
+            <Clock className="h-3 w-3" />
+            {duration} min
+          </span>
+        ) : null}
+        {difficulty && (
+          <span className={metaChipClass}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', difficulty.dot)} />
+            {difficulty.label}
+          </span>
+        )}
+      </div>
+
+      {/* Action */}
+      <div className="relative mt-4 flex items-center justify-between border-t border-foreground/[0.06] pt-3.5">
+        <span className={cn('text-xs font-semibold', theme.accent)}>{meta.actionLabel}</span>
+        <span
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-full border border-foreground/[0.08] bg-background/60',
+            theme.accent
+          )}
+        >
+          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transform-none" />
+        </span>
+      </div>
+    </Link>
   );
 }
