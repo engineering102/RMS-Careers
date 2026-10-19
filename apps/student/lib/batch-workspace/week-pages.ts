@@ -72,3 +72,19 @@ export function initialWeekIndex(weeks: CurriculumWeek[], requestedWeek?: number
   const current = weeks.findIndex((w) => w.weekNumber === currentWeekNumber(weeks));
   return Math.max(0, current);
 }
+
+/** The topic shared by every item in a week, or '' when items differ or have none. */
+export function weekTopic(week: CurriculumWeek): string {
+  const topics = new Set(week.items.map((item) => item.metadata?.topic || ''));
+  return topics.size === 1 ? [...topics][0] : '';
+}
+
+export type WeekState = 'completed' | 'in_progress' | 'not_started' | 'locked';
+
+/** A week's overall state for navigation: locked only when every unfinished item is still locked. */
+export function weekState(week: CurriculumWeek): WeekState {
+  if (week.totalCount > 0 && week.completedCount === week.totalCount) return 'completed';
+  const unfinished = week.items.filter((i) => !i.isCompleted);
+  if (unfinished.length > 0 && unfinished.every((i) => i.isLocked)) return 'locked';
+  return week.completedCount > 0 ? 'in_progress' : 'not_started';
+}
