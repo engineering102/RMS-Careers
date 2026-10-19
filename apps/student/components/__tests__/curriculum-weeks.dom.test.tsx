@@ -3,6 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import './helpers/jsdom-gestures';
 
 import { CurriculumWeeks } from '../batch-workspace/curriculum-weeks';
 import type { CurriculumItem, CurriculumWeek } from '@/lib/types/batch-workspace';
@@ -29,7 +30,7 @@ const WEEKS = [
 ];
 
 const sectionHeader = (name: RegExp) => screen.getByRole('button', { name });
-const weekChip = (name: RegExp) =>
+const railSegment = (name: RegExp) =>
   within(screen.getByRole('navigation', { name: 'Curriculum weeks' })).getByRole('button', { name });
 
 afterEach(cleanup);
@@ -49,7 +50,7 @@ describe('CurriculumWeeks', () => {
     expect(screen.queryByText('Capstone')).toBeNull();
   });
 
-  it('toggles a section and moves between weeks', async () => {
+  it('toggles a section and moves between weeks with the rail, arrows and up-next link', async () => {
     const user = userEvent.setup();
     render(<CurriculumWeeks weeks={WEEKS} />);
 
@@ -59,19 +60,35 @@ describe('CurriculumWeeks', () => {
     expect(sectionHeader(/Lectures/).getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText('Arrays lecture')).toBeNull();
 
-    await user.click(weekChip(/^Week 3$/));
+    await user.click(railSegment(/^Week 3, not started$/));
     expect(screen.getByRole('heading', { level: 2, name: 'Week 3' })).toBeTruthy();
     expect(sectionHeader(/Projects/).getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Capstone')).toBeTruthy();
     expect(window.location.search).toBe('?week=3');
+    expect((screen.getByRole('button', { name: 'Next week' }) as HTMLButtonElement).disabled).toBe(true);
 
-    await user.click(weekChip(/^Week 1, completed$/));
+    await user.click(screen.getByRole('button', { name: 'Previous week' }));
+    expect(screen.getByRole('heading', { level: 2, name: 'Week 2' })).toBeTruthy();
+
+    await user.click(railSegment(/^Week 1, completed$/));
     expect(screen.getByRole('heading', { level: 2, name: 'Week 1' })).toBeTruthy();
     expect(sectionHeader(/Assessments/)).toBeTruthy();
 
-    // Previous / next buttons are named after the neighbouring week.
-    await user.click(screen.getByRole('button', { name: /Week 2$/ }));
+    await user.click(screen.getByRole('button', { name: /Up next/ }));
     expect(screen.getByRole('heading', { level: 2, name: 'Week 2' })).toBeTruthy();
+  });
+
+  it('jumps to a week from the week picker', async () => {
+    const user = userEvent.setup();
+    render(<CurriculumWeeks weeks={WEEKS} />);
+
+    await user.click(screen.getByRole('button', { name: /Choose a week/ }));
+    const options = await screen.findAllByRole('menuitemradio');
+    expect(options).toHaveLength(3);
+    expect(options[1].getAttribute('aria-checked')).toBe('true');
+
+    await user.click(options[2]);
+    expect(screen.getByRole('heading', { level: 2, name: 'Week 3' })).toBeTruthy();
   });
 
   it('honours a requested week', () => {

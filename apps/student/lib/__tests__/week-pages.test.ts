@@ -3,7 +3,8 @@ import {
   currentWeekNumber,
   defaultOpenSections,
   groupWeekSections,
-  initialWeekIndex
+  initialWeekIndex,
+  weekState
 } from '../batch-workspace/week-pages';
 import type { CurriculumItem, CurriculumWeek } from '../types/batch-workspace';
 import type { ContentType } from '../types/library';
@@ -75,5 +76,14 @@ describe('current week', () => {
     expect(initialWeekIndex(weeks, 4)).toBe(1);
     expect(initialWeekIndex(weeks, null)).toBe(1);
     expect(initialWeekIndex(weeks)).toBe(1);
+  });
+});
+
+describe('week state', () => {
+  it('classifies a week for navigation', () => {
+    expect(weekState(week(1, [{ done: true }, { done: true }]))).toBe('completed');
+    expect(weekState(week(1, [{ done: true }, {}]))).toBe('in_progress');
+    expect(weekState(week(1, [{}, {}]))).toBe('not_started');
+    expect(weekState(week(1, [{ done: true }, { locked: true }]))).toBe('locked');
   });
 });
