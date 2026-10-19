@@ -24,31 +24,12 @@ export type {
  * @param studentId Authenticated student ID (students.id).
  */
 export async function getStudentDsaData(studentId: number): Promise<StudentDsaData> {
-  const emptySummary: DsaProgressSummary = {
-    totalProblems: 0,
-    totalSolved: 0,
-    overallPercentage: 0,
-    easyTotal: 0,
-    easySolved: 0,
-    mediumTotal: 0,
-    mediumSolved: 0,
-    hardTotal: 0,
-    hardSolved: 0
-  };
-
-  const emptyData: StudentDsaData = {
-    sheets: STUDENT_DSA_SHEETS,
-    progressMap: {},
-    summary: emptySummary,
-    sheetSummaries: []
-  };
-
   if (!studentId || !process.env.POSTGRES_URL) {
-    return emptyData;
+    return buildDsaData({}, true);
   }
 
   try {
-    // 1. Query student's recorded DSA progress ledger from PostgreSQL
+    // Query student's recorded DSA progress ledger from PostgreSQL
     const progressRows = await db
       .select({
         problemSlug: studentDsaProgress.problemSlug,
@@ -75,75 +56,83 @@ export async function getStudentDsaData(studentId: number): Promise<StudentDsaDa
       }
     }
 
-    // 2. Compute summary metrics across all questions
-    let totalProblems = 0;
-    let totalSolved = 0;
-    let easyTotal = 0;
-    let easySolved = 0;
-    let mediumTotal = 0;
-    let mediumSolved = 0;
-    let hardTotal = 0;
-    let hardSolved = 0;
-
-    const sheetSummaries: SheetProgressSummary[] = [];
-    // A problem can appear in more than one sheet (same slug, one progress row). Sheet summaries count it in
-    // each sheet; the overall and per-difficulty totals count it once.
-    const countedSlugs = new Set<string>();
-
-    for (const sheet of STUDENT_DSA_SHEETS) {
-      let sheetSolved = 0;
-      const sheetTotal = sheet.questions.length;
-
-      for (const q of sheet.questions) {
-        const isSolved = Boolean(progressMap[q.slug]?.isCompleted);
-        if (isSolved) sheetSolved++;
-
-        if (countedSlugs.has(q.slug)) continue;
-        countedSlugs.add(q.slug);
-        totalProblems++;
-        if (isSolved) totalSolved++;
-
-        if (q.difficulty === 'easy') {
-          easyTotal++;
-          if (isSolved) easySolved++;
-        } else if (q.difficulty === 'medium') {
-          mediumTotal++;
-          if (isSolved) mediumSolved++;
-        } else if (q.difficulty === 'hard') {
-          hardTotal++;
-          if (isSolved) hardSolved++;
-        }
-      }
-
-      sheetSummaries.push({
-        sheetSlug: sheet.slug,
-        sheetTitle: sheet.title,
-        totalProblems: sheetTotal,
-        solvedCount: sheetSolved,
-        percentage: sheetTotal > 0 ? Math.round((sheetSolved / sheetTotal) * 100) : 0
-      });
-    }
-
-    const summary: DsaProgressSummary = {
-      totalProblems,
-      totalSolved,
-      overallPercentage: totalProblems > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0,
-      easyTotal,
-      easySolved,
-      mediumTotal,
-      mediumSolved,
-      hardTotal,
-      hardSolved
-    };
-
-    return {
-      sheets: STUDENT_DSA_SHEETS,
-      progressMap,
-      summary,
-      sheetSummaries
-    };
+    return buildDsaData(progressMap, false);
   } catch (error) {
     console.error('[DSA Query] Failed to fetch student DSA progress:', error);
-    return emptyData;
+    return buildDsaData({}, true);
   }
+}
+
+/** Overall, per-difficulty and per-sheet progress for a progress map. */
+function buildDsaData(
+  progressMap: Record<string, StudentProblemProgress>,
+  progressUnavailable: boolean
+): StudentDsaData {
+  let totalProblems = 0;
+  let totalSolved = 0;
+  let easyTotal = 0;
+  let easySolved = 0;
+  let mediumTotal = 0;
+  let mediumSolved = 0;
+  let hardTotal = 0;
+  let hardSolved = 0;
+
+  const sheetSummaries: SheetProgressSummary[] = [];
+  // A problem can appear in more than one sheet (same slug, one progress row). Sheet summaries count it in
+  // each sheet; the overall and per-difficulty totals count it once.
+  const countedSlugs = new Set<string>();
+
+  for (const sheet of STUDENT_DSA_SHEETS) {
+    let sheetSolved = 0;
+    const sheetTotal = sheet.questions.length;
+
+    for (const q of sheet.questions) {
+      const isSolved = Boolean(progressMap[q.slug]?.isCompleted);
+      if (isSolved) sheetSolved++;
+
+      if (countedSlugs.has(q.slug)) continue;
+      countedSlugs.add(q.slug);
+      totalProblems++;
+      if (isSolved) totalSolved++;
+
+      if (q.difficulty === 'easy') {
+        easyTotal++;
+        if (isSolved) easySolved++;
+      } else if (q.difficulty === 'medium') {
+        mediumTotal++;
+        if (isSolved) mediumSolved++;
+      } else if (q.difficulty === 'hard') {
+        hardTotal++;
+        if (isSolved) hardSolved++;
+      }
+    }
+
+    sheetSummaries.push({
+      sheetSlug: sheet.slug,
+      sheetTitle: sheet.title,
+      totalProblems: sheetTotal,
+      solvedCount: sheetSolved,
+      percentage: sheetTotal > 0 ? Math.round((sheetSolved / sheetTotal) * 100) : 0
+    });
+  }
+
+  const summary: DsaProgressSummary = {
+    totalProblems,
+    totalSolved,
+    overallPercentage: totalProblems > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0,
+    easyTotal,
+    easySolved,
+    mediumTotal,
+    mediumSolved,
+    hardTotal,
+    hardSolved
+  };
+
+  return {
+    sheets: STUDENT_DSA_SHEETS,
+    progressMap,
+    summary,
+    sheetSummaries,
+    progressUnavailable
+  };
 }

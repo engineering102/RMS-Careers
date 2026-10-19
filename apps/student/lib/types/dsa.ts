@@ -26,12 +26,18 @@ export interface DSAQuestion {
   externalUrl?: string;
 }
 
+/** Catalog grouping of a problem sheet. */
+export type DsaSheetCategory = 'general' | 'interview' | 'company';
+
 export interface DSASheet {
   id: string;
   slug: string;
   title: string;
   shortDescription: string;
   description: string;
+  category: DsaSheetCategory;
+  /** Company label for category 'company' sheets. */
+  company?: string;
   estimatedHours: number;
   patternCount: number;
   questions: DSAQuestion[];
@@ -71,6 +77,8 @@ export interface StudentDsaData {
   progressMap: Record<string, StudentProblemProgress>;
   summary: DsaProgressSummary;
   sheetSummaries: SheetProgressSummary[];
+  /** True when the student's progress could not be loaded; counts then show 0 and must not be presented as real. */
+  progressUnavailable: boolean;
 }
 
 export interface RecordDsaProblemInput {
