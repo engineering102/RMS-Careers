@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Library, SearchX, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,7 @@ interface LibraryEmptyStateProps {
 export function LibraryEmptyState({ isFiltered }: LibraryEmptyStateProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (isFiltered) {
     return (
@@ -27,7 +28,11 @@ export function LibraryEmptyState({ isFiltered }: LibraryEmptyStateProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.push(pathname)}
+          onClick={() => {
+            // Stay inside the open category when resetting search/topic.
+            const type = searchParams.get('type');
+            router.push(type ? `${pathname}?type=${encodeURIComponent(type)}` : pathname);
+          }}
           className="mt-5 gap-1.5 text-xs border-input bg-secondary/80 text-foreground/80 hover:text-foreground"
         >
           <RotateCcw className="h-3.5 w-3.5" />

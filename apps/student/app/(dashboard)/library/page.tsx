@@ -1,13 +1,15 @@
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
-import { getLibraryItems } from '@/lib/db/queries/library';
+import { getLibraryCategorySummaries, getLibraryItems } from '@/lib/db/queries/library';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { ContentCard } from '@/components/library/content-card';
 import { SearchFilterBar } from '@/components/library/search-filter-bar';
 import { LibraryEmptyState } from '@/components/library/library-empty-state';
+import { CategoryCard } from '@/components/library/category-card';
+import { CategoryHeader } from '@/components/library/category-header';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Library as LibraryIcon } from 'lucide-react';
 import Link from 'next/link';
-import type { ContentType } from '@/lib/types/library';
+import { getLibraryCategory, LIBRARY_CATEGORIES } from '@/lib/data/library-categories';
 
 export const metadata = {
   title: 'My Library — RMS Student Portal',
@@ -38,28 +40,95 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   // Await search params in Next.js 15
   const params = await searchParams;
   const currentQuery = params.q?.trim() || '';
-  const currentType = (params.type?.trim() || 'all') as ContentType | 'all';
+  // Unknown ?type= values fall back to the category hub rather than an always-empty list.
+  const activeCategory = getLibraryCategory(params.type?.trim());
+  const currentType = activeCategory?.type ?? 'all';
   const currentTopic = params.topic?.trim() || 'all';
   const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
-  // Fetch authorized library catalog
-  const result = await getLibraryItems(student.id, {
-    enrolledProgramIds,
-    enrolledBatchIds,
-    filters: {
-      query: currentQuery,
-      contentType: currentType,
-      topic: currentTopic,
-      page: currentPage,
-      limit: 24
-    }
-  });
+  const isSearching = Boolean(currentQuery || currentTopic !== 'all');
+  const showHub = !activeCategory && !isSearching;
 
-  const isFiltered = Boolean(
-    (currentQuery && currentQuery.trim()) ||
-      (currentType && currentType !== 'all') ||
-      (currentTopic && currentTopic !== 'all')
+  const summariesPromise = getLibraryCategorySummaries({ enrolledProgramIds, enrolledBatchIds });
+
+  const enrolledProgramsBadge = (
+    <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card/60 px-3.5 py-2 text-xs text-muted-foreground">
+      <span>Enrolled Programs:</span>
+      <span className="font-semibold text-foreground">
+        {context.enrollments.map((e) => e.programCode).join(', ') || 'Active'}
+      </span>
+    </div>
   );
+
+  const hubHeader = (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+      <div>
+        <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
+          <LibraryIcon className="h-4 w-4" />
+          <span>Resource Catalog · Self-Paced</span>
+        </div>
+        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+          My Library
+        </h1>
+        <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          Recorded lectures, study notes, practice sheets, and learning resources across your
+          enrolled programs. Pick a category to dive in, or search everything at once.
+        </p>
+      </div>
+      {enrolledProgramsBadge}
+    </div>
+  );
+
+  // Category hub: one themed card per content type.
+  if (showHub) {
+    const summaries = await summariesPromise;
+    const byType = new Map(summaries.map((s) => [s.contentType, s]));
+
+    return (
+      <div className="space-y-8">
+        {hubHeader}
+
+        <SearchFilterBar
+          availableTopics={[]}
+          currentQuery=""
+          showTopicFilter={false}
+          placeholder="Search across all categories..."
+        />
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {LIBRARY_CATEGORIES.map((category) => {
+            const summary = byType.get(category.type);
+            return (
+              <CategoryCard
+                key={category.type}
+                category={category}
+                itemCount={summary?.itemCount ?? 0}
+                topicCount={summary?.topicCount ?? 0}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Fetch authorized library catalog for the open category (or cross-category search)
+  const [result, summaries] = await Promise.all([
+    getLibraryItems(student.id, {
+      enrolledProgramIds,
+      enrolledBatchIds,
+      filters: {
+        query: currentQuery,
+        contentType: currentType,
+        topic: currentTopic,
+        page: currentPage,
+        limit: 24
+      }
+    }),
+    summariesPromise
+  ]);
+
+  const isFiltered = isSearching;
 
   const buildPageUrl = (targetPage: number) => {
     const urlParams = new URLSearchParams();
@@ -74,29 +143,27 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   return (
     <div className="space-y-8">
-      {/* 1. Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
-            <LibraryIcon className="h-4 w-4" />
-            <span>Resource Catalog · Self-Paced</span>
-          </div>
-          <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            My Library
-          </h1>
-          <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            Searchable, non-chronological repository of recorded lectures, study notes, practice
-            sheets, and learning resources across your enrolled programs.
-          </p>
+      {/* 1. Header: themed category banner, or the hub header with a way back for cross-category search */}
+      {activeCategory ? (
+        <CategoryHeader
+          category={activeCategory}
+          totalCount={
+            summaries.find((s) => s.contentType === activeCategory.type)?.itemCount ??
+            result.totalCount
+          }
+        />
+      ) : (
+        <div className="space-y-4">
+          <Link
+            href="/library"
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            All categories
+          </Link>
+          {hubHeader}
         </div>
-
-        <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card/60 px-3.5 py-2 text-xs text-muted-foreground">
-          <span>Enrolled Programs:</span>
-          <span className="font-semibold text-foreground">
-            {context.enrollments.map((e) => e.programCode).join(', ') || 'Active'}
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* 2. Interactive Search & Topic Filter Bar */}
       <SearchFilterBar
@@ -104,6 +171,11 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         currentQuery={currentQuery}
         currentType={currentType}
         currentTopic={currentTopic}
+        placeholder={
+          activeCategory
+            ? `Search ${activeCategory.label.toLowerCase()}...`
+            : 'Search across all categories...'
+        }
       />
 
       {/* 3. Results Header & Count */}

@@ -4,30 +4,24 @@ import React, { useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Search, X, Filter, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { ContentType } from '@/lib/types/library';
 
 interface SearchFilterBarProps {
   availableTopics: string[];
   currentQuery?: string;
   currentType?: string;
   currentTopic?: string;
+  /** Hide the topic dropdown (e.g. on the category hub, where only search applies). */
+  showTopicFilter?: boolean;
+  placeholder?: string;
 }
-
-const TYPE_OPTIONS: { label: string; value: ContentType | 'all' }[] = [
-  { label: 'All Items', value: 'all' },
-  { label: 'Lectures', value: 'lecture' },
-  { label: 'Notes', value: 'notes' },
-  { label: 'DSA Practice', value: 'dsa_sheet' },
-  { label: 'Quizzes', value: 'quiz' },
-  { label: 'Projects', value: 'project' },
-  { label: 'Resources', value: 'resource' }
-];
 
 export function SearchFilterBar({
   availableTopics,
   currentQuery = '',
   currentType = 'all',
-  currentTopic = 'all'
+  currentTopic = 'all',
+  showTopicFilter = true,
+  placeholder = 'Search lectures, practice sheets, quizzes, topics...'
 }: SearchFilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -73,15 +67,17 @@ export function SearchFilterBar({
 
   const handleClearAll = () => {
     setSearchVal('');
+    // Clearing search/topic keeps the student inside the category they opened.
+    const params = new URLSearchParams();
+    if (currentType && currentType !== 'all') params.set('type', currentType);
     startTransition(() => {
-      router.push(pathname);
+      const queryString = params.toString();
+      router.push(queryString ? `${pathname}?${queryString}` : pathname);
     });
   };
 
   const hasActiveFilters = Boolean(
-    (currentQuery && currentQuery.trim()) ||
-      (currentType && currentType !== 'all') ||
-      (currentTopic && currentTopic !== 'all')
+    (currentQuery && currentQuery.trim()) || (currentTopic && currentTopic !== 'all')
   );
 
   return (
@@ -96,7 +92,7 @@ export function SearchFilterBar({
               type="text"
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
-              placeholder="Search lectures, practice sheets, quizzes, topics..."
+              placeholder={placeholder}
               className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-card/80 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition"
             />
             {searchVal && (
@@ -114,21 +110,23 @@ export function SearchFilterBar({
 
         {/* Topic / Category Dropdown */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="relative min-w-[160px]">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-            <select
-              value={currentTopic}
-              onChange={(e) => updateFilters({ topic: e.target.value })}
-              className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-card/80 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition appearance-none cursor-pointer"
-            >
-              <option value="all">All Topics</option>
-              {availableTopics.map((topic) => (
-                <option key={topic} value={topic}>
-                  {topic}
-                </option>
-              ))}
-            </select>
-          </div>
+          {showTopicFilter && (
+            <div className="relative min-w-[160px]">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <select
+                value={currentTopic}
+                onChange={(e) => updateFilters({ topic: e.target.value })}
+                className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-card/80 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition appearance-none cursor-pointer"
+              >
+                <option value="all">All Topics</option>
+                {availableTopics.map((topic) => (
+                  <option key={topic} value={topic}>
+                    {topic}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {hasActiveFilters && (
             <Button
@@ -142,27 +140,6 @@ export function SearchFilterBar({
             </Button>
           )}
         </div>
-      </div>
-
-      {/* Content Type Filter Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {TYPE_OPTIONS.map((opt) => {
-          const isActive = currentType === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => updateFilters({ type: opt.value })}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.97] motion-reduce:active:scale-100 ${
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                  : 'bg-card/80 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border/80'
-              }`}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
       </div>
 
       {isPending && (

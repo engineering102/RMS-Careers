@@ -40,6 +40,22 @@ function escapeIlikePattern(query: string): string {
 }
 
 /**
+ * Content is accessible if it belongs to an enrolled program OR is scheduled in an enrolled batch.
+ */
+function buildEntitlementConditions(programIds: number[], batchIds: string[]) {
+  const conditions = [];
+  if (programIds.length > 0) {
+    conditions.push(inArray(contentItems.programId, programIds));
+  }
+  if (batchIds.length > 0) {
+    conditions.push(
+      sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN ${batchIds})`
+    );
+  }
+  return conditions;
+}
+
+/**
  * Retrieves the non-chronological, searchable, topic-filtered learning content catalog
  * accessible to the authenticated student based on their active program enrollments.
  *
@@ -103,16 +119,7 @@ export async function getLibraryItems(
     }
 
     // 2. Build entitlement authorization conditions
-    // Content is accessible if it belongs to an enrolled program OR is scheduled in an enrolled batch
-    const entitlementConditions = [];
-    if (programIds.length > 0) {
-      entitlementConditions.push(inArray(contentItems.programId, programIds));
-    }
-    if (batchIds.length > 0) {
-      entitlementConditions.push(
-        sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN ${batchIds})`
-      );
-    }
+    const entitlementConditions = buildEntitlementConditions(programIds, batchIds);
 
     // External tests are batch-scheduled and live on the Assessments page, not in the library.
     const baseWhereClauses = [
@@ -189,12 +196,15 @@ export async function getLibraryItems(
       .limit(pageSize)
       .offset(offset);
 
-    // 8. Fetch Available Topics across the student's authorized scope
+    // 8. Fetch Available Topics across the student's authorized scope (within the open category, if any)
     const topicAuthClauses = [
       eq(contentItems.isPublished, true),
       ne(contentItems.contentType, 'external_test'),
       or(...entitlementConditions)!
     ];
+    if (contentTypeFilter && contentTypeFilter !== 'all') {
+      topicAuthClauses.push(eq(contentItems.contentType, contentTypeFilter));
+    }
 
     const topicRows = await db
       .select({
@@ -247,5 +257,52 @@ export async function getLibraryItems(
   } catch (error) {
     console.error('[Library] Error retrieving accessible library items:', error);
     return emptyResult;
+  }
+}
+
+export interface LibraryCategorySummary {
+  contentType: ContentType;
+  itemCount: number;
+  topicCount: number;
+}
+
+/**
+ * Per-content-type totals for the My Library category hub, scoped to the same
+ * entitlement rules as getLibraryItems. Types with no accessible items are omitted.
+ */
+export async function getLibraryCategorySummaries(options: {
+  enrolledProgramIds: number[];
+  enrolledBatchIds: string[];
+}): Promise<LibraryCategorySummary[]> {
+  const { enrolledProgramIds, enrolledBatchIds } = options;
+
+  if (!process.env.POSTGRES_URL) return [];
+  if (enrolledProgramIds.length === 0 && enrolledBatchIds.length === 0) return [];
+
+  try {
+    const rows = await db
+      .select({
+        contentType: contentItems.contentType,
+        itemCount: sql<number>`count(*)::int`,
+        topicCount: sql<number>`count(DISTINCT coalesce(nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', '')))::int`
+      })
+      .from(contentItems)
+      .where(
+        and(
+          eq(contentItems.isPublished, true),
+          ne(contentItems.contentType, 'external_test'),
+          or(...buildEntitlementConditions(enrolledProgramIds, enrolledBatchIds))!
+        )
+      )
+      .groupBy(contentItems.contentType);
+
+    return rows.map((r) => ({
+      contentType: r.contentType as ContentType,
+      itemCount: Number(r.itemCount) || 0,
+      topicCount: Number(r.topicCount) || 0
+    }));
+  } catch (error) {
+    console.error('[Library] Error retrieving library category summaries:', error);
+    return [];
   }
 }
