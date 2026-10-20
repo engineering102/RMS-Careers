@@ -29,11 +29,12 @@ export default async function DashboardLayout({
 
   if (context.isActive && context.student?.userId) {
     try {
-      // Turn new reviews, due-soon quizzes and streak milestones into notifications before reading them.
+      // Turn new reviews, deadlines, published content and streak milestones into notifications before reading them.
       await syncDerivedNotifications({
         studentId: context.student.id,
         userId: context.student.userId,
-        batchIds: context.activeBatches.map((b) => b.batchId)
+        batchIds: context.activeBatches.map((b) => b.batchId),
+        programs: context.enrollments.map((e) => ({ programId: e.programId, programName: e.programName }))
       });
     } catch (err) {
       console.error('[DashboardLayout] Failed to sync derived notifications:', err);

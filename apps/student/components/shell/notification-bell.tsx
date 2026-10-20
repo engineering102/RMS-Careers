@@ -12,7 +12,8 @@ import {
   Sparkles,
   ExternalLink,
   Check,
-  X
+  X,
+  BookOpen
 } from 'lucide-react';
 import {
   markNotificationAsReadAction,
@@ -103,6 +104,8 @@ export function NotificationBell({
         return <Award className="h-4 w-4 text-purple-400" />;
       case 'STUDENT_ACTIVATED':
         return <Sparkles className="h-4 w-4 text-primary" />;
+      case 'CONTENT_PUBLISHED':
+        return <BookOpen className="h-4 w-4 text-info" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
@@ -113,7 +116,12 @@ export function NotificationBell({
       {/* Bell Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          // The bell lives in the layout, which client navigation does not re-render: refresh on open so
+          // notifications created since the last full render (new content, deadlines, reviews) show up.
+          if (!isOpen) router.refresh();
+          setIsOpen((prev) => !prev);
+        }}
         className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground/80 hover:bg-secondary hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 focus:outline-none focus:ring-2 focus:ring-ring/40"
         aria-label="Open notifications"
         aria-expanded={isOpen}

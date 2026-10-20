@@ -207,6 +207,47 @@ describe('Slice 17 — Notification Center & Domain Events', () => {
       expect(mockNotifications[0].body).not.toContain('undefined');
     });
 
+    it('words a project deadline as a project, not a formal assessment', async () => {
+      await inAppNotificationConsumer.handle({
+        type: 'ASSESSMENT_DUE_SOON',
+        studentId: TEST_STUDENT_ID,
+        userId: TEST_USER_ID,
+        quizTitle: 'URL Shortener',
+        contentType: 'project',
+        dueAt: new Date('2026-10-21T08:00:00Z')
+      });
+      expect(mockNotifications[0].title).toBe('Project Due Soon: URL Shortener');
+      expect(mockNotifications[0].body).toContain('Your project is due by');
+    });
+
+    it('creates CONTENT_PUBLISHED notifications for one item and for a grouped batch update', async () => {
+      await inAppNotificationConsumer.handle({
+        type: 'CONTENT_PUBLISHED',
+        studentId: TEST_STUDENT_ID,
+        userId: TEST_USER_ID,
+        scopeName: 'CSE 2026',
+        itemCount: 1,
+        itemTitle: 'Hash Maps',
+        contentType: 'lecture',
+        actionUrl: '/content/abc?batchId=b1'
+      });
+      await inAppNotificationConsumer.handle({
+        type: 'CONTENT_PUBLISHED',
+        studentId: TEST_STUDENT_ID,
+        userId: TEST_USER_ID,
+        scopeName: 'CSE 2026',
+        itemCount: 5,
+        itemTitle: 'Tries'
+      });
+
+      expect(mockNotifications[0].title).toBe('New in CSE 2026: Hash Maps');
+      expect(mockNotifications[0].body).toBe('Lecture "Hash Maps" is now available.');
+      expect(mockNotifications[0].actionUrl).toBe('/content/abc?batchId=b1');
+      expect(mockNotifications[1].title).toBe('5 new items in CSE 2026');
+      expect(mockNotifications[1].body).toContain('"Tries"');
+      expect(mockNotifications[1].actionUrl).toBe('/batches');
+    });
+
     it('creates in-app notification when ASSESSMENT_DUE_SOON is dispatched', async () => {
       const dueAt = new Date('2026-10-15T18:30:00Z');
       const result = await inAppNotificationConsumer.handle({

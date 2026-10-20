@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { StudentDeadlineItem, DeadlineContentType } from '@/lib/db/queries/overview';
 import { formatDate, formatTime } from '@/lib/format/datetime';
-import { buildDsaHref } from '@/lib/dsa/sheet-view';
+import { curriculumItemHref } from '@/lib/content/content-href';
 
 interface DeadlinesCardProps {
   deadlines: StudentDeadlineItem[];
@@ -88,19 +88,7 @@ export function formatRelativeDeadline(dueAtDate: Date) {
 }
 
 export function getDeadlineHref(item: StudentDeadlineItem): string {
-  const batchParam = `batchId=${encodeURIComponent(item.batchId)}`;
-  switch (item.contentType) {
-    case 'dsa_sheet':
-      return buildDsaHref(item.slug, item.batchId);
-    case 'quiz':
-      return `/assessments?${batchParam}`;
-    case 'external_test':
-      return '/assessments#external-tests';
-    case 'lecture':
-    case 'project':
-    default:
-      return `/content/${encodeURIComponent(item.contentItemId)}?${batchParam}`;
-  }
+  return curriculumItemHref(item);
 }
 
 export function DeadlinesCard({ deadlines }: DeadlinesCardProps) {

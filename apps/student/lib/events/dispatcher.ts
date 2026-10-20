@@ -24,6 +24,26 @@ const REVIEW_STATUS_LABELS: Record<string, string> = {
   resubmission_requested: 'Resubmission requested'
 };
 
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  lecture: 'Lecture',
+  notes: 'Notes',
+  dsa_sheet: 'DSA sheet',
+  quiz: 'Quiz',
+  project: 'Project',
+  resource: 'Resource',
+  external_test: 'External test'
+};
+
+function contentTypeLabel(contentType?: string): string {
+  return (contentType && CONTENT_TYPE_LABELS[contentType]) || 'Content';
+}
+
+/** "Assessment" for quizzes (the original wording), otherwise the item's own kind. */
+function dueItemLabel(contentType?: string): string {
+  if (!contentType || contentType === 'quiz') return 'Assessment';
+  return contentTypeLabel(contentType);
+}
+
 /** "Approved (Score: 80)" / "Resubmission requested"; score is optional on a review. */
 function describeReview(status: string, score?: number): string {
   const label = REVIEW_STATUS_LABELS[status] ?? status;
@@ -95,8 +115,12 @@ export const inAppNotificationConsumer: DomainEventConsumer = {
         break;
 
       case 'ASSESSMENT_DUE_SOON':
-        title = `Assessment Due Soon: ${event.quizTitle}`;
-        body = `Your formal assessment is due by ${new Date(event.dueAt).toLocaleString('en-IN', {
+        title = `${dueItemLabel(event.contentType)} Due Soon: ${event.quizTitle}`;
+        body = `${
+          !event.contentType || event.contentType === 'quiz'
+            ? 'Your formal assessment'
+            : `Your ${contentTypeLabel(event.contentType).toLowerCase()}`
+        } is due by ${new Date(event.dueAt).toLocaleString('en-IN', {
           timeZone: 'Asia/Kolkata',
           dateStyle: 'medium',
           timeStyle: 'short'
@@ -109,6 +133,17 @@ export const inAppNotificationConsumer: DomainEventConsumer = {
         body = event.batchName
           ? `A new learning milestone has been unlocked in batch "${event.batchName}".`
           : `A new milestone has been unlocked in your learning pathway.`;
+        actionUrl = event.actionUrl || '/batches';
+        break;
+
+      case 'CONTENT_PUBLISHED':
+        if (event.itemCount > 1) {
+          title = `${event.itemCount} new items in ${event.scopeName}`;
+          body = `New learning content is available, including "${event.itemTitle}".`;
+        } else {
+          title = `New in ${event.scopeName}: ${event.itemTitle}`;
+          body = `${contentTypeLabel(event.contentType)} "${event.itemTitle}" is now available.`;
+        }
         actionUrl = event.actionUrl || '/batches';
         break;
 
