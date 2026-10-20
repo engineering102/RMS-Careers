@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getPublicPrograms } from '@/lib/db/queries/programs';
 import { getAllPublicSheets } from '@/lib/data/dsa-sheets';
+import { legalPolicies } from '@/lib/data/legal-content';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.rms-careers.com';
@@ -55,6 +56,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7
   }));
 
+  const legalRoutes: MetadataRoute.Sitemap = legalPolicies.map((policy) => ({
+    url: `${baseUrl}/legal/${policy.slug}`,
+    lastModified: currentDate,
+    changeFrequency: 'yearly',
+    priority: 0.3
+  }));
+
   // Dynamic public programs from database
   let programRoutes: MetadataRoute.Sitemap = [];
   try {
@@ -69,5 +77,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Failed to fetch public programs:', err);
   }
 
-  return [...staticRoutes, ...sheetRoutes, ...programRoutes];
+  return [...staticRoutes, ...sheetRoutes, ...legalRoutes, ...programRoutes];
 }

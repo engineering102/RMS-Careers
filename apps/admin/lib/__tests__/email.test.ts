@@ -109,7 +109,7 @@ describe('Enrollment Confirmation Email Template — renderEnrollmentConfirmatio
     expect(text).toContain('Hello Aarav Patel,');
     expect(text).toContain('Full Stack Web Development');
     expect(text).toContain('FSWD-2026');
-    expect(text).toContain('RMS CAREERS — Rising Minds Solutions');
+    expect(text).toContain('RMS CAREERS — Rising Mind Solutions');
     expect(text).toContain('This is an automated email. Please do not reply directly to this message.');
   });
 

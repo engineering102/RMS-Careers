@@ -1,6 +1,6 @@
 # RMS Careers Monorepo
 
-RMS Careers (Rising Minds Solutions) is an institutional career-readiness and placement preparation platform.
+RMS Careers (Rising Mind Solutions) is an institutional career-readiness and placement preparation platform.
 
 This repository is structured as a `pnpm` workspace monorepo.
 

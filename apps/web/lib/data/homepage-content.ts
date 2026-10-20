@@ -618,7 +618,7 @@ export const founderContent = {
   ],
   signature: {
     name: 'Academic & Technical Leadership',
-    title: 'RMS Careers (Rising Minds Solutions)',
+    title: 'RMS Careers (Rising Mind Solutions)',
     location: 'Hyderabad, India'
   }
 };
