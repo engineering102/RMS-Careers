@@ -17,6 +17,19 @@ export interface DomainEventConsumer {
   handle: (event: DomainEvent) => Promise<unknown>;
 }
 
+const REVIEW_STATUS_LABELS: Record<string, string> = {
+  submitted: 'Submitted',
+  under_review: 'Under review',
+  approved: 'Approved',
+  resubmission_requested: 'Resubmission requested'
+};
+
+/** "Approved (Score: 80)" / "Resubmission requested"; score is optional on a review. */
+function describeReview(status: string, score?: number): string {
+  const label = REVIEW_STATUS_LABELS[status] ?? status;
+  return typeof score === 'number' ? `${label} (Score: ${score})` : label;
+}
+
 /**
  * Resolves userId and email for a given studentId if not already present on the event payload.
  */
@@ -75,7 +88,7 @@ export const inAppNotificationConsumer: DomainEventConsumer = {
 
       case 'PROJECT_REVIEWED':
         title = `Project Review: ${event.assignmentTitle}`;
-        body = `Your project submission has been reviewed with status "${event.status}" (Score: ${event.score}).${
+        body = `Your project submission has been reviewed: ${describeReview(event.status, event.score)}.${
           event.tutorFeedback ? ` Feedback: ${event.tutorFeedback}` : ''
         }`;
         actionUrl = event.actionUrl || '/assessments';
@@ -179,7 +192,7 @@ export const emailNotificationConsumer: DomainEventConsumer = {
       textContent = 'Your student account is now fully active. Log in to start learning at https://student.rms-careers.com';
     } else if (event.type === 'PROJECT_REVIEWED') {
       subject = `Project Feedback: ${event.assignmentTitle}`;
-      textContent = `Your submission has been reviewed. Status: ${event.status}, Score: ${event.score}.\n\nFeedback: ${
+      textContent = `Your submission has been reviewed: ${describeReview(event.status, event.score)}.\n\nFeedback: ${
         event.tutorFeedback || 'None'
       }\n\nView details: https://student.rms-careers.com/assessments`;
     } else if (event.type === 'ASSESSMENT_DUE_SOON') {

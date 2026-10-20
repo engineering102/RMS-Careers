@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentOverview } from '@/lib/db/queries/overview';
-import { getStudentActivityLedger } from '@/lib/db/queries/activities';
 import { getResumeLearningTarget } from '@/lib/services/resume-learning';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { ResumeLearningCard } from '@/components/dashboard/resume-learning-card';
@@ -9,7 +8,6 @@ import { XpCard } from '@/components/overview/xp-card';
 import { StreakCard } from '@/components/overview/streak-card';
 import { DeadlinesCard } from '@/components/overview/deadlines-card';
 import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
-import { ActivityLedger } from '@/components/overview/activity-ledger';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { Building2, Calendar, BookOpen } from 'lucide-react';
 import { formatDate } from '@/lib/format/datetime';
@@ -46,10 +44,9 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
   const activeBatchIds = context.activeBatches.map((b) => b.batchId);
 
-  // Fetch server-authoritative overview data, activity ledger, and resume target
-  const [overviewData, activityLedger, resumeTarget] = await Promise.all([
+  // Fetch server-authoritative overview data and resume target
+  const [overviewData, resumeTarget] = await Promise.all([
     getStudentOverview(student.id, activeBatchIds),
-    getStudentActivityLedger(student.id, { limit: 10 }),
     getResumeLearningTarget(student.id)
   ]);
 
@@ -157,15 +154,6 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
             </article>
           ))}
         </div>
-      </section>
-
-      {/* 5. Chronological Activity Ledger & Streak Log (Slice 15) */}
-      <section>
-        <ActivityLedger
-          activities={activityLedger.activities}
-          totalCount={activityLedger.totalCount}
-          streakDetails={activityLedger.streakDetails}
-        />
       </section>
     </div>
   );

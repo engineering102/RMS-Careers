@@ -115,7 +115,7 @@ export async function activateStudentAccount(rawToken: string, password: string)
     const passwordHash = await hashPassword(password);
     const now = new Date();
 
-    return await dbTx.transaction(async (tx) => {
+    const outcome = await dbTx.transaction(async (tx) => {
       const consumed = await tx
         .update(accountTokens)
         .set({ consumedAt: now })
@@ -131,7 +131,7 @@ export async function activateStudentAccount(rawToken: string, password: string)
 
       const userId = consumed[0]?.userId;
       if (!userId) {
-        return { success: false, error: 'This activation link is invalid, expired, or has already been used.' };
+        return { success: false as const, error: 'This activation link is invalid, expired, or has already been used.' };
       }
 
       const [user] = await tx.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -147,8 +147,24 @@ export async function activateStudentAccount(rawToken: string, password: string)
         .set({ passwordHash, status: 'active', emailVerifiedAt: now, updatedAt: now })
         .where(eq(users.id, userId));
 
-      return { success: true };
+      return { success: true as const, userId, studentId: student.id, email: user.email };
     });
+
+    if (!outcome.success) return outcome;
+
+    // Post-commit and best-effort: the account is active either way; the welcome notification/email is a bonus.
+    try {
+      await dispatchDomainEvent({
+        type: 'STUDENT_ACTIVATED',
+        userId: outcome.userId,
+        studentId: outcome.studentId,
+        email: outcome.email
+      });
+    } catch (dispatchErr) {
+      console.error('[Activation] Welcome dispatch error:', dispatchErr instanceof Error ? dispatchErr.message : 'unknown');
+    }
+
+    return { success: true };
   } catch {
     return { success: false, error: 'This activation link is invalid or unavailable.' };
   }

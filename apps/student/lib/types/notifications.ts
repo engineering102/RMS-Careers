@@ -27,7 +27,8 @@ export type DomainEvent =
       userId?: string;
       assignmentTitle: string;
       status: 'submitted' | 'under_review' | 'approved' | 'resubmission_requested';
-      score: number;
+      /** Absent when the tutor reviewed without scoring. */
+      score?: number;
       tutorFeedback?: string;
       actionUrl?: string;
     }

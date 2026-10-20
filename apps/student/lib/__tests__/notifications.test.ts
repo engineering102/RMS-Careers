@@ -188,9 +188,23 @@ describe('Slice 17 — Notification Center & Domain Events', () => {
       expect(result).toBeDefined();
       expect(mockNotifications.length).toBe(1);
       expect(mockNotifications[0].title).toBe('Project Review: Distributed Cache in Go');
-      expect(mockNotifications[0].body).toContain('approved');
+      expect(mockNotifications[0].body).toContain('Approved (Score: 95)');
       expect(mockNotifications[0].body).toContain('95');
       expect(mockNotifications[0].body).toContain('Superb architecture!');
+    });
+
+    it('describes an unscored resubmission request without a bogus score', async () => {
+      await inAppNotificationConsumer.handle({
+        type: 'PROJECT_REVIEWED',
+        studentId: TEST_STUDENT_ID,
+        userId: TEST_USER_ID,
+        assignmentTitle: 'Distributed Cache in Go',
+        status: 'resubmission_requested'
+      });
+
+      expect(mockNotifications[0].body).toContain('Resubmission requested');
+      expect(mockNotifications[0].body).not.toContain('Score');
+      expect(mockNotifications[0].body).not.toContain('undefined');
     });
 
     it('creates in-app notification when ASSESSMENT_DUE_SOON is dispatched', async () => {

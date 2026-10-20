@@ -54,33 +54,3 @@ export interface RecordActivityResult {
   totalXp: number;
   currentLevel: number;
 }
-
-export interface LearningActivityRecord {
-  id: number;
-  studentId: number;
-  batchId: string | null;
-  batchName: string | null;
-  activityType: ActivityType;
-  referenceId: string;
-  title: string;
-  xpAwarded: number;
-  activityDateIst: string; // 'YYYY-MM-DD'
-  createdAt: Date;
-}
-
-export interface StudentStreakDetails {
-  currentStreak: number;
-  longestStreak: number;
-  lastActivityDateIst: string | null;
-  isActiveToday: boolean;
-  isAtRisk: boolean;
-  totalXp: number;
-  currentLevel: number;
-}
-
-export interface ActivityLedgerData {
-  activities: LearningActivityRecord[];
-  totalCount: number;
-  totalXpEarned: number;
-  streakDetails: StudentStreakDetails;
-}
