@@ -36,7 +36,10 @@ export type DomainEvent =
       type: 'ASSESSMENT_DUE_SOON';
       studentId: number;
       userId?: string;
+      /** Title of the item that is due (a quiz, project or external test). */
       quizTitle: string;
+      /** Content type of the due item; absent means a quiz. */
+      contentType?: string;
       dueAt: Date;
       actionUrl?: string;
     }
@@ -46,6 +49,20 @@ export type DomainEvent =
       userId?: string;
       milestoneTitle: string;
       batchName?: string;
+      actionUrl?: string;
+    }
+  | {
+      /** New content became available to the student: one item, or several grouped per batch/program. */
+      type: 'CONTENT_PUBLISHED';
+      studentId: number;
+      userId?: string;
+      /** Batch or program name the content was published to. */
+      scopeName: string;
+      itemCount: number;
+      /** Title of the item (or of the newest item, when grouped). */
+      itemTitle: string;
+      /** Content type of the single item; ignored when grouped. */
+      contentType?: string;
       actionUrl?: string;
     }
   | {

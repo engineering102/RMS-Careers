@@ -12,7 +12,8 @@ import {
   Check,
   CheckCheck,
   ExternalLink,
-  Filter
+  Filter,
+  BookOpen
 } from 'lucide-react';
 import {
   markNotificationAsReadAction,
@@ -86,6 +87,8 @@ export function NotificationsView({
         return <Award className="h-5 w-5 text-purple-400" />;
       case 'STUDENT_ACTIVATED':
         return <Sparkles className="h-5 w-5 text-primary" />;
+      case 'CONTENT_PUBLISHED':
+        return <BookOpen className="h-5 w-5 text-info" />;
       default:
         return <Bell className="h-5 w-5 text-muted-foreground" />;
     }
