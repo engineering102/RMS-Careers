@@ -38,6 +38,17 @@ export default function OverviewLoading() {
           </div>
         </div>
       </div>
+
+      {/* Activity Insights Skeleton */}
+      <div className="h-56 rounded-2xl border border-border bg-card/50 p-6 grid gap-6 md:grid-cols-2">
+        {[1, 2].map((i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-4 w-28 rounded bg-secondary" />
+            <div className="h-7 w-24 rounded bg-secondary" />
+            <div className="h-24 rounded-xl bg-background/60" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
