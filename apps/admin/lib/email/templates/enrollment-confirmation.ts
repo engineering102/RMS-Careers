@@ -1,7 +1,7 @@
 /**
  * RMS Careers — Enrollment Confirmation Email Template
  *
- * Brand identity: RMS Careers (Rising Minds Solutions)
+ * Brand identity: RMS Careers (Rising Mind Solutions)
  * Brand colors: Navy #1a1a6e | Blue #2563eb | Purple #7c3aed
  *
  * Logo delivery:
@@ -105,7 +105,7 @@ export function renderEnrollmentConfirmationEmail(data: EnrollmentConfirmationEm
                     RMS<span style="color:#93c5fd;">CAREERS</span>
                   </div>
                   <div style="color:#bfdbfe;font-size:12px;letter-spacing:0.12em;margin-top:4px;font-weight:400;">
-                    RISING MINDS SOLUTIONS
+                    RISING MIND SOLUTIONS
                   </div>`
               }
             </td>
@@ -222,7 +222,7 @@ export function renderEnrollmentConfirmationEmail(data: EnrollmentConfirmationEm
               <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">
                 Warm regards,<br>
                 <strong style="color:#0f172a;">RMS Careers Team</strong><br>
-                <span style="color:#94a3b8;font-size:13px;">Rising Minds Solutions</span>
+                <span style="color:#94a3b8;font-size:13px;">Rising Mind Solutions</span>
               </p>
 
             </td>
@@ -235,7 +235,7 @@ export function renderEnrollmentConfirmationEmail(data: EnrollmentConfirmationEm
               <p style="margin:0 0 12px 0;font-size:12px;color:#94a3b8;">Career-focused learning and training</p>
               <p style="margin:0;font-size:11px;color:#cbd5e1;line-height:1.5;">
                 This is an automated email. Please do not reply directly to this message.<br>
-                © ${new Date().getFullYear()} RMS Careers — Rising Minds Solutions. All rights reserved.
+                © ${new Date().getFullYear()} RMS Careers — Rising Mind Solutions. All rights reserved.
               </p>
             </td>
           </tr>
@@ -253,7 +253,7 @@ export function renderEnrollmentConfirmationEmail(data: EnrollmentConfirmationEm
 
   // ─── Plain-text fallback ──────────────────────────────────────────────────
   const text = `
-RMS CAREERS — Rising Minds Solutions
+RMS CAREERS — Rising Mind Solutions
 Registration Received
 
 Hello ${data.studentName},
@@ -274,11 +274,11 @@ Our team will review your enrollment and reach out if any further information is
 
 Warm regards,
 RMS Careers Team
-Rising Minds Solutions
+Rising Mind Solutions
 
 ---
 This is an automated email. Please do not reply directly to this message.
-© ${new Date().getFullYear()} RMS Careers — Rising Minds Solutions
+© ${new Date().getFullYear()} RMS Careers — Rising Mind Solutions
 `.trim();
 
   return { subject, html, text };

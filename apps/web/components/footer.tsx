@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShieldCheck, BookOpen, Layers, Code2, ExternalLink, Mail, ArrowUpRight, Building2, GraduationCap, Users2, Shield } from 'lucide-react';
+import { legalPolicies } from '@/lib/data/legal-content';
 
 export function Footer() {
   return (
@@ -152,47 +153,17 @@ export function Footer() {
               Legal
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li>
-                <span className="text-muted-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-                  Privacy Policy
-                </span>
-              </li>
-              <li>
-                <span className="text-muted-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-                  Terms & Conditions
-                </span>
-              </li>
-              <li>
-                <span className="text-muted-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-                  Refund & Cancellation Policy
-                </span>
-              </li>
-              <li>
-                <span className="text-muted-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-                  Cookie Policy
-                </span>
-              </li>
-              <li>
-                <span className="text-muted-foreground/80 hover:text-foreground transition-colors cursor-pointer">
-                  Disclaimer
-                </span>
-              </li>
+              {legalPolicies.map((policy) => (
+                <li key={policy.slug}>
+                  <Link
+                    href={`/legal/${policy.slug}`}
+                    className="text-muted-foreground/80 hover:text-foreground transition-colors"
+                  >
+                    {policy.title}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
-        </div>
-
-        {/* Platform Integrity & Canonical Domain Notice */}
-        <div className="border-t border-border mt-10 pt-6">
-          <div className="rounded-xl border border-border/70 bg-muted/30 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-muted-foreground">
-            <div className="space-y-1">
-              <span className="font-semibold text-foreground">Canonical Domain & Architectural Invariant:</span>
-              <p className="leading-relaxed">
-                RMS Careers maintains complete surface separation across the public corporate website and authenticated portals. Public starter DSA practice operates purely in client-side storage without authentication or database persistence.
-              </p>
-            </div>
-            <div className="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-background border border-border shrink-0">
-              www.rms-careers.com
-            </div>
           </div>
         </div>
       </div>

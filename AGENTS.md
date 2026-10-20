@@ -6,7 +6,7 @@ This document is the authoritative engineering instruction guide for **Codex** w
 
 ## 1. Project Overview
 
-**RMS Careers** (Rising Minds Solutions) is an enterprise-grade technical career-readiness, curriculum delivery, and campus placement platform engineered for B.Tech engineering students across disciplines and academic years.
+**RMS Careers** (Rising Mind Solutions) is an enterprise-grade technical career-readiness, curriculum delivery, and campus placement platform engineered for B.Tech engineering students across disciplines and academic years.
 
 The institutional business model is college-led (B2B partnerships / MoUs). The platform bridges academic theory and industry engineering hiring standards through pattern-based problem solving, production-grade project development, and structured placement preparation.
 

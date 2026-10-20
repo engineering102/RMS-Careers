@@ -49,6 +49,7 @@ describe('SEO, Sitemap & Robots Validation (@rms/web)', () => {
       expect(urls).toContain('https://www.rms-careers.com/learn');
       expect(urls).toContain('https://www.rms-careers.com/learn/dsa');
       expect(urls).toContain('https://www.rms-careers.com/login');
+      expect(urls).toContain('https://www.rms-careers.com/legal/privacy-policy');
 
       // Dynamic public sheets
       expect(urls).toContain('https://www.rms-careers.com/learn/dsa/arrays-and-hashing');
