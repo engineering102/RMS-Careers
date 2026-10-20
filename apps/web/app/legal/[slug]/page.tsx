@@ -13,12 +13,8 @@ import {
   type LegalBlock
 } from '@/lib/data/legal-content';
 
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return legalPolicies.map((policy) => ({ slug: policy.slug }));
-}
-
+// Rendered on demand (unknown slugs hit notFound()). Prerendering with `dynamicParams = false` 404s on
+// Cloudflare: OpenNext has no populated incremental cache, so every prerendered path is a cache miss.
 export async function generateMetadata({
   params
 }: {
