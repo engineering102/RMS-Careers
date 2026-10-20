@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentNotifications } from '@/lib/db/queries/notifications';
+import { syncDerivedNotifications } from '@/lib/services/derived-notifications';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import type { NotificationItem } from '@/lib/types/notifications';
@@ -27,6 +28,17 @@ export default async function DashboardLayout({
   let initialUnreadCount = 0;
 
   if (context.isActive && context.student?.userId) {
+    try {
+      // Turn new reviews, due-soon quizzes and streak milestones into notifications before reading them.
+      await syncDerivedNotifications({
+        studentId: context.student.id,
+        userId: context.student.userId,
+        batchIds: context.activeBatches.map((b) => b.batchId)
+      });
+    } catch (err) {
+      console.error('[DashboardLayout] Failed to sync derived notifications:', err);
+    }
+
     try {
       const summary = await getStudentNotifications(context.student.userId, { limit: 5 });
       initialNotifications = summary.notifications;

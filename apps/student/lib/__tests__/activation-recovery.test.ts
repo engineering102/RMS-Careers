@@ -14,6 +14,11 @@ import { hashToken, hashPassword, verifyPassword } from '@rms/auth';
 
 vi.mock('server-only', () => ({}));
 
+const dispatchDomainEventMock = vi.fn(async (_event: unknown) => [] as unknown[]);
+vi.mock('@/lib/events/dispatcher', () => ({
+  dispatchDomainEvent: (event: unknown) => dispatchDomainEventMock(event)
+}));
+
 // In-memory test store simulating PostgreSQL tables for @rms/db
 interface UserRow {
   id: string;
@@ -384,6 +389,33 @@ describe('Slice 4: Student Account Activation Pipeline', () => {
     expect(mockUsers[0].status).toBe('active');
     expect(mockUsers[0].passwordHash).not.toBeNull();
     expect(await verifyPassword('ValidPassword123!', mockUsers[0].passwordHash!)).toBe(true);
+  });
+
+  it('dispatches STUDENT_ACTIVATED after a successful activation so the welcome notification is created', async () => {
+    dispatchDomainEventMock.mockClear();
+    const result = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
+    expect(result.success).toBe(true);
+    expect(dispatchDomainEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'STUDENT_ACTIVATED',
+        userId: mockUsers[0].id,
+        studentId: mockStudents[0].id,
+        email: mockUsers[0].email
+      })
+    );
+  });
+
+  it('still activates when the welcome dispatch fails, and never dispatches for a failed activation', async () => {
+    dispatchDomainEventMock.mockClear();
+    dispatchDomainEventMock.mockRejectedValueOnce(new Error('consumer down'));
+    const ok = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
+    expect(ok.success).toBe(true);
+    expect(mockUsers[0].status).toBe('active');
+
+    dispatchDomainEventMock.mockClear();
+    const replay = await activateStudentAccount(rawActivationToken, 'ValidPassword123!');
+    expect(replay.success).toBe(false);
+    expect(dispatchDomainEventMock).not.toHaveBeenCalled();
   });
 
   it('rejects activation password shorter than 12 characters', async () => {

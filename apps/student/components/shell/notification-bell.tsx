@@ -58,13 +58,17 @@ export function NotificationBell({
   }, [isOpen]);
 
   const handleMarkAsRead = async (id: string, actionUrl?: string | null) => {
-    // Optimistic UI update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    // Only an unread item changes the count; re-opening a read one just navigates.
+    const wasUnread = notifications.some((n) => n.id === id && !n.isRead);
+    if (wasUnread) {
+      // Optimistic UI update
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    await markNotificationAsReadAction(id);
+      await markNotificationAsReadAction(id);
+    }
 
     if (actionUrl) {
       setIsOpen(false);
