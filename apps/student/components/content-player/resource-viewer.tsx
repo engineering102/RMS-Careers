@@ -3,6 +3,8 @@ import { FileText, ExternalLink, Download, Bookmark, FileCode, CheckCircle2 } fr
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { ResourceMetadata } from '@/lib/types/content';
+import { parseDriveUrl } from '@/lib/content/drive-url';
+import { DriveDocumentViewer } from './drive-document-viewer';
 
 interface ResourceViewerProps {
   title: string;
@@ -18,11 +20,19 @@ export function ResourceViewer({
   const documentUrl = resourceMetadata?.documentUrl;
   const notes = resourceMetadata?.notes;
   const isPdf = documentUrl?.toLowerCase().endsWith('.pdf');
+  const driveLink = parseDriveUrl(documentUrl);
 
   return (
     <div className="space-y-6">
-      {/* Resource Download / Access Card */}
-      {documentUrl ? (
+      {/* Drive / Docs links open in the in-page viewer; anything else keeps the access card */}
+      {documentUrl && driveLink ? (
+        <DriveDocumentViewer
+          title={title}
+          kind={driveLink.kind}
+          embedUrl={driveLink.embedUrl}
+          sourceUrl={documentUrl}
+        />
+      ) : documentUrl ? (
         <Card className="border-border bg-card/60 overflow-hidden">
           <CardContent className="p-5 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
