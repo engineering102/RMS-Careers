@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentOverview } from '@/lib/db/queries/overview';
+import { getStudentActivityInsights } from '@/lib/db/queries/activity-insights';
 import { getResumeLearningTarget } from '@/lib/services/resume-learning';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { ResumeLearningCard } from '@/components/dashboard/resume-learning-card';
@@ -8,6 +9,7 @@ import { XpCard } from '@/components/overview/xp-card';
 import { StreakCard } from '@/components/overview/streak-card';
 import { DeadlinesCard } from '@/components/overview/deadlines-card';
 import { ActivityHeatmap } from '@/components/overview/activity-heatmap';
+import { ActivityInsightsCard } from '@/components/overview/activity-insights-card';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { Building2, Calendar, BookOpen } from 'lucide-react';
 import { formatDate } from '@/lib/format/datetime';
@@ -44,9 +46,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
 
   const activeBatchIds = context.activeBatches.map((b) => b.batchId);
 
-  // Fetch server-authoritative overview data and resume target
-  const [overviewData, resumeTarget] = await Promise.all([
+  // Fetch server-authoritative overview data, activity insights and resume target
+  const [overviewData, activityInsights, resumeTarget] = await Promise.all([
     getStudentOverview(student.id, activeBatchIds),
+    getStudentActivityInsights(student.id),
     getResumeLearningTarget(student.id)
   ]);
 
@@ -112,7 +115,10 @@ export default async function OverviewPage({ searchParams }: OverviewPageProps) 
         </div>
       </section>
 
-      {/* 4. Active Enrollments Overview */}
+      {/* 4. Weekly XP trend and XP mix (fixed size, replaces the old activity log) */}
+      <ActivityInsightsCard insights={activityInsights} />
+
+      {/* 5. Active Enrollments Overview */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
