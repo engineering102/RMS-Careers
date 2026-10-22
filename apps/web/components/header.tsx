@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Code2
 } from 'lucide-react';
+import { TUTOR_PORTAL_URL, isPortalVisible } from '@/lib/data/portals';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,6 +65,7 @@ export function Header() {
 
   const portalOptions = [
     {
+      id: 'student' as const,
       name: 'Student Portal',
       description: 'Enrolled cohort coursework, evaluations & streaks',
       href: 'https://student.rms-careers.com',
@@ -71,20 +73,22 @@ export function Header() {
       badge: 'Learner'
     },
     {
+      id: 'tutor' as const,
       name: 'Tutor Portal',
       description: 'Milestone reviews, code feedback & batch grading',
-      href: 'https://tutor.rms-careers.com',
+      href: TUTOR_PORTAL_URL,
       icon: Users2,
       badge: 'Mentor'
     },
     {
+      id: 'admin' as const,
       name: 'Admin Portal',
       description: 'Institution administration, batches & rosters',
       href: 'https://admin.rms-careers.com',
       icon: ShieldCheck,
       badge: 'Control Plane'
     }
-  ];
+  ].filter((portal) => isPortalVisible(portal.id));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/80 glass transition-colors" id="home">
