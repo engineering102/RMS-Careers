@@ -8,11 +8,15 @@ import {
   ExternalLink,
   ShieldCheck
 } from 'lucide-react';
+import { TUTOR_PORTAL_URL, isPortalVisible } from '@/lib/data/portals';
+
+const showTutorPortal = isPortalVisible('tutor');
 
 export const metadata: Metadata = {
   title: 'Portal Login Gateway',
-  description:
-    'Routing gateway to dedicated RMS Careers portals for Students, Tutors, and Administrators.',
+  description: showTutorPortal
+    ? 'Routing gateway to dedicated RMS Careers portals for Students, Tutors, and Administrators.'
+    : 'Routing gateway to dedicated RMS Careers portals for Students and Administrators.',
   openGraph: {
     title: 'Portal Login Gateway | RMS Careers',
     description: 'Select your role to access your dedicated RMS Careers application portal.'
@@ -37,7 +41,7 @@ export default function LoginGatewayPage() {
       </div>
 
       {/* Gateway Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${showTutorPortal ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {/* 1. Student Portal */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
           <div className="space-y-4">
@@ -72,39 +76,41 @@ export default function LoginGatewayPage() {
           </div>
         </div>
 
-        {/* 2. Tutor Portal */}
-        <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
-          <div className="space-y-4">
-            <div className="h-12 w-12 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Users2 className="h-6 w-6" />
+        {/* 2. Tutor Portal (hidden until launch, see lib/data/portals.ts) */}
+        {showTutorPortal && (
+          <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">
+            <div className="space-y-4">
+              <div className="h-12 w-12 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <Users2 className="h-6 w-6" />
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  Instructors
+                </span>
+                <h2 className="text-xl font-bold text-foreground">Tutor Portal</h2>
+              </div>
+
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Review student code submissions across assigned college batches, publish technical articles, and mentor cohort batches.
+              </p>
+
+              <div className="pt-2 text-xs font-mono text-muted-foreground">
+                {new URL(TUTOR_PORTAL_URL).host}
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Instructors
-              </span>
-              <h2 className="text-xl font-bold text-foreground">Tutor Portal</h2>
-            </div>
-
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Review student code submissions across assigned college batches, publish technical articles, and mentor cohort batches.
-            </p>
-
-            <div className="pt-2 text-xs font-mono text-muted-foreground">
-              tutor.rms-careers.com
+            <div className="pt-6 mt-6 border-t border-border">
+              <a
+                href={TUTOR_PORTAL_URL}
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-secondary text-secondary-foreground hover:bg-muted font-semibold text-sm transition-colors border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <span>Continue to Tutor</span>
+                <ExternalLink className="h-4 w-4" />
+              </a>
             </div>
           </div>
-
-          <div className="pt-6 mt-6 border-t border-border">
-            <a
-              href="https://tutor.rms-careers.com"
-              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-secondary text-secondary-foreground hover:bg-muted font-semibold text-sm transition-colors border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <span>Continue to Tutor</span>
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
+        )}
 
         {/* 3. Admin Portal */}
         <div className="flex flex-col justify-between rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm hover:shadow-md hover:border-primary/40 transition-all">

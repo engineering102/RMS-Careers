@@ -6,6 +6,8 @@
  * and institutional propositions can be replaced here without modifying component layouts.
  */
 
+import { TUTOR_PORTAL_LIVE, TUTOR_PORTAL_URL } from './portals';
+
 export interface CtaButton {
   label: string;
   href: string;
@@ -966,8 +968,9 @@ export const faqContent = {
     },
     {
       question: 'How do tutors and college administrators track student progress?',
-      answer:
-        'Our platform provides dedicated, isolated application surfaces: tutor.rms-careers.com for mentors to evaluate submissions, and admin.rms-careers.com for institutional batch administration and analytics.'
+      answer: TUTOR_PORTAL_LIVE
+        ? `Our platform provides dedicated, isolated application surfaces: ${new URL(TUTOR_PORTAL_URL).host} for mentors to evaluate submissions, and admin.rms-careers.com for institutional batch administration and analytics.`
+        : 'Our platform provides dedicated, isolated application surfaces for tutors to evaluate submissions and for institutional batch administration and analytics at admin.rms-careers.com.'
     },
     {
       question: 'What happens after an institution submits a partnership inquiry?',

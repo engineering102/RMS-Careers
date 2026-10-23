@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShieldCheck, BookOpen, Layers, Code2, ExternalLink, Mail, ArrowUpRight, Building2, GraduationCap, Users2, Shield } from 'lucide-react';
 import { legalPolicies } from '@/lib/data/legal-content';
+import { TUTOR_PORTAL_URL, isPortalVisible } from '@/lib/data/portals';
 
 export function Footer() {
   return (
@@ -93,17 +94,19 @@ export function Footer() {
                   Guest Learning
                 </Link>
               </li>
-              <li>
-                <a
-                  href="https://tutor.rms-careers.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors flex items-center justify-between group"
-                >
-                  <span>Tutor Login</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
-                </a>
-              </li>
+              {isPortalVisible('tutor') && (
+                <li>
+                  <a
+                    href={TUTOR_PORTAL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-foreground transition-colors flex items-center justify-between group"
+                  >
+                    <span>Tutor Login</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                </li>
+              )}
               <li>
                 <a
                   href="https://admin.rms-careers.com"
