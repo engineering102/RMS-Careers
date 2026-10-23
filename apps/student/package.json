@@ -9,7 +9,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "student:seed": "tsx scripts/seed-student.ts --target=development",
-    "cf:build": "node ../../scripts/check-cloudflare-build-env.mjs pre && opennextjs-cloudflare build && node ../../scripts/check-cloudflare-build-env.mjs post",
+    "cf:build": "node ../../scripts/check-cloudflare-build-env.mjs pre && opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && node ../../scripts/check-cloudflare-build-env.mjs post",
     "preview": "pnpm cf:build && opennextjs-cloudflare preview",
     "deploy": "pnpm cf:build && opennextjs-cloudflare deploy",
     "test:int": "vitest run -c vitest.int.config.ts",
