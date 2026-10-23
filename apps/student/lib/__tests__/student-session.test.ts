@@ -47,6 +47,14 @@ describe('Student authorized callback role & route enforcement', () => {
     expect(resultLibrary).toBe(false);
   });
 
+  // GHSA-8fpg-xm3f-6cx3: next-auth <= 5.0.0-beta.31 could hand the callback an error object instead of null
+  // on a server configuration error. Without a user it must still be treated as signed out.
+  it('treats an error-shaped auth object as unauthenticated', () => {
+    const errorShaped = { message: 'There was a problem with the server configuration.' };
+    expect(runAuthorized(errorShaped, '/dashboard')).toBe(false);
+    expect(runAuthorized({ user: undefined }, '/library')).toBe(false);
+  });
+
   it('allows authenticated student users to access protected routes', () => {
     const studentAuth = { user: { id: 'u1', role: 'student' } };
     const result = runAuthorized(studentAuth, '/dashboard');
