@@ -89,6 +89,8 @@ Not used by code (do not set): `NEXTAUTH_URL`, `AUTH_URL`, `AUTH_TRUST_HOST` (`t
 
 **Build-secret guard (all Cloudflare apps):** OpenNext inlines `.env`, `.env.<mode>`, `.env.local` and `.env.<mode>.local` (from the app directory **and** the monorepo root) into `.open-next/cloudflare/next-env.mjs`, which is bundled into the Worker. `scripts/check-cloudflare-build-env.mjs` is wired into each app's `cf:build` (and therefore `preview` / `deploy`): `pre` fails the build if any of those files has a non-empty value, `post` fails if `next-env.mjs` embeds any variable. It prints file names and variable names only. `.env.example`, `.dev.vars`, `.dev.vars.example` and empty-valued files are allowed. To build with a populated `.env.local`, rename it first (`mv .env.local .env.local.bak`) or use a clean checkout; `next dev`, `next build` and tests are unaffected. Never run `opennextjs-cloudflare build` directly for a deployable artifact.
 
+**Unsupported-Next override (temporary):** since 2026-10-21 OpenNext refuses to build Next.js majors older than two years, and all apps are on Next 15 (released 2024-10-21). Each `cf:build` therefore passes `--dangerouslyUseUnsupportedNextVersion`. This only skips that date check; the build is otherwise unchanged. Remove the flag as part of the Next 16 upgrade.
+
 **Preview:** run it over HTTPS (`wrangler dev --local-protocol https`). Over plain HTTP, Auth.js middleware and route handlers disagree on the cookie name (`authjs.` vs `__Secure-authjs.`) and sessions appear to drop; production is always HTTPS.
 
 **Environments**
