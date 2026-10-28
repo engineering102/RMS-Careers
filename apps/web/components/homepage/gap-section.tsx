@@ -42,7 +42,7 @@ export function GapSection() {
 
             {/* Bridge 1 */}
             <div className="lg:col-span-1 flex justify-center py-2 lg:py-0">
-              <div className="flex flex-col items-center gap-1 text-muted-foreground/60">
+              <div className="flex flex-col items-center gap-1 text-muted-foreground">
                 <span className="text-[10px] font-mono uppercase tracking-wider font-bold">Leads to</span>
                 <ArrowDown className="h-5 w-5 lg:-rotate-90 text-primary" />
               </div>
@@ -69,7 +69,7 @@ export function GapSection() {
 
             {/* Bridge 2 */}
             <div className="lg:col-span-1 flex justify-center py-2 lg:py-0">
-              <div className="flex flex-col items-center gap-1 text-muted-foreground/60">
+              <div className="flex flex-col items-center gap-1 text-muted-foreground">
                 <span className="text-[10px] font-mono uppercase tracking-wider font-bold">RMS Solves</span>
                 <ArrowDown className="h-5 w-5 lg:-rotate-90 text-emerald-500" />
               </div>

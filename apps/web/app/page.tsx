@@ -7,8 +7,6 @@ import { ClassroomExperienceSection } from '@/components/homepage/classroom-expe
 import { RmsInActionSection } from '@/components/homepage/rms-in-action-section';
 import { PartnerFormSection } from '@/components/homepage/partner-form-section';
 
-export const dynamic = 'force-dynamic';
-
 export default function HomePage() {
   return (
     <div className="flex flex-col w-full bg-gradient-hero">
