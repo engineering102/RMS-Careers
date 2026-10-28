@@ -118,40 +118,42 @@ export async function getStudentPracticeQuizzes(
 
   const quizIds = rows.map((r) => r.id);
 
-  // 3. Aggregate question count and total points per quiz
-  const questionAggs = await db
-    .select({
-      quizId: quizQuestions.quizId,
-      count: sql<number>`count(${quizQuestions.id})::int`,
-      totalPoints: sql<number>`coalesce(sum(${quizQuestions.points}), 0)::int`
-    })
-    .from(quizQuestions)
-    .where(inArray(quizQuestions.quizId, quizIds))
-    .groupBy(quizQuestions.quizId);
+  // 3–4: both depend only on the quiz ids, so they share one round-trip.
+  const [questionAggs, attemptAggs] = await Promise.all([
+    // 3. Aggregate question count and total points per quiz
+    db
+      .select({
+        quizId: quizQuestions.quizId,
+        count: sql<number>`count(${quizQuestions.id})::int`,
+        totalPoints: sql<number>`coalesce(sum(${quizQuestions.points}), 0)::int`
+      })
+      .from(quizQuestions)
+      .where(inArray(quizQuestions.quizId, quizIds))
+      .groupBy(quizQuestions.quizId),
+    // 4. Aggregate student's attempts for these quizzes
+    db
+      .select({
+        quizId: quizAttempts.quizId,
+        attemptCount: sql<number>`count(${quizAttempts.id})::int`,
+        bestScore: sql<number>`max(${quizAttempts.score})::int`,
+        bestPercentage: sql<number>`max(case when ${quizAttempts.maxScore} > 0 then (${quizAttempts.score} * 100 / ${quizAttempts.maxScore}) else 0 end)::int`,
+        hasPassed: sql<boolean>`bool_or(${quizAttempts.isPassed})`,
+        lastAttemptAt: sql<Date | null>`max(${quizAttempts.submittedAt})`
+      })
+      .from(quizAttempts)
+      .where(
+        and(
+          eq(quizAttempts.studentId, studentId),
+          inArray(quizAttempts.quizId, quizIds)
+        )
+      )
+      .groupBy(quizAttempts.quizId)
+  ]);
 
   const questionStatsMap = new Map<string, { count: number; totalPoints: number }>();
   for (const q of questionAggs) {
     questionStatsMap.set(q.quizId, { count: q.count, totalPoints: q.totalPoints });
   }
-
-  // 4. Aggregate student's attempts for these quizzes
-  const attemptAggs = await db
-    .select({
-      quizId: quizAttempts.quizId,
-      attemptCount: sql<number>`count(${quizAttempts.id})::int`,
-      bestScore: sql<number>`max(${quizAttempts.score})::int`,
-      bestPercentage: sql<number>`max(case when ${quizAttempts.maxScore} > 0 then (${quizAttempts.score} * 100 / ${quizAttempts.maxScore}) else 0 end)::int`,
-      hasPassed: sql<boolean>`bool_or(${quizAttempts.isPassed})`,
-      lastAttemptAt: sql<Date | null>`max(${quizAttempts.submittedAt})`
-    })
-    .from(quizAttempts)
-    .where(
-      and(
-        eq(quizAttempts.studentId, studentId),
-        inArray(quizAttempts.quizId, quizIds)
-      )
-    )
-    .groupBy(quizAttempts.quizId);
 
   const attemptStatsMap = new Map<
     string,
@@ -508,42 +510,44 @@ export async function getStudentFormalAssessments(
 
   const quizIds = rows.map((r) => r.id);
 
-  // 3. Question count and points aggregation
-  const questionAggs = await db
-    .select({
-      quizId: quizQuestions.quizId,
-      count: sql<number>`count(${quizQuestions.id})::int`,
-      totalPoints: sql<number>`coalesce(sum(${quizQuestions.points}), 0)::int`
-    })
-    .from(quizQuestions)
-    .where(inArray(quizQuestions.quizId, quizIds))
-    .groupBy(quizQuestions.quizId);
+  // 3–4: both depend only on the quiz ids, so they share one round-trip.
+  const [questionAggs, attempts] = await Promise.all([
+    // 3. Question count and points aggregation
+    db
+      .select({
+        quizId: quizQuestions.quizId,
+        count: sql<number>`count(${quizQuestions.id})::int`,
+        totalPoints: sql<number>`coalesce(sum(${quizQuestions.points}), 0)::int`
+      })
+      .from(quizQuestions)
+      .where(inArray(quizQuestions.quizId, quizIds))
+      .groupBy(quizQuestions.quizId),
+    // 4. Student's attempts for these formal quizzes
+    db
+      .select({
+        id: quizAttempts.id,
+        quizId: quizAttempts.quizId,
+        batchId: quizAttempts.batchId,
+        score: quizAttempts.score,
+        maxScore: quizAttempts.maxScore,
+        isPassed: quizAttempts.isPassed,
+        tabBlurCount: quizAttempts.tabBlurCount,
+        startedAt: quizAttempts.startedAt,
+        submittedAt: quizAttempts.submittedAt
+      })
+      .from(quizAttempts)
+      .where(
+        and(
+          eq(quizAttempts.studentId, studentId),
+          inArray(quizAttempts.quizId, quizIds)
+        )
+      )
+  ]);
 
   const questionStatsMap = new Map<string, { count: number; totalPoints: number }>();
   for (const q of questionAggs) {
     questionStatsMap.set(q.quizId, { count: q.count, totalPoints: q.totalPoints });
   }
-
-  // 4. Student's attempts for these formal quizzes
-  const attempts = await db
-    .select({
-      id: quizAttempts.id,
-      quizId: quizAttempts.quizId,
-      batchId: quizAttempts.batchId,
-      score: quizAttempts.score,
-      maxScore: quizAttempts.maxScore,
-      isPassed: quizAttempts.isPassed,
-      tabBlurCount: quizAttempts.tabBlurCount,
-      startedAt: quizAttempts.startedAt,
-      submittedAt: quizAttempts.submittedAt
-    })
-    .from(quizAttempts)
-    .where(
-      and(
-        eq(quizAttempts.studentId, studentId),
-        inArray(quizAttempts.quizId, quizIds)
-      )
-    );
 
   const attemptsByQuizAndBatch = new Map<string, (typeof attempts)[0]>();
   for (const a of attempts) {

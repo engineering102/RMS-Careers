@@ -48,6 +48,40 @@ export const DUE_ALERT_CONTENT_TYPES = ['quiz', 'project', 'external_test'] as c
 
 const DERIVED_TYPES = ['PROJECT_REVIEWED', 'ASSESSMENT_DUE_SOON', 'STREAK_MILESTONE', 'CONTENT_PUBLISHED'] as const;
 
+/**
+ * The dashboard layout syncs at most this often per student. The sync is idempotent (see Dedupe above), so running
+ * it on every page view only re-reads the same facts; derived notifications can now appear up to this much later.
+ */
+export const DERIVED_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+/** Bounds the throttle's memory; past this the oldest entry is forgotten (that student just syncs again). */
+export const DERIVED_SYNC_MAX_TRACKED = 5000;
+
+// Per Worker isolate (module state), not shared across isolates or deploys: a cheap filter, not a guarantee.
+const lastSyncByStudent = new Map<number, number>();
+
+/**
+ * Claims this student's sync slot: true when no sync ran in the last DERIVED_SYNC_INTERVAL_MS (and records now),
+ * false to skip. Call releaseDerivedNotificationSync when the claimed sync fails, so the next request retries.
+ */
+export function claimDerivedNotificationSync(studentId: number, nowMs: number = Date.now()): boolean {
+  const last = lastSyncByStudent.get(studentId);
+  if (last !== undefined && nowMs - last < DERIVED_SYNC_INTERVAL_MS) return false;
+
+  // Re-insert so iteration order is oldest-first, then evict from the front when over the bound.
+  lastSyncByStudent.delete(studentId);
+  lastSyncByStudent.set(studentId, nowMs);
+  while (lastSyncByStudent.size > DERIVED_SYNC_MAX_TRACKED) {
+    const oldest = lastSyncByStudent.keys().next().value;
+    if (oldest === undefined) break;
+    lastSyncByStudent.delete(oldest);
+  }
+  return true;
+}
+
+export function releaseDerivedNotificationSync(studentId: number): void {
+  lastSyncByStudent.delete(studentId);
+}
+
 export interface ReviewedSubmissionFact {
   submissionId: string;
   batchId: string;

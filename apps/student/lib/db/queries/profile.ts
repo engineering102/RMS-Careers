@@ -31,29 +31,76 @@ import type {
 export async function getStudentProfileData(studentId: number): Promise<StudentProfileData | null> {
   if (!studentId) return null;
 
-  // 1. Fetch Academic & Career info
-  const [studentRecord] = await db
-    .select({
-      id: students.id,
-      fullName: students.fullName,
-      email: students.email,
-      phone: students.phone,
-      collegeRollNumber: students.collegeRollNumber,
-      branch: students.branch,
-      year: students.year,
-      githubUrl: students.githubUrl,
-      linkedinUrl: students.linkedinUrl,
-      portfolioUrl: students.portfolioUrl,
-      targetCompanies: students.targetCompanies,
-      primaryLanguage: students.primaryLanguage,
-      createdAt: students.createdAt,
-      collegeName: colleges.name,
-      collegeCode: colleges.code
-    })
-    .from(students)
-    .leftJoin(colleges, eq(colleges.id, students.collegeId))
-    .where(eq(students.id, studentId))
-    .limit(1);
+  const last30Days = getLast30DaysIst();
+  const startDate = last30Days[0];
+  const endDate = last30Days[last30Days.length - 1];
+
+  // Every section keys off the student id alone, so all five reads share one round-trip.
+  const [[studentRecord], [statsRecord], solvedRows, categoryXpRows, recentActivities] = await Promise.all([
+    // 1. Academic & Career info
+    db
+      .select({
+        id: students.id,
+        fullName: students.fullName,
+        email: students.email,
+        phone: students.phone,
+        collegeRollNumber: students.collegeRollNumber,
+        branch: students.branch,
+        year: students.year,
+        githubUrl: students.githubUrl,
+        linkedinUrl: students.linkedinUrl,
+        portfolioUrl: students.portfolioUrl,
+        targetCompanies: students.targetCompanies,
+        primaryLanguage: students.primaryLanguage,
+        createdAt: students.createdAt,
+        collegeName: colleges.name,
+        collegeCode: colleges.code
+      })
+      .from(students)
+      .leftJoin(colleges, eq(colleges.id, students.collegeId))
+      .where(eq(students.id, studentId))
+      .limit(1),
+    // 2. Gamification & Streak stats
+    db
+      .select()
+      .from(studentStats)
+      .where(eq(studentStats.studentId, studentId))
+      .limit(1),
+    // 3. Completed DSA problem slugs (topic progress bars)
+    db
+      .select({ problemSlug: studentDsaProgress.problemSlug })
+      .from(studentDsaProgress)
+      .where(
+        and(
+          eq(studentDsaProgress.studentId, studentId),
+          eq(studentDsaProgress.isCompleted, true)
+        )
+      ),
+    // 4. XP per activity type (category breakdown)
+    db
+      .select({
+        activityType: activities.activityType,
+        totalXp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`
+      })
+      .from(activities)
+      .where(eq(activities.studentId, studentId))
+      .groupBy(activities.activityType),
+    // 5. Last 30 days of activity (heatmap)
+    db
+      .select({
+        activityDateIst: activities.activityDateIst,
+        count: sql<number>`count(*)::int`,
+        totalXp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`
+      })
+      .from(activities)
+      .where(
+        and(
+          eq(activities.studentId, studentId),
+          gte(activities.activityDateIst, startDate)
+        )
+      )
+      .groupBy(activities.activityDateIst)
+  ]);
 
   if (!studentRecord) {
     return null;
@@ -80,13 +127,6 @@ export async function getStudentProfileData(studentId: number): Promise<StudentP
     primaryLanguage: studentRecord.primaryLanguage
   };
 
-  // 2. Fetch Gamification & Streak stats
-  const [statsRecord] = await db
-    .select()
-    .from(studentStats)
-    .where(eq(studentStats.studentId, studentId))
-    .limit(1);
-
   const stats: StudentStatsSummary = {
     totalXp: statsRecord?.totalXp || 0,
     currentLevel: statsRecord?.currentLevel || 1,
@@ -96,17 +136,6 @@ export async function getStudentProfileData(studentId: number): Promise<StudentP
   };
 
   // 3. Compute Topic Completion Progress Bars
-  // Fetch all completed problem slugs for this student
-  const solvedRows = await db
-    .select({ problemSlug: studentDsaProgress.problemSlug })
-    .from(studentDsaProgress)
-    .where(
-      and(
-        eq(studentDsaProgress.studentId, studentId),
-        eq(studentDsaProgress.isCompleted, true)
-      )
-    );
-
   const solvedSlugs = new Set(solvedRows.map((r) => r.problemSlug));
 
   const topicProgress: TopicProgress[] = STUDENT_DSA_SHEETS.map((sheet) => {
@@ -125,15 +154,6 @@ export async function getStudentProfileData(studentId: number): Promise<StudentP
   });
 
   // 4. Compute Category XP Breakdown
-  const categoryXpRows = await db
-    .select({
-      activityType: activities.activityType,
-      totalXp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`
-    })
-    .from(activities)
-    .where(eq(activities.studentId, studentId))
-    .groupBy(activities.activityType);
-
   let dsaXp = 0;
   let quizzesXp = 0;
   let projectsXp = 0;
@@ -187,25 +207,6 @@ export async function getStudentProfileData(studentId: number): Promise<StudentP
   ];
 
   // 5. Compute 30-Day Activity Heatmap
-  const last30Days = getLast30DaysIst();
-  const startDate = last30Days[0];
-  const endDate = last30Days[last30Days.length - 1];
-
-  const recentActivities = await db
-    .select({
-      activityDateIst: activities.activityDateIst,
-      count: sql<number>`count(*)::int`,
-      totalXp: sql<number>`coalesce(sum(${activities.xpAwarded}), 0)::int`
-    })
-    .from(activities)
-    .where(
-      and(
-        eq(activities.studentId, studentId),
-        gte(activities.activityDateIst, startDate)
-      )
-    )
-    .groupBy(activities.activityDateIst);
-
   const activityMap = new Map<string, { count: number; xp: number }>();
   recentActivities.forEach((row) => {
     activityMap.set(row.activityDateIst, {
