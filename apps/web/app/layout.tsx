@@ -7,6 +7,8 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 
 const GA_MEASUREMENT_ID = 'G-LXYJZEJ8QE';
+/** Fallback for visitors who never interact: load analytics this long after the page's load event. */
+const GA_LOAD_DELAY_MS = 5000;
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.rms-careers.com'),
@@ -108,15 +110,32 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
-        {/* lazyOnload: gtag.js blocked the main thread for 400–570 ms on mobile (Lighthouse 2026-10) when it
-            loaded during hydration; at browser idle it no longer delays interactivity. */}
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="lazyOnload" />
-        <Script id="ga4-init" strategy="lazyOnload">
+        {/* gtag.js costs ~500 ms of main-thread time on mobile (Lighthouse 2026-10). Even at browser idle it landed
+            inside the page's interactive window, so it now loads on the visitor's first interaction, or
+            GA_LOAD_DELAY_MS after the load event. Calls are queued in dataLayer meanwhile, so the page_view is
+            still sent; only visitors who leave before either trigger are not counted. */}
+        <Script id="ga4-init" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '${GA_MEASUREMENT_ID}');
+            (function () {
+              var loaded = false;
+              var events = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+              function load() {
+                if (loaded) return;
+                loaded = true;
+                events.forEach(function (e) { window.removeEventListener(e, load); });
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}';
+                document.head.appendChild(s);
+              }
+              events.forEach(function (e) { window.addEventListener(e, load, { once: true, passive: true }); });
+              function later() { setTimeout(load, ${GA_LOAD_DELAY_MS}); }
+              if (document.readyState === 'complete') later(); else window.addEventListener('load', later, { once: true });
+            })();
           `}
         </Script>
       </body>
