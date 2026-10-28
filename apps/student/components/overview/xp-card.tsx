@@ -77,6 +77,7 @@ export function XpCard({ stats }: XpCardProps) {
               className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
               style={{ width: `${levelProgressPercent}%` }}
               role="progressbar"
+              aria-label={`Progress to Level ${currentLevel + 1}`}
               aria-valuenow={levelProgressPercent}
               aria-valuemin={0}
               aria-valuemax={100}

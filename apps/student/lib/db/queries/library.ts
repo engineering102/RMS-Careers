@@ -163,40 +163,7 @@ export async function getLibraryItems(
 
     const finalWhereClause = and(...baseWhereClauses);
 
-    // 6. Execute Count Query
-    const [countRow] = await db
-      .select({ total: sql<number>`count(*)::int` })
-      .from(contentItems)
-      .where(finalWhereClause);
-
-    const totalCount = countRow?.total || 0;
-    const totalPages = Math.ceil(totalCount / pageSize);
-
-    // 7. Execute Data Query
-    const rows = await db
-      .select({
-        id: contentItems.id,
-        programId: contentItems.programId,
-        programName: programs.name,
-        programCode: programs.code,
-        title: contentItems.title,
-        slug: contentItems.slug,
-        contentType: contentItems.contentType,
-        description: contentItems.description,
-        metadata: contentItems.metadata,
-        isPublished: contentItems.isPublished,
-        createdAt: contentItems.createdAt,
-        updatedAt: contentItems.updatedAt
-      })
-      .from(contentItems)
-      // leftJoin: content_items.program_id is nullable (central content is placed via batch_curriculum)
-      .leftJoin(programs, eq(programs.id, contentItems.programId))
-      .where(finalWhereClause)
-      .orderBy(desc(contentItems.createdAt), asc(contentItems.title))
-      .limit(pageSize)
-      .offset(offset);
-
-    // 8. Fetch Available Topics across the student's authorized scope (within the open category, if any)
+    // Available topics span the student's authorized scope (within the open category, if any)
     const topicAuthClauses = [
       eq(contentItems.isPublished, true),
       ne(contentItems.contentType, 'external_test'),
@@ -206,17 +173,49 @@ export async function getLibraryItems(
       topicAuthClauses.push(eq(contentItems.contentType, contentTypeFilter));
     }
 
-    const topicRows = await db
-      .select({
-        topic: sql<string>`DISTINCT coalesce(nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', ''))`
-      })
-      .from(contentItems)
-      .where(
-        and(
-          ...topicAuthClauses,
-          sql`coalesce(nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', '')) IS NOT NULL`
+    // 6–8. Count, page of items and available topics are independent: one round-trip instead of three.
+    const [[countRow], rows, topicRows] = await Promise.all([
+      db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(contentItems)
+        .where(finalWhereClause),
+      db
+        .select({
+          id: contentItems.id,
+          programId: contentItems.programId,
+          programName: programs.name,
+          programCode: programs.code,
+          title: contentItems.title,
+          slug: contentItems.slug,
+          contentType: contentItems.contentType,
+          description: contentItems.description,
+          metadata: contentItems.metadata,
+          isPublished: contentItems.isPublished,
+          createdAt: contentItems.createdAt,
+          updatedAt: contentItems.updatedAt
+        })
+        .from(contentItems)
+        // leftJoin: content_items.program_id is nullable (central content is placed via batch_curriculum)
+        .leftJoin(programs, eq(programs.id, contentItems.programId))
+        .where(finalWhereClause)
+        .orderBy(desc(contentItems.createdAt), asc(contentItems.title))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({
+          topic: sql<string>`DISTINCT coalesce(nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', ''))`
+        })
+        .from(contentItems)
+        .where(
+          and(
+            ...topicAuthClauses,
+            sql`coalesce(nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', '')) IS NOT NULL`
+          )
         )
-      );
+    ]);
+
+    const totalCount = countRow?.total || 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     const availableTopics = topicRows
       .map((r) => r.topic)

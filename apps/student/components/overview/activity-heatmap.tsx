@@ -87,7 +87,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
         <TooltipProvider delayDuration={100}>
           <div
             className="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-15 gap-2 p-3 rounded-xl border border-border/80 bg-background/40"
-            role="grid"
+            role="group"
             aria-label="30-Day Activity Heatmap"
           >
             {days.map((day) => {
@@ -105,7 +105,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
                   <TooltipTrigger asChild>
                     <div
                       tabIndex={0}
-                      role="gridcell"
+                      role="img"
                       aria-label={tooltipText}
                       title={tooltipText}
                       className={`h-7 w-full rounded-md border transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-success/50 ${intensityClass}`}

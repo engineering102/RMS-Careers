@@ -163,6 +163,7 @@ export function BatchHeader({
             className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
             style={{ width: `${overallProgressPercent}%` }}
             role="progressbar"
+            aria-label="Batch progress"
             aria-valuenow={overallProgressPercent}
             aria-valuemin={0}
             aria-valuemax={100}

@@ -6,22 +6,21 @@ import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { MobileNav } from './mobile-nav';
 
-import type { NotificationItem } from '@/lib/types/notifications';
+import type { BellNotificationSummary } from '@/lib/types/notifications';
 
 interface DashboardShellProps {
   context: StudentEntitlementContext;
   activeCohort?: StudentBatchItem | null;
   children: React.ReactNode;
-  initialUnreadCount?: number;
-  initialNotifications?: NotificationItem[];
+  /** Streamed from the layout; the bell renders empty until it resolves. */
+  bellNotifications?: Promise<BellNotificationSummary>;
 }
 
 export function DashboardShell({
   context,
   activeCohort = null,
   children,
-  initialUnreadCount = 0,
-  initialNotifications = []
+  bellNotifications
 }: DashboardShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -47,8 +46,7 @@ export function DashboardShell({
           context={context}
           activeCohort={activeCohort}
           onOpenMobileNav={() => setMobileNavOpen(true)}
-          initialUnreadCount={initialUnreadCount}
-          initialNotifications={initialNotifications}
+          bellNotifications={bellNotifications}
         />
 
         {/* Scrollable Page Body */}

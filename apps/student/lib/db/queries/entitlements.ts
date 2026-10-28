@@ -3,7 +3,7 @@ import 'server-only';
 import { cache } from 'react';
 import { redirect, notFound } from 'next/navigation';
 import { db, students, users, userRoles, enrollments, programs, batches, colleges } from '@rms/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { hasRole } from '@rms/auth';
 import { auth } from '@/lib/auth';
 import { isSessionCurrent } from '@/lib/auth/session-revocation';
@@ -108,7 +108,52 @@ export async function getStudentEntitlementContext(
       };
     }
 
-    const roles = await db.select().from(userRoles).where(eq(userRoles.userId, userId));
+    // Roles, profile and enrollments all key off the user id, so they load in one round-trip once the user
+    // check above has passed. Every gate below still runs, in the same order, before anything is returned.
+    const [roles, [studentRecord], enrollmentRows] = await Promise.all([
+      db.select().from(userRoles).where(eq(userRoles.userId, userId)),
+      db
+        .select({
+          id: students.id,
+          userId: students.userId,
+          fullName: students.fullName,
+          email: students.email,
+          phone: students.phone,
+          collegeRollNumber: students.collegeRollNumber,
+          branch: students.branch,
+          year: students.year,
+          collegeId: colleges.id,
+          collegeName: colleges.name,
+          collegeCode: colleges.code
+        })
+        .from(students)
+        .leftJoin(colleges, eq(colleges.id, students.collegeId))
+        .where(eq(students.userId, userId))
+        .limit(1),
+      // Active and confirmed enrollments of this user's student record (students.user_id is unique).
+      db
+        .select({
+          enrollmentId: enrollments.id,
+          status: enrollments.status,
+          programId: programs.id,
+          programName: programs.name,
+          programCode: programs.code,
+          batchId: batches.id,
+          batchName: batches.name,
+          batchStartDate: batches.startDate,
+          batchEndDate: batches.endDate
+        })
+        .from(enrollments)
+        .innerJoin(programs, eq(programs.id, enrollments.programId))
+        .leftJoin(batches, eq(batches.id, enrollments.batchId))
+        .where(
+          and(
+            sql`${enrollments.studentId} = (select ${students.id} from ${students} where ${students.userId} = ${userId})`,
+            enrollmentGrantsAccess()
+          )
+        )
+    ]);
+
     if (!hasRole(roles, 'student')) {
       return {
         isStudent: false,
@@ -120,26 +165,6 @@ export async function getStudentEntitlementContext(
       };
     }
 
-    // 2. Fetch student profile with college info
-    const [studentRecord] = await db
-      .select({
-        id: students.id,
-        userId: students.userId,
-        fullName: students.fullName,
-        email: students.email,
-        phone: students.phone,
-        collegeRollNumber: students.collegeRollNumber,
-        branch: students.branch,
-        year: students.year,
-        collegeId: colleges.id,
-        collegeName: colleges.name,
-        collegeCode: colleges.code
-      })
-      .from(students)
-      .leftJoin(colleges, eq(colleges.id, students.collegeId))
-      .where(eq(students.userId, userId))
-      .limit(1);
-
     if (!studentRecord) {
       return {
         isStudent: true,
@@ -150,29 +175,6 @@ export async function getStudentEntitlementContext(
         hasActiveEntitlement: false
       };
     }
-
-    // 3. Query active and confirmed enrollments
-    const enrollmentRows = await db
-      .select({
-        enrollmentId: enrollments.id,
-        status: enrollments.status,
-        programId: programs.id,
-        programName: programs.name,
-        programCode: programs.code,
-        batchId: batches.id,
-        batchName: batches.name,
-        batchStartDate: batches.startDate,
-        batchEndDate: batches.endDate
-      })
-      .from(enrollments)
-      .innerJoin(programs, eq(programs.id, enrollments.programId))
-      .leftJoin(batches, eq(batches.id, enrollments.batchId))
-      .where(
-        and(
-          eq(enrollments.studentId, studentRecord.id),
-          enrollmentGrantsAccess()
-        )
-      );
 
     // Extract deduplicated active batches
     const batchMap = new Map<string, StudentBatchItem>();
@@ -218,7 +220,7 @@ export async function getStudentEntitlementContext(
  * Redirects unauthenticated users to /login and unauthorized roles to /login?error=Unauthorized.
  *
  * Memoized per request with React cache(): the dashboard layout and the page both call it, and each call is
- * five sequential queries (measured: docs/audits/load-testing-2026-10.md). cache() scope is one server request
+ * two DB round-trips (was five sequential: docs/audits/load-testing-2026-10.md). cache() scope is one server request
  * and the function takes no arguments, deriving identity from that request's session, so results are never
  * shared between users. Outside a React render (Server Actions) cache() does not memoize.
  */
