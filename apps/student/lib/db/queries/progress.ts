@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import {
   db,
@@ -36,10 +37,15 @@ export type {
  * Resolves the unified, multi-source BatchProgressSummary for an authenticated student in a batch.
  * Guarantees zero N+1 queries by executing parallelized batched lookups across completion sources.
  *
+ * Two round-trips: the entitlement check runs alongside the curriculum read (nothing is returned unless it passes,
+ * and its notFound() rejects the Promise.all), then the completion sources. Memoized per request with React
+ * cache(): Overview can ask for the same batch from the deadlines card, the resume card and the notification sync.
+ * Outside a React render (Server Actions) cache() does not memoize.
+ *
  * @param studentId Authenticated student ID (students.id).
  * @param batchId Target cohort batch UUID.
  */
-export async function getBatchProgressSummary(
+export const getBatchProgressSummary = cache(async function getBatchProgressSummary(
   studentId: number,
   batchId: string
 ): Promise<BatchProgressSummary> {
@@ -47,42 +53,42 @@ export async function getBatchProgressSummary(
     notFound();
   }
 
-  // 1. Authorize: Guarantees the student is actively/confirmed/completed enrolled in the batch
-  const entitlement = await assertBatchEntitlement(studentId, batchId);
-
   try {
-    const batchName = entitlement.batchName || 'Cohort Batch';
-
-    const curriculumRows = await db
-      .select({
-        id: batchCurriculum.id,
-        batchId: batchCurriculum.batchId,
-        contentItemId: batchCurriculum.contentItemId,
-        weekNumber: batchCurriculum.weekNumber,
-        sequenceOrder: batchCurriculum.sequenceOrder,
-        isRequired: batchCurriculum.isRequired,
-        availableFrom: batchCurriculum.availableFrom,
-        dueAt: batchCurriculum.dueAt,
-        title: contentItems.title,
-        slug: contentItems.slug,
-        contentType: contentItems.contentType,
-        metadata: contentItems.metadata,
-        isPublished: contentItems.isPublished
-      })
-      .from(batchCurriculum)
-      .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
-      .where(
-        and(
-          eq(batchCurriculum.batchId, batchId),
-          eq(contentItems.isPublished, true)
+    // Authorize (actively/confirmed/completed enrolled in the batch) while the curriculum loads.
+    const [entitlement, curriculumRows] = await Promise.all([
+      assertBatchEntitlement(studentId, batchId),
+      db
+        .select({
+          id: batchCurriculum.id,
+          batchId: batchCurriculum.batchId,
+          contentItemId: batchCurriculum.contentItemId,
+          weekNumber: batchCurriculum.weekNumber,
+          sequenceOrder: batchCurriculum.sequenceOrder,
+          isRequired: batchCurriculum.isRequired,
+          availableFrom: batchCurriculum.availableFrom,
+          dueAt: batchCurriculum.dueAt,
+          title: contentItems.title,
+          slug: contentItems.slug,
+          contentType: contentItems.contentType,
+          metadata: contentItems.metadata,
+          isPublished: contentItems.isPublished
+        })
+        .from(batchCurriculum)
+        .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
+        .where(
+          and(
+            eq(batchCurriculum.batchId, batchId),
+            eq(contentItems.isPublished, true)
+          )
         )
-      )
-      .orderBy(
-        asc(batchCurriculum.weekNumber),
-        asc(batchCurriculum.sequenceOrder),
-        asc(batchCurriculum.id)
-      );
+        .orderBy(
+          asc(batchCurriculum.weekNumber),
+          asc(batchCurriculum.sequenceOrder),
+          asc(batchCurriculum.id)
+        )
+    ]);
 
+    const batchName = entitlement.batchName || 'Cohort Batch';
     return await resolveBatchProgressSummary(studentId, batchId, batchName, curriculumRows);
   } catch (error: any) {
     if (error?.message === 'NEXT_NOT_FOUND' || error?.digest?.startsWith('NEXT_NOT_FOUND')) {
@@ -91,7 +97,7 @@ export async function getBatchProgressSummary(
     console.error('[ProgressQuery] Error resolving batch progress summary:', error);
     notFound();
   }
-}
+});
 
 /** The curriculum columns progress resolution reads; a superset (e.g. the workspace's rows) is fine. */
 export interface ProgressCurriculumRow {

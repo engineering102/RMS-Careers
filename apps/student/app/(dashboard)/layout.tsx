@@ -1,7 +1,11 @@
 import { cookies } from 'next/headers';
 import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { getStudentNotifications } from '@/lib/db/queries/notifications';
-import { syncDerivedNotifications } from '@/lib/services/derived-notifications';
+import {
+  claimDerivedNotificationSync,
+  releaseDerivedNotificationSync,
+  syncDerivedNotifications
+} from '@/lib/services/derived-notifications';
 import { DashboardShell } from '@/components/shell/dashboard-shell';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
@@ -21,16 +25,20 @@ const EMPTY_SUMMARY: BellNotificationSummary = { notifications: [], unreadCount:
 async function loadBellNotifications(context: StudentEntitlementContext): Promise<BellNotificationSummary> {
   if (!context.isActive || !context.student?.userId) return EMPTY_SUMMARY;
 
-  try {
-    // Turn new reviews, deadlines, published content and streak milestones into notifications before reading them.
-    await syncDerivedNotifications({
-      studentId: context.student.id,
-      userId: context.student.userId,
-      batchIds: context.activeBatches.map((b) => b.batchId),
-      programs: context.enrollments.map((e) => ({ programId: e.programId, programName: e.programName }))
-    });
-  } catch (err) {
-    console.error('[DashboardLayout] Failed to sync derived notifications:', err);
+  // Turn new reviews, deadlines, published content and streak milestones into notifications before reading them,
+  // at most once per DERIVED_SYNC_INTERVAL_MS per student rather than on every page view.
+  if (claimDerivedNotificationSync(context.student.id)) {
+    try {
+      await syncDerivedNotifications({
+        studentId: context.student.id,
+        userId: context.student.userId,
+        batchIds: context.activeBatches.map((b) => b.batchId),
+        programs: context.enrollments.map((e) => ({ programId: e.programId, programName: e.programName }))
+      });
+    } catch (err) {
+      releaseDerivedNotificationSync(context.student.id);
+      console.error('[DashboardLayout] Failed to sync derived notifications:', err);
+    }
   }
 
   try {

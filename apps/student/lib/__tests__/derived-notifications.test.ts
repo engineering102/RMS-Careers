@@ -18,6 +18,10 @@ import {
   CONTENT_LOOKBACK_MS,
   DEDUPE_LOOKBACK_MS,
   CONTENT_GROUP_THRESHOLD,
+  DERIVED_SYNC_INTERVAL_MS,
+  DERIVED_SYNC_MAX_TRACKED,
+  claimDerivedNotificationSync,
+  releaseDerivedNotificationSync,
   type DerivedNotificationInput,
   type DueItemFact,
   type PublishedContentFact
@@ -255,5 +259,44 @@ describe('derived notifications planner', () => {
     expect(DEDUPE_LOOKBACK_MS).toBeGreaterThanOrEqual(REVIEW_LOOKBACK_MS);
     expect(DEDUPE_LOOKBACK_MS).toBeGreaterThanOrEqual(DUE_SOON_WINDOW_MS);
     expect(DEDUPE_LOOKBACK_MS).toBeGreaterThanOrEqual(CONTENT_LOOKBACK_MS);
+  });
+});
+
+describe('derived-notification sync throttle', () => {
+  // Student ids are unique per test: the throttle is module state shared across tests.
+  it('runs the first sync and skips repeats inside the interval', () => {
+    const t0 = 1_000_000;
+    expect(claimDerivedNotificationSync(9001, t0)).toBe(true);
+    expect(claimDerivedNotificationSync(9001, t0 + 1)).toBe(false);
+    expect(claimDerivedNotificationSync(9001, t0 + DERIVED_SYNC_INTERVAL_MS - 1)).toBe(false);
+  });
+
+  it('allows the next sync once the interval has passed', () => {
+    const t0 = 2_000_000;
+    expect(claimDerivedNotificationSync(9002, t0)).toBe(true);
+    expect(claimDerivedNotificationSync(9002, t0 + DERIVED_SYNC_INTERVAL_MS)).toBe(true);
+    expect(claimDerivedNotificationSync(9002, t0 + DERIVED_SYNC_INTERVAL_MS + 1)).toBe(false);
+  });
+
+  it('throttles each student independently', () => {
+    const t0 = 3_000_000;
+    expect(claimDerivedNotificationSync(9003, t0)).toBe(true);
+    expect(claimDerivedNotificationSync(9004, t0)).toBe(true);
+  });
+
+  it('retries on the next request after a failed sync is released', () => {
+    const t0 = 4_000_000;
+    expect(claimDerivedNotificationSync(9005, t0)).toBe(true);
+    releaseDerivedNotificationSync(9005);
+    expect(claimDerivedNotificationSync(9005, t0 + 1)).toBe(true);
+  });
+
+  it('forgets the oldest students past the memory bound', () => {
+    const t0 = 5_000_000;
+    expect(claimDerivedNotificationSync(100_000, t0)).toBe(true);
+    for (let i = 1; i <= DERIVED_SYNC_MAX_TRACKED; i++) claimDerivedNotificationSync(100_000 + i, t0);
+    // 100_000 was evicted, so it may sync again; a recent one is still throttled.
+    expect(claimDerivedNotificationSync(100_000, t0 + 1)).toBe(true);
+    expect(claimDerivedNotificationSync(100_000 + DERIVED_SYNC_MAX_TRACKED, t0 + 1)).toBe(false);
   });
 });

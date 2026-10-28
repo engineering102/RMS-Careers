@@ -63,32 +63,25 @@ export async function getResumeLearningTarget(
     if (activeEnrollments.length > 1) {
       const now = new Date();
 
-      // Query upcoming deadlines across active batches
-      const upcomingDeadlines = await db
-        .select({
-          batchId: batchCurriculum.batchId,
-          dueAt: batchCurriculum.dueAt
-        })
-        .from(batchCurriculum)
-        .where(
-          and(
-            inArray(batchCurriculum.batchId, batchIds),
-            gte(batchCurriculum.dueAt, now)
+      // Both tie-breakers load together; the deadline wins when there is one.
+      const [upcomingDeadlines, recentActivities] = await Promise.all([
+        // Query upcoming deadlines across active batches
+        db
+          .select({
+            batchId: batchCurriculum.batchId,
+            dueAt: batchCurriculum.dueAt
+          })
+          .from(batchCurriculum)
+          .where(
+            and(
+              inArray(batchCurriculum.batchId, batchIds),
+              gte(batchCurriculum.dueAt, now)
+            )
           )
-        )
-        .orderBy(asc(batchCurriculum.dueAt))
-        .limit(1);
-
-      if (upcomingDeadlines.length > 0 && upcomingDeadlines[0].batchId) {
-        const matchingBatch = activeEnrollments.find(
-          (b) => b.batchId === upcomingDeadlines[0].batchId
-        );
-        if (matchingBatch) {
-          selectedBatch = matchingBatch;
-        }
-      } else {
+          .orderBy(asc(batchCurriculum.dueAt))
+          .limit(1),
         // Query most recent activity across batches
-        const recentActivities = await db
+        db
           .select({
             batchId: activities.batchId
           })
@@ -100,52 +93,54 @@ export async function getResumeLearningTarget(
             )
           )
           .orderBy(desc(activities.createdAt))
-          .limit(1);
+          .limit(1)
+      ]);
 
-        if (recentActivities.length > 0 && recentActivities[0].batchId) {
-          const matchingBatch = activeEnrollments.find(
-            (b) => b.batchId === recentActivities[0].batchId
-          );
-          if (matchingBatch) {
-            selectedBatch = matchingBatch;
-          }
-        }
+      const preferredBatchId =
+        upcomingDeadlines.length > 0 && upcomingDeadlines[0].batchId
+          ? upcomingDeadlines[0].batchId
+          : recentActivities[0]?.batchId;
+      const matchingBatch = preferredBatchId
+        ? activeEnrollments.find((b) => b.batchId === preferredBatchId)
+        : undefined;
+      if (matchingBatch) {
+        selectedBatch = matchingBatch;
       }
     }
 
     const targetBatchId = selectedBatch.batchId!;
     const targetBatchName = selectedBatch.batchName || 'Cohort Batch';
 
-    // 3. Resolve unified progress summary for the selected batch
-    const progressSummary = await getBatchProgressSummary(studentId, targetBatchId);
-
-    // 4. Query chronological published curriculum items
-    const curriculumRows = await db
-      .select({
-        id: batchCurriculum.id,
-        contentItemId: batchCurriculum.contentItemId,
-        weekNumber: batchCurriculum.weekNumber,
-        sequenceOrder: batchCurriculum.sequenceOrder,
-        availableFrom: batchCurriculum.availableFrom,
-        dueAt: batchCurriculum.dueAt,
-        title: contentItems.title,
-        slug: contentItems.slug,
-        contentType: contentItems.contentType,
-        isRequired: batchCurriculum.isRequired
-      })
-      .from(batchCurriculum)
-      .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
-      .where(
-        and(
-          eq(batchCurriculum.batchId, targetBatchId),
-          eq(contentItems.isPublished, true)
+    // 3–4. Unified progress summary and the chronological published curriculum, in parallel
+    const [progressSummary, curriculumRows] = await Promise.all([
+      getBatchProgressSummary(studentId, targetBatchId),
+      db
+        .select({
+          id: batchCurriculum.id,
+          contentItemId: batchCurriculum.contentItemId,
+          weekNumber: batchCurriculum.weekNumber,
+          sequenceOrder: batchCurriculum.sequenceOrder,
+          availableFrom: batchCurriculum.availableFrom,
+          dueAt: batchCurriculum.dueAt,
+          title: contentItems.title,
+          slug: contentItems.slug,
+          contentType: contentItems.contentType,
+          isRequired: batchCurriculum.isRequired
+        })
+        .from(batchCurriculum)
+        .innerJoin(contentItems, eq(contentItems.id, batchCurriculum.contentItemId))
+        .where(
+          and(
+            eq(batchCurriculum.batchId, targetBatchId),
+            eq(contentItems.isPublished, true)
+          )
         )
-      )
-      .orderBy(
-        asc(batchCurriculum.weekNumber),
-        asc(batchCurriculum.sequenceOrder),
-        asc(batchCurriculum.id)
-      );
+        .orderBy(
+          asc(batchCurriculum.weekNumber),
+          asc(batchCurriculum.sequenceOrder),
+          asc(batchCurriculum.id)
+        )
+    ]);
 
     const now = new Date();
     const unlockedItems: typeof curriculumRows = [];
