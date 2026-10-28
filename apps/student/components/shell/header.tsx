@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, use, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Menu, LogOut, GraduationCap } from 'lucide-react';
 import type { StudentEntitlementContext, StudentBatchItem } from '@/lib/db/queries/entitlements';
@@ -9,22 +9,25 @@ import { SignOutButton } from './sign-out-button';
 
 import { NotificationBell } from './notification-bell';
 import { sectionTitleFor } from './nav-items';
-import type { NotificationItem } from '@/lib/types/notifications';
+import type { BellNotificationSummary } from '@/lib/types/notifications';
 
 interface HeaderProps {
   context: StudentEntitlementContext;
   activeCohort?: StudentBatchItem | null;
   onOpenMobileNav: () => void;
-  initialUnreadCount?: number;
-  initialNotifications?: NotificationItem[];
+  bellNotifications?: Promise<BellNotificationSummary>;
+}
+
+function StreamedNotificationBell({ summary }: { summary: Promise<BellNotificationSummary> }) {
+  const { notifications, unreadCount } = use(summary);
+  return <NotificationBell initialUnreadCount={unreadCount} initialNotifications={notifications} />;
 }
 
 export function Header({
   context,
   activeCohort = null,
   onOpenMobileNav,
-  initialUnreadCount = 0,
-  initialNotifications = []
+  bellNotifications
 }: HeaderProps) {
   const student = context.student;
 
@@ -91,11 +94,14 @@ export function Header({
           variant="header"
         />
 
-        {/* Notification Bell */}
-        <NotificationBell
-          initialUnreadCount={initialUnreadCount}
-          initialNotifications={initialNotifications}
-        />
+        {/* Notification Bell: an empty bell holds its place while the summary streams in. */}
+        {bellNotifications ? (
+          <Suspense fallback={<NotificationBell />}>
+            <StreamedNotificationBell summary={bellNotifications} />
+          </Suspense>
+        ) : (
+          <NotificationBell />
+        )}
 
         {/* Student Avatar */}
         <div

@@ -420,7 +420,7 @@ export function BatchesClient({
                 Filter by College
               </label>
               <Select value={filterCollege} onValueChange={handleCollegeFilterChange}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9" aria-label="Filter by college">
                   <SelectValue placeholder="All Colleges" />
                 </SelectTrigger>
                 <SelectContent>
@@ -440,7 +440,7 @@ export function BatchesClient({
                 Filter by Program
               </label>
               <Select value={filterProgram} onValueChange={handleProgramFilterChange}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9" aria-label="Filter by program">
                   <SelectValue placeholder="All Programs" />
                 </SelectTrigger>
                 <SelectContent>

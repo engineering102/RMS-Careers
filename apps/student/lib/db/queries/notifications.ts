@@ -22,43 +22,40 @@ export async function getStudentNotifications(
     };
   }
 
-  // 1. Fetch unread count
-  const [unreadResult] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(notifications)
-    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
-
-  const unreadCount = Number(unreadResult?.count || 0);
-
-  // 2. Fetch total count
-  const [totalResult] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(notifications)
-    .where(eq(notifications.userId, userId));
-
-  const totalCount = Number(totalResult?.count || 0);
-
-  // 3. Build where conditions for notifications list
   const conditions = [eq(notifications.userId, userId)];
   if (unreadOnly) {
     conditions.push(eq(notifications.isRead, false));
   }
 
-  const rows = await db
-    .select({
-      id: notifications.id,
-      userId: notifications.userId,
-      type: notifications.type,
-      title: notifications.title,
-      body: notifications.body,
-      actionUrl: notifications.actionUrl,
-      isRead: notifications.isRead,
-      createdAt: notifications.createdAt
-    })
-    .from(notifications)
-    .where(and(...conditions))
-    .orderBy(desc(notifications.createdAt))
-    .limit(limit);
+  // Unread count, total count and the list are independent: one round-trip instead of three.
+  const [[unreadResult], [totalResult], rows] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(eq(notifications.userId, userId)),
+    db
+      .select({
+        id: notifications.id,
+        userId: notifications.userId,
+        type: notifications.type,
+        title: notifications.title,
+        body: notifications.body,
+        actionUrl: notifications.actionUrl,
+        isRead: notifications.isRead,
+        createdAt: notifications.createdAt
+      })
+      .from(notifications)
+      .where(and(...conditions))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit)
+  ]);
+
+  const unreadCount = Number(unreadResult?.count || 0);
+  const totalCount = Number(totalResult?.count || 0);
 
   const mappedNotifications: NotificationItem[] = rows.map((r) => ({
     id: r.id,

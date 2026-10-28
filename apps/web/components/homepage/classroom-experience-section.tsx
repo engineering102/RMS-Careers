@@ -44,7 +44,6 @@ export function ClassroomExperienceSection() {
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
-                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3 p-3 rounded-xl bg-card/85 backdrop-blur-md border border-border/80">

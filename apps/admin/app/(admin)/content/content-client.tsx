@@ -535,7 +535,7 @@ export function ContentClient({
                   applyFilters(val, filterType, filterStatus, search);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Filter by scope">
                   <SelectValue placeholder="Scope" />
                 </SelectTrigger>
                 <SelectContent>
@@ -559,7 +559,7 @@ export function ContentClient({
                   applyFilters(filterProgram, val, filterStatus, search);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Filter by type">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -582,7 +582,7 @@ export function ContentClient({
                   applyFilters(filterProgram, filterType, val, search);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Filter by status">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -679,7 +679,7 @@ export function ContentClient({
                               /{item.slug}
                             </span>
                             {Boolean(item.metadata?.topic) && (
-                              <span className="text-xs text-muted-foreground/80 mt-1 flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                                 <Sparkles className="h-3 w-3 text-amber-500" />
                                 {item.metadata.topic as string}
                               </span>
@@ -808,7 +808,7 @@ export function ContentClient({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleLifecycleChange(item, 'unpublish')}
-                                className="h-8 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                                className="h-8 px-2 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-500/10"
                                 title="Unpublish (revert to Draft)"
                               >
                                 Unpublish

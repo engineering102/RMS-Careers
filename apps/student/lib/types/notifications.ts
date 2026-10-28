@@ -90,4 +90,7 @@ export interface NotificationSummary {
   totalCount: number;
 }
 
+/** What the header bell needs: the latest few notifications and the unread count. */
+export type BellNotificationSummary = Pick<NotificationSummary, 'notifications' | 'unreadCount'>;
+
 export type NotificationFilter = 'all' | 'unread';

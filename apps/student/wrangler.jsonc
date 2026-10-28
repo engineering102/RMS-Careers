@@ -4,6 +4,10 @@
     "main": ".open-next/worker.js",
     "compatibility_date": "2026-10-04",
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    // Smart Placement: run the Worker near the database rather than at the visitor's PoP. Every dashboard page
+    // makes several sequential Neon round-trips; from the user's PoP each one pays the PoP→DB distance
+    // (Lighthouse 2026-10: ~1.2–5.6 s server response vs ~0.2 s for /login, which makes no DB call).
+    "placement": { "mode": "smart" },
     "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"

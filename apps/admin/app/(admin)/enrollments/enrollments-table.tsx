@@ -421,6 +421,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                       checked={isAllPaginatedSelected}
                       indeterminate={isSomePaginatedSelected}
                       onChange={(e) => handleSelectAll(e.target.checked)}
+                      aria-label="Select all enrollments on this page"
                     />
                   </TableHead>
                   <TableHead>Student Name</TableHead>
@@ -444,6 +445,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                         <Checkbox
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(item.id, e.target.checked)}
+                          aria-label={`Select ${item.student.fullName}`}
                         />
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
@@ -452,7 +454,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                       <TableCell>
                         <div className="flex flex-col text-xs">
                           <span className="font-mono text-muted-foreground">{item.student.email}</span>
-                          <span className="text-[11px] text-muted-foreground/80">
+                          <span className="text-[11px] text-muted-foreground">
                             Roll: {item.student.collegeRollNumber || 'N/A'}
                           </span>
                         </div>
@@ -562,6 +564,7 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                       <Checkbox
                         checked={isSelected}
                         onChange={(e) => handleSelectRow(item.id, e.target.checked)}
+                        aria-label={`Select ${item.student.fullName}`}
                       />
                       <div>
                         <h4 className="font-semibold text-sm">{item.student.fullName}</h4>
