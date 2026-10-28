@@ -264,7 +264,7 @@ export function ProgramsClient({
                       Status
                     </label>
                     <Select name="status" defaultValue="draft">
-                      <SelectTrigger>
+                      <SelectTrigger id="status">
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -363,7 +363,7 @@ export function ProgramsClient({
                       value={collegeOf(prog) ?? NO_COLLEGE}
                       onValueChange={(val) => handleCollegeChange(prog, val)}
                     >
-                      <SelectTrigger className="h-7 w-[170px] text-xs">
+                      <SelectTrigger className="h-7 w-[170px] text-xs" aria-label={`College for ${prog.name}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,7 +393,7 @@ export function ProgramsClient({
                     value={statusOf(prog)}
                     onValueChange={(val) => handleStatusChange(prog, val as ProgramStatus)}
                   >
-                    <SelectTrigger className="h-8 text-xs w-[110px]">
+                    <SelectTrigger className="h-8 text-xs w-[110px]" aria-label={`Status for ${prog.name}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

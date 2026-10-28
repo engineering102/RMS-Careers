@@ -148,7 +148,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
             value={searchParams.get('program') || 'all'}
             onValueChange={(val) => updateParam('program', val)}
           >
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-xs" aria-label="Program">
               <SelectValue placeholder="All Programs" />
             </SelectTrigger>
             <SelectContent>
@@ -169,7 +169,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
             value={searchParams.get('status') || 'all'}
             onValueChange={(val) => updateParam('status', val)}
           >
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-xs" aria-label="Enrollment status">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +189,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
             value={searchParams.get('year') || 'all'}
             onValueChange={(val) => updateParam('year', val)}
           >
-            <SelectTrigger className="h-8 text-xs">
+            <SelectTrigger className="h-8 text-xs" aria-label="Academic year">
               <SelectValue placeholder="All Years" />
             </SelectTrigger>
             <SelectContent>

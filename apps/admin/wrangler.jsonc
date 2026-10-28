@@ -4,6 +4,9 @@
     "main": ".open-next/worker.js",
     "compatibility_date": "2026-10-04",
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    // Smart Placement: run the Worker near the database rather than at the visitor's PoP, so each sequential
+    // Neon round-trip stays short (see apps/student/wrangler.jsonc).
+    "placement": { "mode": "smart" },
     "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"

@@ -25,7 +25,8 @@
     --secondary-foreground: 222 47% 11%;
 
     --muted: 215 28% 95%;
-    --muted-foreground: 215 16% 47%;
+    /* 43% (was 47%): secondary text on the light card/table backgrounds now passes WCAG AA 4.5:1. */
+    --muted-foreground: 215 16% 43%;
 
     --accent: 215 28% 93%;
     --accent-foreground: 222 47% 11%;
