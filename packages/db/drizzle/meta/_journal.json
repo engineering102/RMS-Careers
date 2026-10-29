@@ -43,6 +43,13 @@
       "when": 1792300000000,
       "tag": "0005_external_test_content_type",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792735685250,
+      "tag": "0006_tutor_review_attribution_live_sessions",
+      "breakpoints": true
     }
   ]
 }
