@@ -23,6 +23,9 @@ let mockContentItems: any[] = [];
 let mockBatchCurriculum: any[] = [];
 let mockAssignments: any[] = [];
 let mockAssignmentSubmissions: any[] = [];
+// Runs just before a submission UPDATE executes: simulates a reviewer's write landing between the action's read
+// and its update.
+let beforeSubmissionUpdate: (() => void) | null = null;
 
 // Mock entitlement
 vi.mock('@/lib/db/queries/entitlements', () => ({
@@ -128,13 +131,24 @@ vi.mock('@rms/db', async () => {
         })
       }),
 
+      // Mirrors resubmitProjectIfEditable(): the row is only updated while its status is still student-editable
+      // (that predicate's SQL is covered by resubmission-guard.int.test.ts).
       update: (table: any) => ({
         set: (vals: any) => ({
           where: () => {
-            if (table === actual.assignmentSubmissions && mockAssignmentSubmissions.length > 0) {
-              Object.assign(mockAssignmentSubmissions[0], vals);
-            }
-            return Promise.resolve();
+            const apply = () => {
+              beforeSubmissionUpdate?.();
+              const row = mockAssignmentSubmissions[0];
+              if (table !== actual.assignmentSubmissions || !row) return [];
+              if (!['submitted', 'resubmission_requested'].includes(row.status)) return [];
+              Object.assign(row, vals);
+              return [{ id: row.id }];
+            };
+            return {
+              returning: () => Promise.resolve(apply()),
+              then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+                Promise.resolve(apply()).then(resolve, reject)
+            };
           }
         })
       })
@@ -205,6 +219,7 @@ describe('Slice 13: Project Submissions & GitHub Validator', () => {
     ];
 
     mockAssignmentSubmissions = [];
+    beforeSubmissionUpdate = null;
 
     // Default fetch returns 200 OK for GitHub HEAD
     mockFetch.mockResolvedValue({
@@ -453,6 +468,62 @@ describe('Slice 13: Project Submissions & GitHub Validator', () => {
       expect(result.data.isResubmission).toBe(true);
       expect(result.data.status).toBe('submitted');
       expect(mockAssignmentSubmissions[0].status).toBe('submitted');
+    });
+
+    // Tutor plan D-12: the status read earlier in the action can be stale by the time the update runs.
+    it('keeps a reviewer claim that lands between the status read and the update', async () => {
+      mockAssignmentSubmissions = [
+        {
+          id: TEST_SUBMISSION_ID,
+          assignmentId: TEST_ASSIGNMENT_ID,
+          studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
+          githubUrl: 'https://github.com/student/original-repo',
+          status: 'submitted'
+        }
+      ];
+      beforeSubmissionUpdate = () => {
+        mockAssignmentSubmissions[0].status = 'under_review';
+      };
+
+      const result = await submitProjectAssignment({
+        assignmentId: TEST_ASSIGNMENT_ID,
+        contentItemId: TEST_CONTENT_ITEM_ID,
+        batchId: TEST_BATCH_ID,
+        githubUrl: 'https://github.com/student/late-update'
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.code).toBe('LOCKED_UNDER_REVIEW');
+      expect(mockAssignmentSubmissions[0].status).toBe('under_review');
+      expect(mockAssignmentSubmissions[0].githubUrl).toBe('https://github.com/student/original-repo');
+    });
+
+    it('reports ALREADY_APPROVED when the submission was approved after the status read', async () => {
+      mockAssignmentSubmissions = [
+        {
+          id: TEST_SUBMISSION_ID,
+          assignmentId: TEST_ASSIGNMENT_ID,
+          studentId: TEST_STUDENT_ID,
+          batchId: TEST_BATCH_ID,
+          githubUrl: 'https://github.com/student/original-repo',
+          status: 'resubmission_requested'
+        }
+      ];
+      beforeSubmissionUpdate = () => {
+        mockAssignmentSubmissions[0].status = 'approved';
+      };
+
+      const result = await submitProjectAssignment({
+        assignmentId: TEST_ASSIGNMENT_ID,
+        contentItemId: TEST_CONTENT_ITEM_ID,
+        batchId: TEST_BATCH_ID,
+        githubUrl: 'https://github.com/student/late-update'
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) expect(result.code).toBe('ALREADY_APPROVED');
+      expect(mockAssignmentSubmissions[0].githubUrl).toBe('https://github.com/student/original-repo');
     });
 
     it('blocks submission if student is not actively enrolled in batch', async () => {
