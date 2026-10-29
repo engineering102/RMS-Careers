@@ -38,6 +38,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.6
         version: 1.2.16(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@rms/academic':
+        specifier: workspace:*
+        version: link:../../packages/academic
       '@rms/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -341,6 +344,28 @@ importers:
       wrangler:
         specifier: ^4.147.0
         version: 4.147.0(@types/node@20.17.6)
+
+  packages/academic:
+    dependencies:
+      '@rms/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.31.4
+        version: 0.31.4(@neondatabase/serverless@0.9.5)(@types/pg@8.11.6)(@types/react@19.0.0)(react@19.0.0)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+    devDependencies:
+      '@types/node':
+        specifier: 20.17.6
+        version: 20.17.6
+      typescript:
+        specifier: 5.7.2
+        version: 5.7.2
+      vitest:
+        specifier: 2.0.0
+        version: 2.0.0(@types/node@20.17.6)(jsdom@25.0.1)(terser@5.16.9)
 
   packages/auth:
     dependencies:

@@ -1,7 +1,12 @@
 # Tutor Portal: Final Implementation Plan
 
-Status: **approved 2026-10-22** (D-1, D-2, D-5 as revised, D-12). WS-1 (hide public tutor links) is the first change; nothing else is implemented yet. No migration, deployment, secret,
-dependency or configuration change has been made.
+Status: **approved 2026-10-22** (D-1, D-2, D-5 as revised, D-12). Progress:
+- WS-1 (hide public tutor links): merged, #56.
+- WS-2 (Auth.js `5.0.0-beta.32`): merged, #58.
+- WS-3 (migration 0006): PR #62. **0006 applied to production** (`ep-blue-queen-b4qdn2dc`, `neondb`) by the owner on
+  2026-10-29 with the guarded runner; Neon restore branch `pre-0006-2026-10-29`. Also applied to the NonProd test branch.
+- WS-4 (`@rms/academic` shared package): in review.
+- Build hotfix outside the plan: #57 (`--dangerouslyUseUnsupportedNextVersion`, see `docs/architecture/deployment.md`).
 Date: 2026-10-22. Branch inspected: `feat/staging-env`, which has many uncommitted changes. Implementation must start from a
 clean branch off `main`.
 

@@ -1,0 +1,44 @@
+{
+  "name": "@rms/academic",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./scope": {
+      "types": "./src/scope.ts",
+      "import": "./src/scope.ts",
+      "default": "./src/scope.ts"
+    },
+    "./projects": {
+      "types": "./src/projects.ts",
+      "import": "./src/projects.ts",
+      "default": "./src/projects.ts"
+    },
+    "./assessments": {
+      "types": "./src/assessments.ts",
+      "import": "./src/assessments.ts",
+      "default": "./src/assessments.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rms/db": "workspace:*",
+    "drizzle-orm": "^0.31.4",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.6",
+    "typescript": "5.7.2",
+    "vitest": "2.0.0"
+  }
+}
