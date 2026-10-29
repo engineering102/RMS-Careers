@@ -1,7 +1,7 @@
 import { buildSecurityHeaders } from './security-headers';
 
 export default {
-  transpilePackages: ['@rms/db', '@rms/auth'],
+  transpilePackages: ['@rms/db', '@rms/auth', '@rms/academic'],
   images: {
     remotePatterns: [
       {

@@ -23,7 +23,10 @@
       "@rms/db/xp-ledger": ["../../packages/db/src/xp-ledger"],
       "@rms/db/guard-env": ["../../packages/db/src/guard-env"],
       "@rms/db/migration-runner": ["../../packages/db/src/migration-runner"],
-      "@rms/db/node-tooling": ["../../packages/db/src/node-tooling"]
+      "@rms/db/node-tooling": ["../../packages/db/src/node-tooling"],
+      "@rms/academic/scope": ["../../packages/academic/src/scope"],
+      "@rms/academic/projects": ["../../packages/academic/src/projects"],
+      "@rms/academic/assessments": ["../../packages/academic/src/assessments"]
     },
     "plugins": [
       {
