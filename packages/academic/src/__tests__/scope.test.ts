@@ -119,3 +119,25 @@ describe('package boundaries', () => {
     expect(source).not.toMatch(/from\s*'@rms\/auth'/);
   });
 });
+
+describe('restrictScope', () => {
+  it('narrows the admin scope to the named batches', async () => {
+    const { restrictScope } = await import('../scope');
+    const narrowed = restrictScope(adminScope(), [A]);
+    expect(isBatchInScope(narrowed, A)).toBe(true);
+    expect(isBatchInScope(narrowed, B)).toBe(false);
+  });
+
+  it('never widens a tutor scope', async () => {
+    const { restrictScope } = await import('../scope');
+    const narrowed = restrictScope(tutorScope([A]), [A, B]);
+    expect(isBatchInScope(narrowed, A)).toBe(true);
+    expect(isBatchInScope(narrowed, B)).toBe(false);
+    expect(isBatchInScope(restrictScope(tutorScope([A]), [B]), B)).toBe(false);
+  });
+
+  it('rejects a forged scope', async () => {
+    const { restrictScope } = await import('../scope');
+    expect(() => restrictScope({ kind: 'all' } as AcademicScope, [A])).toThrow(/invalid scope/);
+  });
+});

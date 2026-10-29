@@ -27,7 +27,9 @@ import {
   GitPullRequest,
   RefreshCw,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  RotateCcw,
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,6 +79,7 @@ import type {
 } from '@/lib/db/queries';
 import type { GithubValidationResult } from '@/lib/services/github-validator';
 import type { Batch, College, Program, SubmissionStatusEnum } from '@rms/db';
+import type { ReviewTransition } from '@rms/academic/review-rules';
 
 interface BatchProjectsClientProps {
   batch: Batch;
@@ -112,6 +115,9 @@ export function BatchProjectsClient({
   const [reviewScore, setReviewScore] = React.useState<string>('');
   const [reviewFeedback, setReviewFeedback] = React.useState<string>('');
   const [isSubmittingReview, setIsSubmittingReview] = React.useState<boolean>(false);
+  // Admin overrides on an approved submission
+  const [reopenReason, setReopenReason] = React.useState<string>('');
+  const [isCorrecting, setIsCorrecting] = React.useState<boolean>(false);
 
   // GitHub Validation state
   const [githubValidation, setGithubValidation] = React.useState<GithubValidationResult | null>(null);
@@ -174,6 +180,8 @@ export function BatchProjectsClient({
       setSubmissionDetails(res.data);
       setReviewScore(res.data.score !== null ? String(res.data.score) : '');
       setReviewFeedback(res.data.tutorFeedback || '');
+      setReopenReason('');
+      setIsCorrecting(false);
 
       // Trigger automatic background GitHub validation
       if (res.data.githubUrl) {
@@ -204,53 +212,78 @@ export function BatchProjectsClient({
     }
   };
 
-  // Execute review lifecycle transition
-  const handleExecuteTransition = async (newStatus: SubmissionStatusEnum) => {
+  // Reload the open submission (after a review, or when someone else changed it first)
+  const refreshSubmissionDetails = async (submissionId: string) => {
+    const refreshed = await getSubmissionDetailsAction(batch.id, submissionId);
+    if (refreshed.success) {
+      setSubmissionDetails(refreshed.data);
+      setReviewScore(refreshed.data.score !== null ? String(refreshed.data.score) : '');
+      setReviewFeedback(refreshed.data.tutorFeedback || '');
+    }
+  };
+
+  // Execute review lifecycle transition (one atomic server transaction, see actions.ts)
+  const handleExecuteTransition = async (transition: ReviewTransition) => {
     if (!submissionDetails) return;
 
-    if (newStatus === 'resubmission_requested' && !reviewFeedback.trim()) {
+    if (transition === 'request_resubmission' && !reviewFeedback.trim()) {
       toast.error('Structured feedback is required when requesting changes.');
       return;
     }
 
+    if (transition === 'reopen' && !reopenReason.trim()) {
+      toast.error('Give a reason for reopening this approved submission.');
+      return;
+    }
+
+    const setsScore = transition === 'approve' || transition === 'correct';
     let parsedScore: number | null = null;
-    if (reviewScore.trim() !== '') {
-      parsedScore = parseInt(reviewScore.trim(), 10);
-      if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > submissionDetails.maxScore) {
-        toast.error(`Score must be a number between 0 and ${submissionDetails.maxScore}.`);
+    if (setsScore && reviewScore.trim() !== '') {
+      parsedScore = Number(reviewScore.trim());
+      if (!Number.isInteger(parsedScore) || parsedScore < 0 || parsedScore > submissionDetails.maxScore) {
+        toast.error(`Score must be a whole number between 0 and ${submissionDetails.maxScore}.`);
         return;
       }
     }
 
-    if (newStatus === 'approved' && parsedScore === null) {
+    if (transition === 'approve' && parsedScore === null) {
       toast.error('Please assign a score before approving this submission.');
       return;
     }
 
+    // Claim, resume and reopen leave score and feedback as they are.
+    const keepsReviewText = transition === 'claim' || transition === 'resume' || transition === 'reopen';
+
     setIsSubmittingReview(true);
     try {
       const res = await updateSubmissionReviewAction(batch.id, submissionDetails.submissionId, {
-        newStatus,
-        score: parsedScore,
-        feedback: reviewFeedback.trim() || null
+        transition,
+        expectedVersion: submissionDetails.version,
+        score: setsScore ? parsedScore : undefined,
+        feedback: keepsReviewText ? undefined : reviewFeedback.trim() || null,
+        reason: transition === 'reopen' ? reopenReason.trim() : undefined
       });
 
       if (!res.success) {
         toast.error(res.error || 'Failed to update review status.');
+        if (res.code === 'conflict') {
+          await refreshSubmissionDetails(submissionDetails.submissionId);
+        }
         return;
       }
 
-      toast.success(res.message || `Submission status updated to ${newStatus}.`);
+      toast.success(res.message);
 
       // Update local state in table list
+      const newStatus = res.data.status as SubmissionStatusEnum;
       setSubmissions((prev) =>
         prev.map((s) => {
           if (s.submissionId === submissionDetails.submissionId) {
             return {
               ...s,
               status: newStatus,
-              score: parsedScore !== null ? parsedScore : s.score,
-              tutorFeedback: reviewFeedback.trim() || s.tutorFeedback,
+              score: setsScore && parsedScore !== null ? parsedScore : s.score,
+              tutorFeedback: keepsReviewText ? s.tutorFeedback : reviewFeedback.trim() || null,
               reviewedAt: new Date()
             };
           }
@@ -258,11 +291,9 @@ export function BatchProjectsClient({
         })
       );
 
-      // Refresh inspector details
-      const refreshed = await getSubmissionDetailsAction(batch.id, submissionDetails.submissionId);
-      if (refreshed.success) {
-        setSubmissionDetails(refreshed.data);
-      }
+      setReopenReason('');
+      setIsCorrecting(false);
+      await refreshSubmissionDetails(submissionDetails.submissionId);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to update submission.');
     } finally {
@@ -907,9 +938,9 @@ export function BatchProjectsClient({
                           'This project submission has been approved and marked as successfully completed.'}
                       </p>
 
-                      {submissionDetails.reviewedByTutorName && (
+                      {submissionDetails.reviewedByName && (
                         <div className="pt-2 border-t mt-1 text-[11px] text-muted-foreground">
-                          Evaluated by: <strong className="text-foreground">{submissionDetails.reviewedByTutorName}</strong>
+                          Evaluated by: <strong className="text-foreground">{submissionDetails.reviewedByName}</strong>
                           {submissionDetails.reviewedAt && (
                             <span> on {formatDate(submissionDetails.reviewedAt)}</span>
                           )}
@@ -941,7 +972,7 @@ export function BatchProjectsClient({
                       <Button
                         size="sm"
                         disabled={isSubmittingReview}
-                        onClick={() => handleExecuteTransition('under_review')}
+                        onClick={() => handleExecuteTransition('claim')}
                         className="w-full gap-1.5 shadow-sm"
                       >
                         <Eye className="h-3.5 w-3.5" />
@@ -990,7 +1021,7 @@ export function BatchProjectsClient({
                           size="sm"
                           variant="outline"
                           disabled={isSubmittingReview}
-                          onClick={() => handleExecuteTransition('resubmission_requested')}
+                          onClick={() => handleExecuteTransition('request_resubmission')}
                           className="h-9 gap-1.5 text-xs border-orange-500/40 text-orange-700 hover:bg-orange-500/10 dark:text-orange-400"
                         >
                           <AlertTriangle className="h-3.5 w-3.5" />
@@ -1000,7 +1031,7 @@ export function BatchProjectsClient({
                         <Button
                           size="sm"
                           disabled={isSubmittingReview}
-                          onClick={() => handleExecuteTransition('approved')}
+                          onClick={() => handleExecuteTransition('approve')}
                           className="h-9 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1026,7 +1057,7 @@ export function BatchProjectsClient({
                         size="sm"
                         variant="outline"
                         disabled={isSubmittingReview}
-                        onClick={() => handleExecuteTransition('under_review')}
+                        onClick={() => handleExecuteTransition('resume')}
                         className="w-full gap-1.5 text-xs"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
@@ -1050,6 +1081,108 @@ export function BatchProjectsClient({
                       {submissionDetails.tutorFeedback && (
                         <div className="pt-2 border-t border-emerald-500/20 text-muted-foreground">
                           <span className="font-medium text-foreground">Feedback:</span> {submissionDetails.tutorFeedback}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {submissionDetails.status === 'approved' && (
+                    <div className="rounded-lg border p-3.5 flex flex-col gap-3 text-xs">
+                      <span className="font-semibold text-foreground">Admin override</span>
+                      {isCorrecting ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-1.5">
+                            <label htmlFor="correct-score" className="text-xs font-semibold text-foreground">
+                              Score (Max: {submissionDetails.maxScore})
+                            </label>
+                            <Input
+                              id="correct-score"
+                              type="number"
+                              min="0"
+                              max={submissionDetails.maxScore}
+                              value={reviewScore}
+                              onChange={(e) => setReviewScore(e.target.value)}
+                              className="h-8 text-xs font-mono"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label htmlFor="correct-feedback" className="text-xs font-semibold text-foreground">
+                              Feedback
+                            </label>
+                            <textarea
+                              id="correct-feedback"
+                              rows={4}
+                              value={reviewFeedback}
+                              onChange={(e) => setReviewFeedback(e.target.value)}
+                              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            />
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            The student is notified. XP does not depend on the score and does not change.
+                          </p>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isSubmittingReview}
+                              onClick={() => {
+                                setIsCorrecting(false);
+                                setReviewScore(submissionDetails.score !== null ? String(submissionDetails.score) : '');
+                                setReviewFeedback(submissionDetails.tutorFeedback || '');
+                              }}
+                              className="h-8 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              disabled={isSubmittingReview}
+                              onClick={() => handleExecuteTransition('correct')}
+                              className="h-8 text-xs"
+                            >
+                              Save correction
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isSubmittingReview}
+                            onClick={() => setIsCorrecting(true)}
+                            className="w-full gap-1.5 text-xs"
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Correct score or feedback</span>
+                          </Button>
+                          <div className="flex flex-col gap-1.5">
+                            <label htmlFor="reopen-reason" className="text-xs font-semibold text-foreground">
+                              Reason for reopening
+                            </label>
+                            <textarea
+                              id="reopen-reason"
+                              rows={2}
+                              maxLength={500}
+                              value={reopenReason}
+                              onChange={(e) => setReopenReason(e.target.value)}
+                              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            />
+                            <p className="text-[11px] text-muted-foreground">
+                              Moves the submission back to under review and notifies the student. The 100 XP already
+                              awarded is kept, and approving again does not award it twice.
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isSubmittingReview || !reopenReason.trim()}
+                            onClick={() => handleExecuteTransition('reopen')}
+                            className="w-full gap-1.5 text-xs border-orange-500/40 text-orange-700 hover:bg-orange-500/10 dark:text-orange-400"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Reopen for review</span>
+                          </Button>
                         </div>
                       )}
                     </div>
