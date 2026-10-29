@@ -11,11 +11,22 @@ import {
   assignments,
   assignmentSubmissions,
   tutors,
+  users,
   type SubmissionStatusEnum
 } from '@rms/db/schema';
+import { alias } from 'drizzle-orm/pg-core';
 import type { DbClient } from '@rms/db';
 import { eq, and, sql, desc, inArray, ilike, or } from 'drizzle-orm';
 import { isBatchInScope, type AcademicScope } from './scope';
+
+// Reviewer attribution (migration 0006): reviewed_by_user_id names the account behind the last transition, admin or
+// tutor. Display name: that user's tutor profile, else the user's name, else the legacy reviewed_by_tutor_id tutor
+// (rows reviewed before 0006).
+const reviewerUser = alias(users, 'reviewer_user');
+const reviewerUserTutor = alias(tutors, 'reviewer_user_tutor');
+const reviewerName = sql<string | null>`coalesce(${reviewerUserTutor.fullName}, ${reviewerUser.name}, ${tutors.fullName})`;
+/** Exact `updated_at` (microseconds), the optimistic-concurrency token of review transitions. */
+const submissionVersion = sql<string>`${assignmentSubmissions.updatedAt}::text`;
 
 export interface RubricCriterion {
   id?: string;
@@ -64,6 +75,9 @@ export interface ProjectSubmissionListItem {
   tutorFeedback: string | null;
   reviewedByTutorId: string | null;
   reviewedByTutorName: string | null;
+  reviewedByUserId: string | null;
+  /** Reviewer display name (see reviewerName). */
+  reviewedByName: string | null;
   reviewedAt: Date | null;
   submittedAt: Date;
   updatedAt: Date;
@@ -92,9 +106,14 @@ export interface ProjectSubmissionInspectorDetails {
   tutorFeedback: string | null;
   reviewedByTutorId: string | null;
   reviewedByTutorName: string | null;
+  reviewedByUserId: string | null;
+  /** Reviewer display name (see reviewerName). */
+  reviewedByName: string | null;
   reviewedAt: Date | null;
   submittedAt: Date;
   updatedAt: Date;
+  /** Pass back as expectedVersion when reviewing. */
+  version: string;
   allowedTransitions: SubmissionStatusEnum[];
 }
 
@@ -315,6 +334,8 @@ export async function getBatchProjectSubmissions(
         tutorFeedback: assignmentSubmissions.tutorFeedback,
         reviewedByTutorId: assignmentSubmissions.reviewedByTutorId,
         reviewedByTutorName: tutors.fullName,
+        reviewedByUserId: assignmentSubmissions.reviewedByUserId,
+        reviewedByName: reviewerName,
         reviewedAt: assignmentSubmissions.reviewedAt,
         submittedAt: assignmentSubmissions.submittedAt,
         updatedAt: assignmentSubmissions.updatedAt
@@ -331,6 +352,8 @@ export async function getBatchProjectSubmissions(
       )
       .innerJoin(students, eq(students.id, assignmentSubmissions.studentId))
       .leftJoin(tutors, eq(tutors.id, assignmentSubmissions.reviewedByTutorId))
+      .leftJoin(reviewerUser, eq(reviewerUser.id, assignmentSubmissions.reviewedByUserId))
+      .leftJoin(reviewerUserTutor, eq(reviewerUserTutor.userId, assignmentSubmissions.reviewedByUserId))
       .where(and(...conditions))
       .orderBy(desc(assignmentSubmissions.submittedAt));
 
@@ -352,6 +375,8 @@ export async function getBatchProjectSubmissions(
       tutorFeedback: r.tutorFeedback,
       reviewedByTutorId: r.reviewedByTutorId,
       reviewedByTutorName: r.reviewedByTutorName || null,
+      reviewedByUserId: r.reviewedByUserId ?? null,
+      reviewedByName: r.reviewedByName || r.reviewedByTutorName || null,
       reviewedAt: r.reviewedAt ? new Date(r.reviewedAt) : null,
       submittedAt: new Date(r.submittedAt),
       updatedAt: new Date(r.updatedAt)
@@ -399,9 +424,12 @@ export async function getBatchProjectSubmissionDetails(
         tutorFeedback: assignmentSubmissions.tutorFeedback,
         reviewedByTutorId: assignmentSubmissions.reviewedByTutorId,
         reviewedByTutorName: tutors.fullName,
+        reviewedByUserId: assignmentSubmissions.reviewedByUserId,
+        reviewedByName: reviewerName,
         reviewedAt: assignmentSubmissions.reviewedAt,
         submittedAt: assignmentSubmissions.submittedAt,
-        updatedAt: assignmentSubmissions.updatedAt
+        updatedAt: assignmentSubmissions.updatedAt,
+        version: submissionVersion
       })
       .from(assignmentSubmissions)
       .innerJoin(batches, eq(batches.id, assignmentSubmissions.batchId))
@@ -416,6 +444,8 @@ export async function getBatchProjectSubmissionDetails(
       )
       .innerJoin(students, eq(students.id, assignmentSubmissions.studentId))
       .leftJoin(tutors, eq(tutors.id, assignmentSubmissions.reviewedByTutorId))
+      .leftJoin(reviewerUser, eq(reviewerUser.id, assignmentSubmissions.reviewedByUserId))
+      .leftJoin(reviewerUserTutor, eq(reviewerUserTutor.userId, assignmentSubmissions.reviewedByUserId))
       .where(
         and(
           eq(assignmentSubmissions.id, submissionId),
@@ -454,9 +484,12 @@ export async function getBatchProjectSubmissionDetails(
       tutorFeedback: row.tutorFeedback,
       reviewedByTutorId: row.reviewedByTutorId,
       reviewedByTutorName: row.reviewedByTutorName || null,
+      reviewedByUserId: row.reviewedByUserId ?? null,
+      reviewedByName: row.reviewedByName || row.reviewedByTutorName || null,
       reviewedAt: row.reviewedAt ? new Date(row.reviewedAt) : null,
       submittedAt: new Date(row.submittedAt),
       updatedAt: new Date(row.updatedAt),
+      version: row.version,
       allowedTransitions
     };
   } catch (error) {

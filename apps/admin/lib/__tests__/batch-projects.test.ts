@@ -3,10 +3,19 @@ import util from 'node:util';
 
 vi.mock('server-only', () => ({}));
 
-// Shared XP ledger (@rms/db/xp-ledger): its SQL is covered by the student xp-ledger tests and the
-// integration tier; here we assert that approvals go through it.
-const { mockAwardActivityXp } = vi.hoisted(() => ({ mockAwardActivityXp: vi.fn() }));
-vi.mock('@rms/db/xp-ledger', () => ({ awardActivityXp: (...args: unknown[]) => mockAwardActivityXp(...args) }));
+// Reviews go through the shared atomic review (@rms/academic/review) inside dbTx.transaction. Its SQL (lock,
+// version check, XP, notification) is covered by review-transactions.int.test.ts against a real database; here we
+// check what the admin action passes to it and how it reports the result.
+const { mockReviewSubmission, mockTransaction, fakeTx } = vi.hoisted(() => {
+  const fakeTx = { tx: 'fake' };
+  return {
+    fakeTx,
+    mockReviewSubmission: vi.fn(),
+    mockTransaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(fakeTx))
+  };
+});
+vi.mock('@rms/academic/review', () => ({ reviewSubmission: (...args: unknown[]) => mockReviewSubmission(...args) }));
+vi.mock('@rms/db/tx', () => ({ dbTx: { transaction: (fn: (tx: unknown) => unknown) => mockTransaction(fn) } }));
 
 const mockAuth = vi.fn();
 vi.mock('@/lib/auth', () => ({
@@ -19,6 +28,7 @@ const otherBatchId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
 const sampleAssignmentId = 'aaaaaaaa-1111-2222-3333-444444444444';
 const sampleContentItemId = 'cccccccc-1111-2222-3333-444444444444';
 const sampleSubmissionId = 'ssssssss-1111-2222-3333-444444444444';
+const validSubmissionId = '5a5a5a5a-1111-4222-8333-444444444444';
 const tutorUserId = 'tutor-user-uuid';
 const sampleTutorId = 'tutor-record-uuid';
 
@@ -251,9 +261,9 @@ vi.mock('@rms/db', async (importOriginal) => {
 import {
   getBatchProjectsOverview,
   getBatchProjectSubmissions,
-  getBatchProjectSubmissionDetails,
-  updateSubmissionReviewStatus
+  getBatchProjectSubmissionDetails
 } from '../db/queries/batch-projects';
+import { isBatchInScope } from '@rms/academic/scope';
 
 import {
   getSubmissionDetailsAction,
@@ -431,13 +441,15 @@ describe('Slice C3: Project Evaluation Workbench', () => {
     it('rejects updateSubmissionReviewAction when unauthenticated', async () => {
       mockAuth.mockResolvedValue(null);
 
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'under_review'
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, {
+        transition: 'claim',
+        expectedVersion: 'v1'
       });
       expect(res.success).toBe(false);
       if (!res.success) {
         expect(res.error).toMatch(/unauthorized/i);
       }
+      expect(mockTransaction).not.toHaveBeenCalled();
     });
 
     it('rejects validateGithubRepoAction when unauthenticated', async () => {
@@ -609,132 +621,124 @@ describe('Slice C3: Project Evaluation Workbench', () => {
       expect(actionRes.success).toBe(false);
     });
 
-    it('rejects review mutations across batches', async () => {
-      const crossRes = await updateSubmissionReviewAction(otherBatchId, sampleSubmissionId, {
-        newStatus: 'under_review'
+    it('narrows a review to the batch in the URL (a submission of another batch is out of scope)', async () => {
+      mockReviewSubmission.mockResolvedValue({ ok: false, code: 'not_found' });
+
+      const crossRes = await updateSubmissionReviewAction(otherBatchId, validSubmissionId, {
+        transition: 'claim',
+        expectedVersion: 'v1'
       });
 
       expect(crossRes.success).toBe(false);
-      expect(crossRes.error).toMatch(/does not belong to this batch/i);
+      if (!crossRes.success) expect(crossRes.error).toMatch(/does not belong to this batch/i);
+      const scope = mockReviewSubmission.mock.calls[0][1];
+      expect(isBatchInScope(scope, otherBatchId)).toBe(true);
+      expect(isBatchInScope(scope, sampleBatchId)).toBe(false);
     });
   });
 
   // =========================================================================
-  // 6. Evaluation Lifecycle & State Machine Transitions
+  // 6. Review action -> shared atomic review (@rms/academic/review)
+  //    Transition rules: packages/academic review-rules.test.ts. Transaction, XP, notification and races:
+  //    review-transactions.int.test.ts (real database).
   // =========================================================================
-  describe('Evaluation Lifecycle Transitions', () => {
-    it('successfully starts review (submitted -> under_review)', async () => {
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'under_review'
-      });
+  describe('Review action', () => {
+    it('runs the review in one transaction with the admin as attributed actor', async () => {
+      mockReviewSubmission.mockResolvedValue({ ok: true, status: 'approved', version: 'v2', xpAwarded: true, notified: true });
 
-      expect(res.success).toBe(true);
-      expect(mockAssignmentSubmissions[0].status).toBe('under_review');
-    });
-
-    it('successfully requests changes with structured feedback (under_review -> resubmission_requested)', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
-
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'resubmission_requested',
-        feedback: 'Please implement exponential backoff on Raft RPC election timeouts.'
-      });
-
-      expect(res.success).toBe(true);
-      expect(mockAssignmentSubmissions[0].status).toBe('resubmission_requested');
-      expect(mockAssignmentSubmissions[0].tutorFeedback).toContain('exponential backoff');
-    });
-
-    it('rejects requesting changes without structured feedback', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
-
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'resubmission_requested',
-        feedback: '' // Empty feedback
-      });
-
-      expect(res.success).toBe(false);
-      expect(res.error).toMatch(/feedback is required/i);
-    });
-
-    it('successfully approves submission with score and tutor attribution (under_review -> approved)', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
-
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'approved',
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, {
+        transition: 'approve',
+        expectedVersion: 'v1',
         score: 98,
         feedback: 'Outstanding implementation and concurrency testing.'
       });
 
-      expect(res.success).toBe(true);
-      expect(mockAssignmentSubmissions[0].status).toBe('approved');
-      expect(mockAssignmentSubmissions[0].score).toBe(98);
-      expect(mockAssignmentSubmissions[0].reviewedByTutorId).toBe(sampleTutorId);
-    });
-
-    it('awards approval XP once through the shared ledger (audit F-07)', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
-      mockAwardActivityXp.mockResolvedValue({ awarded: true, xpAwarded: 100 });
-
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'approved', score: 90 });
-
-      expect(res.success).toBe(true);
-      expect(mockAwardActivityXp).toHaveBeenCalledTimes(1);
-      expect(mockAwardActivityXp.mock.calls[0][0]).toMatchObject({
-        studentId: 101,
-        batchId: sampleBatchId,
-        activityType: 'assignment_approved',
-        referenceId: sampleSubmissionId,
-        xp: 100
+      expect(res).toEqual({ success: true, message: 'Project approved.', data: { status: 'approved', version: 'v2' } });
+      expect(mockTransaction).toHaveBeenCalledTimes(1);
+      const [tx, scope, actor, input] = mockReviewSubmission.mock.calls[0];
+      expect(tx).toBe(fakeTx);
+      expect(isBatchInScope(scope, sampleBatchId)).toBe(true);
+      expect(actor).toEqual({ userId: tutorUserId, tutorId: sampleTutorId, kind: 'admin' });
+      expect(input).toEqual({
+        submissionId: validSubmissionId,
+        transition: 'approve',
+        expectedVersion: 'v1',
+        score: 98,
+        feedback: 'Outstanding implementation and concurrency testing.'
       });
     });
 
-    it('awards nothing for non-approval transitions', async () => {
-      await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'under_review' });
-      expect(mockAwardActivityXp).not.toHaveBeenCalled();
+    it('records no tutor id for an admin without a tutor profile', async () => {
+      mockTutors = [];
+      mockReviewSubmission.mockResolvedValue({ ok: true, status: 'under_review', version: 'v2', xpAwarded: false, notified: false });
+
+      await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, { transition: 'claim', expectedVersion: 'v1' });
+
+      expect(mockReviewSubmission.mock.calls[0][2]).toEqual({ userId: tutorUserId, tutorId: null, kind: 'admin' });
     });
 
-    it('keeps the saved review when the ledger write fails', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
-      mockAwardActivityXp.mockRejectedValue(new Error('ledger unavailable'));
+    it.each([
+      ['conflict', /changed by someone else/i],
+      ['forbidden_transition', /invalid status transition/i],
+      ['feedback_required', /feedback is required/i],
+      ['invalid_score', /between 0 and/i],
+      ['reason_required', /reason/i],
+      ['nothing_to_correct', /change the score or the feedback/i]
+    ])('reports %s with its message and code', async (code, message) => {
+      mockReviewSubmission.mockResolvedValue({ ok: false, code });
 
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, { newStatus: 'approved', score: 90 });
-
-      expect(res.success).toBe(true);
-      expect(mockAssignmentSubmissions[0].status).toBe('approved');
-    });
-
-    it('rejects invalid state transitions (submitted -> approved directly)', async () => {
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'approved',
-        score: 100
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, {
+        transition: 'approve',
+        expectedVersion: 'v1',
+        score: 90
       });
 
       expect(res.success).toBe(false);
-      expect(res.error).toMatch(/invalid status transition/i);
+      if (!res.success) {
+        expect(res.code).toBe(code);
+        expect(res.error).toMatch(message);
+      }
     });
 
-    it('rejects transitioning from approved terminal state', async () => {
-      mockAssignmentSubmissions[0].status = 'approved';
-
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'under_review'
-      });
+    it.each([
+      ['an unknown transition', { transition: 'publish', expectedVersion: 'v1' }],
+      ['a missing version', { transition: 'claim', expectedVersion: '' }],
+      ['a fractional score', { transition: 'approve', expectedVersion: 'v1', score: 9.5 }],
+      ['over-long feedback', { transition: 'request_resubmission', expectedVersion: 'v1', feedback: 'x'.repeat(5001) }]
+    ])('rejects %s before opening a transaction', async (_label, data) => {
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, data as never);
 
       expect(res.success).toBe(false);
-      expect(res.error).toMatch(/invalid status transition/i);
+      if (!res.success) expect(res.code).toBe('invalid_input');
+      expect(mockTransaction).not.toHaveBeenCalled();
     });
 
-    it('rejects score exceeding maximum points', async () => {
-      mockAssignmentSubmissions[0].status = 'under_review';
+    it('rejects a submission id that is not a UUID', async () => {
+      const res = await updateSubmissionReviewAction(sampleBatchId, 'not-a-uuid', { transition: 'claim', expectedVersion: 'v1' });
+      expect(res.success).toBe(false);
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
 
-      const res = await updateSubmissionReviewAction(sampleBatchId, sampleSubmissionId, {
-        newStatus: 'approved',
-        score: 150 // maxScore is 100
-      });
+    it('refuses a signed-in user without an admin role', async () => {
+      mockAuth.mockResolvedValue({ user: { id: tutorUserId, role: 'tutor' } });
+
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, { transition: 'claim', expectedVersion: 'v1' });
 
       expect(res.success).toBe(false);
-      expect(res.error).toMatch(/between 0 and 100/i);
+      if (!res.success) expect(res.code).toBe('unauthorized');
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('reports a generic failure when the transaction throws (nothing is committed)', async () => {
+      mockReviewSubmission.mockRejectedValue(new Error('ledger unavailable'));
+
+      const res = await updateSubmissionReviewAction(sampleBatchId, validSubmissionId, {
+        transition: 'approve',
+        expectedVersion: 'v1',
+        score: 90
+      });
+
+      expect(res).toEqual({ success: false, error: 'Failed to update submission review.', code: 'failed' });
     });
   });
 

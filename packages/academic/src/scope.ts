@@ -52,3 +52,13 @@ export function inScope(column: AnyPgColumn, scope: AcademicScope): SQL | undefi
   if (scope.batchIds.length === 0) return sql`false`;
   return inArray(column, [...scope.batchIds]);
 }
+
+/**
+ * Narrows a scope to the given batches (the intersection), for example to the batch named in a URL, so a request
+ * for one batch can never act on another even with the admin scope.
+ */
+export function restrictScope(scope: AcademicScope, batchIds: readonly string[]): AcademicScope {
+  assertScope(scope);
+  const allowed = scope.kind === 'all' ? batchIds : batchIds.filter((id) => scope.batchIds.includes(id));
+  return issue({ kind: 'batches', batchIds: Object.freeze([...new Set(allowed)]) });
+}

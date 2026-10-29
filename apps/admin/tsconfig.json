@@ -26,7 +26,10 @@
       "@rms/db/node-tooling": ["../../packages/db/src/node-tooling"],
       "@rms/academic/scope": ["../../packages/academic/src/scope"],
       "@rms/academic/projects": ["../../packages/academic/src/projects"],
-      "@rms/academic/assessments": ["../../packages/academic/src/assessments"]
+      "@rms/academic/assessments": ["../../packages/academic/src/assessments"],
+      "@rms/academic/review": ["../../packages/academic/src/review"],
+      "@rms/academic/review-rules": ["../../packages/academic/src/review-rules"],
+      "@rms/academic/notifications": ["../../packages/academic/src/notifications"]
     },
     "plugins": [
       {
