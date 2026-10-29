@@ -9,6 +9,7 @@ import {
 } from '@rms/db';
 import { eq, and } from 'drizzle-orm';
 import { requireStudentEntitlement, hasBatchAccess } from '@/lib/db/queries/entitlements';
+import { resubmitProjectIfEditable } from '@/lib/db/queries/projects';
 import type {
   SubmitProjectInput,
   SubmitProjectResult
@@ -251,18 +252,33 @@ export async function submitProjectAssignment(
         };
       }
 
-      // Allowed for 'submitted' or 'resubmission_requested'
-      await db
-        .update(assignmentSubmissions)
-        .set({
-          githubUrl: cleanGithubUrl,
-          liveUrl: cleanLiveUrl,
-          notes: cleanNotes,
-          status: 'submitted', // resets resubmission_requested back to submitted
-          submittedAt: now,
-          updatedAt: now
-        })
-        .where(eq(assignmentSubmissions.id, existingSubmission.id));
+      // Allowed for 'submitted' or 'resubmission_requested' (resets resubmission_requested back to submitted).
+      // The update re-checks the status itself: a reviewer may have claimed it since the read above.
+      const resubmitted = await resubmitProjectIfEditable(
+        existingSubmission.id,
+        { githubUrl: cleanGithubUrl, liveUrl: cleanLiveUrl, notes: cleanNotes },
+        now
+      );
+
+      if (!resubmitted) {
+        const [current] = await db
+          .select({ status: assignmentSubmissions.status })
+          .from(assignmentSubmissions)
+          .where(eq(assignmentSubmissions.id, existingSubmission.id))
+          .limit(1);
+
+        return current?.status === 'approved'
+          ? {
+              success: false,
+              error: 'This project has already been approved and cannot be resubmitted.',
+              code: 'ALREADY_APPROVED'
+            }
+          : {
+              success: false,
+              error: 'Your submission is currently under review by a tutor and cannot be updated.',
+              code: 'LOCKED_UNDER_REVIEW'
+            };
+      }
 
       submissionId = existingSubmission.id;
     } else {

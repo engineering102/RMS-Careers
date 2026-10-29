@@ -264,6 +264,32 @@ export async function getProjectAssignmentForStudent(
   };
 }
 
+/** Submission statuses the student may still change. A reviewer's claim (under_review) or an approval locks it. */
+export const STUDENT_EDITABLE_SUBMISSION_STATUSES = ['submitted', 'resubmission_requested'] as const;
+
+/**
+ * Replaces the student's repository details and resets the submission to `submitted`, but only while it is still
+ * editable, in one statement (tutor plan D-12). The caller's earlier status read can be stale: a tutor or admin may
+ * claim the submission (under_review) in between, and that claim must win. Returns false when nothing was updated.
+ */
+export async function resubmitProjectIfEditable(
+  submissionId: string,
+  values: { githubUrl: string; liveUrl: string | null; notes: string | null },
+  now: Date
+): Promise<boolean> {
+  const updated = await db
+    .update(assignmentSubmissions)
+    .set({ ...values, status: 'submitted', submittedAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(assignmentSubmissions.id, submissionId),
+        inArray(assignmentSubmissions.status, [...STUDENT_EDITABLE_SUBMISSION_STATUSES])
+      )
+    )
+    .returning({ id: assignmentSubmissions.id });
+  return updated.length > 0;
+}
+
 /**
  * Fetches all project assignments across the student's active enrolled batches.
  */
