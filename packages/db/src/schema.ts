@@ -10,7 +10,9 @@ import {
   index,
   boolean,
   varchar,
-  jsonb
+  jsonb,
+  smallint,
+  date
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -486,6 +488,11 @@ export const assignmentSubmissions = pgTable(
     reviewedByTutorId: uuid('reviewed_by_tutor_id').references(() => tutors.id, {
       onDelete: 'set null'
     }),
+    // The account that made the last review transition, admin or tutor (migration 0006). Rows reviewed before
+    // 0006 have no value: admin reviews could not be attributed then.
+    reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+      onDelete: 'set null'
+    }),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
@@ -606,6 +613,41 @@ export const notifications = pgTable(
   })
 );
 
+// Weekly recurring live sessions of a batch (migration 0006). One-off session: starts_on = ends_on and the
+// matching single weekday. Not modelled: per-occurrence cancellation or rescheduling, host/start links,
+// non-weekly patterns. CHECK constraints live in the migration SQL (Drizzle 0.31 cannot declare them):
+// bls_duration_chk, bls_days_chk, bls_time_chk, bls_window_chk.
+export const batchLiveSessions = pgTable(
+  'batch_live_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    batchId: uuid('batch_id')
+      .notNull()
+      .references(() => batches.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    // Validated Zoom join URL. May carry a meeting passcode: never log it.
+    meetingUrl: text('meeting_url').notNull(),
+    joiningInstructions: text('joining_instructions'),
+    // ISO weekdays, 1 = Monday .. 7 = Sunday.
+    recurrenceDays: smallint('recurrence_days').array().notNull(),
+    // 'HH:MM' in time_zone.
+    startTime: varchar('start_time', { length: 5 }).notNull(),
+    durationMinutes: integer('duration_minutes').notNull(),
+    timeZone: varchar('time_zone', { length: 64 }).notNull().default('Asia/Kolkata'),
+    startsOn: date('starts_on', { mode: 'string' }),
+    endsOn: date('ends_on', { mode: 'string' }),
+    isPublished: boolean('is_published').notNull().default(false),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => ({
+    batchPublishedIdx: index('batch_live_sessions_batch_pub_idx').on(table.batchId, table.isPublished)
+  })
+);
+
 // ==========================================
 // 7. RELATIONS
 // ==========================================
@@ -668,7 +710,8 @@ export const batchesRelations = relations(batches, ({ one, many }) => ({
   assignmentSubmissions: many(assignmentSubmissions),
   externalAssessments: many(externalAssessmentRecords),
   activities: many(activities),
-  quizAttempts: many(quizAttempts)
+  quizAttempts: many(quizAttempts),
+  liveSessions: many(batchLiveSessions)
 }));
 
 export const tutorBatchAssignmentsRelations = relations(tutorBatchAssignments, ({ one }) => ({
@@ -821,6 +864,10 @@ export const assignmentSubmissionsRelations = relations(assignmentSubmissions, (
   reviewedByTutor: one(tutors, {
     fields: [assignmentSubmissions.reviewedByTutorId],
     references: [tutors.id]
+  }),
+  reviewedByUser: one(users, {
+    fields: [assignmentSubmissions.reviewedByUserId],
+    references: [users.id]
   })
 }));
 
@@ -863,6 +910,17 @@ export const externalAssessmentRecordsRelations = relations(
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
+    references: [users.id]
+  })
+}));
+
+export const batchLiveSessionsRelations = relations(batchLiveSessions, ({ one }) => ({
+  batch: one(batches, {
+    fields: [batchLiveSessions.batchId],
+    references: [batches.id]
+  }),
+  createdByUser: one(users, {
+    fields: [batchLiveSessions.createdByUserId],
     references: [users.id]
   })
 }));
@@ -935,6 +993,9 @@ export type NewExternalAssessmentRecord = typeof externalAssessmentRecords.$infe
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
 
+export type BatchLiveSession = typeof batchLiveSessions.$inferSelect;
+export type NewBatchLiveSession = typeof batchLiveSessions.$inferInsert;
+
 // ==========================================
 // 9. ZOD VALIDATION SCHEMAS
 // ==========================================
@@ -1006,3 +1067,6 @@ export const selectExternalAssessmentRecordSchema = createSelectSchema(
 
 export const insertNotificationSchema = createInsertSchema(notifications);
 export const selectNotificationSchema = createSelectSchema(notifications);
+
+export const insertBatchLiveSessionSchema = createInsertSchema(batchLiveSessions);
+export const selectBatchLiveSessionSchema = createSelectSchema(batchLiveSessions);
