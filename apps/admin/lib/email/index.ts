@@ -6,6 +6,7 @@ import {
   type EnrollmentConfirmationEmailData
 } from './templates/enrollment-confirmation';
 import { renderStudentActivationEmail, type StudentActivationEmailData } from './templates/student-activation';
+import { renderTutorInvitationEmail, type TutorInvitationEmailData } from './templates/tutor-invitation';
 
 export interface SendEmailResult {
   success: boolean;
@@ -81,6 +82,18 @@ export async function sendStudentActivationEmail(data: StudentActivationEmailDat
   if (!apiKey?.trim()) return { success: false, reason: 'provider_not_configured' };
   try {
     const response = await new Resend(apiKey).emails.send({ from: process.env.EMAIL_FROM || 'RMS Careers <onboarding@resend.dev>', to: [data.studentEmail], ...renderStudentActivationEmail(data) });
+    return response.error ? { success: false, reason: 'delivery_failed', error: response.error.message } : { success: true, messageId: response.data?.id };
+  } catch (error) {
+    return { success: false, reason: 'delivery_failed', error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/** Sends a post-commit Tutor Portal activation invitation. Never throws. */
+export async function sendTutorInvitationEmail(data: TutorInvitationEmailData): Promise<SendEmailResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey?.trim()) return { success: false, reason: 'provider_not_configured' };
+  try {
+    const response = await new Resend(apiKey).emails.send({ from: process.env.EMAIL_FROM || 'RMS Careers <onboarding@resend.dev>', to: [data.tutorEmail], ...renderTutorInvitationEmail(data) });
     return response.error ? { success: false, reason: 'delivery_failed', error: response.error.message } : { success: true, messageId: response.data?.id };
   } catch (error) {
     return { success: false, reason: 'delivery_failed', error: error instanceof Error ? error.message : String(error) };

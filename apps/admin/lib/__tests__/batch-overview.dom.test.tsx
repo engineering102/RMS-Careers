@@ -8,7 +8,9 @@ const queries = vi.hoisted(() => ({
   getCollegeById: vi.fn(),
   getProgramById: vi.fn(),
   getBatchRoster: vi.fn(),
-  getProgramEnrollmentCount: vi.fn()
+  getProgramEnrollmentCount: vi.fn(),
+  getBatchTutors: vi.fn(),
+  getAssignableTutors: vi.fn()
 }));
 const notFound = vi.hoisted(() =>
   vi.fn(() => {
@@ -19,6 +21,7 @@ const notFound = vi.hoisted(() =>
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/db/queries', () => queries);
 vi.mock('../../app/(admin)/batches/[batchId]/students/actions', () => ({ addStudentToBatchAction: vi.fn() }));
+vi.mock('../../app/(admin)/batches/[batchId]/tutors/actions', () => ({ assignTutorAction: vi.fn(), unassignTutorAction: vi.fn() }));
 vi.mock('@/lib/authz', () => ({ requireAdminSession: vi.fn().mockResolvedValue({ user: { id: 'a1' } }) }));
 vi.mock('next/navigation', () => ({
   notFound,
@@ -35,6 +38,8 @@ import { BatchesClient } from '../../app/(admin)/batches/batches-client';
 
 beforeEach(() => {
   for (const fn of Object.values(queries)) fn.mockReset();
+  queries.getBatchTutors.mockResolvedValue([]);
+  queries.getAssignableTutors.mockResolvedValue([]);
   notFound.mockClear();
 });
 
@@ -190,7 +195,8 @@ describe('Batches list', () => {
             collegeCode: 'JNT',
             programName: 'Full Stack',
             programCode: 'FS-1',
-            enrollmentCount: 2
+            enrollmentCount: 2,
+            tutorCount: 1
           }
         ]}
         colleges={[]}
