@@ -11,4 +11,5 @@ RESEND_API_KEY=""
 EMAIL_FROM=""
 # Local preview serves http://localhost:8787; production values live in wrangler.jsonc vars.
 STUDENT_APP_URL="http://localhost:3002"
+TUTOR_APP_URL="http://localhost:3003"
 EMAIL_LOGO_URL=""

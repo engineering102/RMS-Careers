@@ -7,7 +7,8 @@ import {
   FileText,
   PanelLeft,
   Settings,
-  Building2
+  Building2,
+  UserCog
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,10 @@ function DesktopNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           <Layers className="h-5 w-5" />
         </NavItem>
 
+        <NavItem href="/tutors" label="Tutors">
+          <UserCog className="h-5 w-5" />
+        </NavItem>
+
         <NavItem href="/enrollments" label="Enrollments">
           <ClipboardList className="h-5 w-5" />
         </NavItem>
@@ -149,6 +154,13 @@ function MobileNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
           >
             <Layers className="h-5 w-5" />
             Batches
+          </Link>
+          <Link
+            href="/tutors"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <UserCog className="h-5 w-5" />
+            Tutors
           </Link>
           <Link
             href="/enrollments"

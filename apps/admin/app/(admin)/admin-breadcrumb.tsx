@@ -15,6 +15,7 @@ const SECTIONS: { prefix: string; label: string }[] = [
   { prefix: '/programs', label: 'Programs' },
   { prefix: '/colleges', label: 'Colleges' },
   { prefix: '/batches', label: 'Batches' },
+  { prefix: '/tutors', label: 'Tutors' },
   { prefix: '/enrollments', label: 'Enrollments' },
   { prefix: '/content', label: 'Content Library' }
 ];

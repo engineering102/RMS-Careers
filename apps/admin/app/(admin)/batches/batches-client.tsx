@@ -524,6 +524,7 @@ export function BatchesClient({
                 <TableHead className="font-semibold">Timeline</TableHead>
                 <TableHead className="font-semibold text-center">Status</TableHead>
                 <TableHead className="font-semibold text-right">Enrolled Students</TableHead>
+                <TableHead className="font-semibold text-right">Tutors</TableHead>
                 <TableHead className="font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -602,6 +603,17 @@ export function BatchesClient({
                         {batch.enrollmentCount === 1 ? 'student' : 'students'}
                       </span>
                     </div>
+                  </TableCell>
+
+                  {/* Assigned tutors */}
+                  <TableCell className="text-right text-xs">
+                    {batch.tutorCount > 0 ? (
+                      <span>
+                        {batch.tutorCount} {batch.tutorCount === 1 ? 'tutor' : 'tutors'}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">None</span>
+                    )}
                   </TableCell>
 
                   {/* Actions */}
