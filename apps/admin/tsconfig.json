@@ -29,7 +29,8 @@
       "@rms/academic/assessments": ["../../packages/academic/src/assessments"],
       "@rms/academic/review": ["../../packages/academic/src/review"],
       "@rms/academic/review-rules": ["../../packages/academic/src/review-rules"],
-      "@rms/academic/notifications": ["../../packages/academic/src/notifications"]
+      "@rms/academic/notifications": ["../../packages/academic/src/notifications"],
+      "@rms/academic/live-sessions": ["../../packages/academic/src/live-sessions"]
     },
     "plugins": [
       {
