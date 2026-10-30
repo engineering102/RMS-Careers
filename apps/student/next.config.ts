@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 import { buildSecurityHeaders } from './security-headers';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@rms/db', '@rms/auth'],
+  transpilePackages: ['@rms/db', '@rms/auth', '@rms/academic'],
   async headers() {
     return [
       {
