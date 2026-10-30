@@ -6,6 +6,7 @@
     "dev:admin": "pnpm --filter @rms/admin dev",
     "dev:student": "pnpm --filter @rms/student dev",
     "dev:web": "pnpm --filter @rms/web dev",
+    "dev:tutor": "pnpm --filter @rms/tutor dev",
     "build": "pnpm -r --filter \"./apps/*\" build",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r typecheck",

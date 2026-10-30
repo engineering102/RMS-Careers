@@ -1,0 +1,44 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "rms-tutor",
+    "main": ".open-next/worker.js",
+    "compatibility_date": "2026-10-04",
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+    },
+    // The first deploy creates the custom domain (and its DNS record) for tutor.rms-careers.com.
+    // Nothing deploys this Worker until the deploy pipeline knows the tutor app (tutor plan WS-11).
+    "routes": [
+        {
+            "pattern": "tutor.rms-careers.com",
+            "custom_domain": true
+        }
+    ],
+    "services": [
+        {
+            "binding": "WORKER_SELF_REFERENCE",
+            "service": "rms-tutor"
+        }
+    ],
+    // Non-secret configuration. Used for emailed activation / reset links.
+    "vars": {
+        "TUTOR_APP_URL": "https://tutor.rms-careers.com"
+    },
+    // Cloudflare Workers Rate Limiting (audit F-04). Read by lib/security/request-limits.ts; keep limit/period
+    // equal to the in-code fallback rules. namespace_id must be unique per binding within the Cloudflare account
+    // (in use elsewhere: 1101, 1201-1203, 1301-1302, 2101, 2301-2302).
+    "ratelimits": [
+        { "name": "AUTH_ACCOUNT_RATE_LIMITER", "namespace_id": "1401", "simple": { "limit": 5, "period": 60 } },
+        { "name": "AUTH_CLIENT_RATE_LIMITER", "namespace_id": "1402", "simple": { "limit": 60, "period": 60 } }
+    ],
+    // Secrets are never committed. Set with `wrangler secret put <NAME>` (or the dashboard). AUTH_SECRET must be
+    // unique to the tutor portal (never the admin or student secret).
+    "secrets": {
+        "required": ["POSTGRES_URL", "AUTH_SECRET", "RESEND_API_KEY", "EMAIL_FROM"]
+    },
+    "observability": {
+        "enabled": true
+    }
+}
