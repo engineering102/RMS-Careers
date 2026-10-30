@@ -12,7 +12,7 @@ import {
   type Batch,
   type TutorBatchAssignment
 } from '@rms/db';
-import { eq, and, desc, count, ilike, ne } from 'drizzle-orm';
+import { eq, and, desc, count, ilike, ne, sql } from 'drizzle-orm';
 import type { BatchRosterEntry } from '@/lib/batches/roster';
 
 export interface BatchWithDetails {
@@ -29,6 +29,8 @@ export interface BatchWithDetails {
   status: string;
   createdAt: Date;
   enrollmentCount: number;
+  /** Tutors assigned to the batch (tutor_batch_assignments). */
+  tutorCount: number;
 }
 
 /**
@@ -70,7 +72,8 @@ export async function getBatchesWithDetails(options?: {
         endDate: batches.endDate,
         status: batches.status,
         createdAt: batches.createdAt,
-        enrollmentCount: count(enrollments.id)
+        enrollmentCount: count(enrollments.id),
+        tutorCount: sql<number>`(select count(*)::int from ${tutorBatchAssignments} where ${tutorBatchAssignments.batchId} = ${batches.id})`
       })
       .from(batches)
       .innerJoin(colleges, eq(batches.collegeId, colleges.id))
@@ -101,7 +104,8 @@ export async function getBatchesWithDetails(options?: {
 
     return rows.map((r) => ({
       ...r,
-      enrollmentCount: Number(r.enrollmentCount)
+      enrollmentCount: Number(r.enrollmentCount),
+      tutorCount: Number(r.tutorCount ?? 0)
     }));
   } catch (error) {
     console.error('Error fetching batches with details:', error);

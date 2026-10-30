@@ -27,3 +27,4 @@ export * from './queries/batch-assessments';
 export * from './queries/batch-projects';
 export * from './queries/batch-external-assessments';
 export * from './queries/batch-analytics';
+export * from './queries/tutors';
