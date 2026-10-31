@@ -20,7 +20,9 @@
       "@rms/db/tx": ["../../packages/db/src/tx"],
       "@rms/db/xp-ledger": ["../../packages/db/src/xp-ledger"],
       "@rms/db/guard-env": ["../../packages/db/src/guard-env"],
-      "@rms/academic/live-sessions": ["../../packages/academic/src/live-sessions"]
+      "@rms/academic/live-sessions": ["../../packages/academic/src/live-sessions"],
+      "@rms/academic/scope": ["../../packages/academic/src/scope"],
+      "@rms/academic/tutor/*": ["../../packages/academic/src/tutor/*"]
     },
     "plugins": [{ "name": "next" }]
   },
