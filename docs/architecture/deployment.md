@@ -84,8 +84,22 @@ Config: `apps/admin/wrangler.jsonc`, `open-next.config.ts`. Scripts: `pnpm --fil
 | `EMAIL_FROM` | Secret/var (optional) | `lib/email` | falls back to a Resend sandbox sender |
 | `EMAIL_LOGO_URL` | Var | email templates | `https://www.rms-careers.com/rms-logo.jpg` |
 | `STUDENT_APP_URL` | Var | activation links | `https://student.rms-careers.com` |
+| `TUTOR_APP_URL` | Var | tutor invitation links | Not set until the tutor launch; without it admin creates tutors but sends no invitation |
 
 Not used by code (do not set): `NEXTAUTH_URL`, `AUTH_URL`, `AUTH_TRUST_HOST` (`trustHost: true` is set in `lib/auth.config.ts`).
+
+### `apps/tutor` (Cloudflare Workers via OpenNext, `tutor.rms-careers.com`; not yet deployed)
+Config: `apps/tutor/wrangler.jsonc`, `open-next.config.ts`. Worker `rms-tutor`, flags `nodejs_compat` + `global_fetch_strictly_public`, rate-limit namespaces 1401 and 1402, observability on, no placement. The deploy pipeline treats it as **pre-launch** (`PRE_LAUNCH_APPS`): automatic deploys skip it until the bootstrap in [`docs/development/tutor-launch.md`](../development/tutor-launch.md).
+
+| Variable | Kind | Description | Production value |
+| :--- | :--- | :--- | :--- |
+| `POSTGRES_URL` | Secret (required) | Neon connection string (neon-http and `@rms/db/tx`) | Production pooled URL |
+| `AUTH_SECRET` | Secret (required) | Auth.js key; unique to the tutor portal | New random 32+ bytes |
+| `RESEND_API_KEY` | Secret (required) | Activation and password-reset email | `re_...` |
+| `EMAIL_FROM` | Secret (required) | Verified sender | `RMS Careers <…@rms-careers.com>` |
+| `TUTOR_APP_URL` | Var (in `wrangler.jsonc`) | Base URL of emailed links | `https://tutor.rms-careers.com` |
+
+Session cookie `__Host-tutor-sess`, `trustHost: true`, HTTPS only. Like student and admin, sign-in runs bcrypt and needs the Workers Paid CPU limit.
 
 **Build-secret guard (all Cloudflare apps):** OpenNext inlines `.env`, `.env.<mode>`, `.env.local` and `.env.<mode>.local` (from the app directory **and** the monorepo root) into `.open-next/cloudflare/next-env.mjs`, which is bundled into the Worker. `scripts/check-cloudflare-build-env.mjs` is wired into each app's `cf:build` (and therefore `preview` / `deploy`): `pre` fails the build if any of those files has a non-empty value, `post` fails if `next-env.mjs` embeds any variable. It prints file names and variable names only. `.env.example`, `.dev.vars`, `.dev.vars.example` and empty-valued files are allowed. To build with a populated `.env.local`, rename it first (`mv .env.local .env.local.bak`) or use a clean checkout; `next dev`, `next build` and tests are unaffected. Never run `opennextjs-cloudflare build` directly for a deployable artifact.
 

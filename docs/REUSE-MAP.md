@@ -62,6 +62,25 @@ Location: `packages/auth/src/`
 
 ---
 
+## 2a. Shared Academic Logic (`@rms/academic`)
+
+Location: `packages/academic/src/`. Used by admin, student and tutor. Every function takes the database client (or a
+transaction) as an argument and never reads the environment.
+
+- `scope`: `adminScope()` (admin only), `tutorScope(batchIds)`, `restrictScope()`, `isBatchInScope()`, `inScope(column, scope)`.
+- `review`: `reviewSubmission(tx, scope, actor, input)`, the project-review transaction (row lock, version token, XP, notification).
+- `review-rules`: `planReview()`, `availableTransitions(status, actor)`, `REVIEW_TRANSITIONS`.
+- `notifications`: `buildProjectReviewedNotification()`.
+- `projects`, `assessments`: batch project and assessment reads (moved from admin; admin keeps wrappers).
+- `live-sessions`: `parseZoomMeetingUrl()`, `validateSchedule()`, `nextOccurrence()`, `describeSchedule()`, `formatIstDateTime()`.
+- `tutor/*`: `getReviewQueue()`, `getReviewSubmission()`, `getTutorOverviewMetrics()`, `getBatchRoster()`, `getRosterStudent()`,
+  `getBatchProgress()` / `computeBatchProgress()` (student completion rules, set-based), `computeIndicators()`,
+  `getQuizParticipation()`, `getBatchLiveSessions()`.
+
+Apps import subpaths (`@rms/academic/review`, `@rms/academic/tutor/roster`, …), mapped in each app's `tsconfig.json` `paths`.
+
+---
+
 ## 3. Reusable UI Components & Primitives
 
 ### Radix UI Primitives (`apps/admin/components/ui/`):
