@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
@@ -60,6 +62,12 @@ describe('getTutorPortalUrl', () => {
     vi.stubEnv('NODE_ENV', 'production');
     expect(getTutorPortalUrl()).toBeNull();
     vi.unstubAllEnvs();
+  });
+
+  it('the admin Worker is configured with the live tutor portal (set at the tutor launch)', () => {
+    const jsonc = readFileSync(path.resolve(__dirname, '../../wrangler.jsonc'), 'utf8');
+    // The canonical hyphenated domain, https only, exactly once, as a plain var (not a secret).
+    expect([...jsonc.matchAll(/"TUTOR_APP_URL":\s*"([^"]*)"/g)].map((m) => m[1])).toEqual(['https://tutor.rms-careers.com']);
   });
 
   it('points local development at the local tutor app', () => {

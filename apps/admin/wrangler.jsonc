@@ -32,6 +32,9 @@
     // Non-secret configuration.
     "vars": {
         "STUDENT_APP_URL": "https://student.rms-careers.com",
+        // Tutor invitation links (lib/email/tutor-portal-url.ts). Set at the tutor launch, after rms-tutor was deployed
+        // and verified (docs/development/tutor-launch.md step 6); without it admin sends no tutor invitations.
+        "TUTOR_APP_URL": "https://tutor.rms-careers.com",
         "EMAIL_LOGO_URL": "https://www.rms-careers.com/rms-logo.jpg"
     },
     // Cloudflare Workers Rate Limiting (audit F-04). Read by lib/security/request-limits.ts; keep limit/period
