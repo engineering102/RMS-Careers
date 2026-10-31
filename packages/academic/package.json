@@ -45,6 +45,41 @@
       "types": "./src/live-sessions.ts",
       "import": "./src/live-sessions.ts",
       "default": "./src/live-sessions.ts"
+    },
+    "./tutor/progress": {
+      "types": "./src/tutor/progress.ts",
+      "import": "./src/tutor/progress.ts",
+      "default": "./src/tutor/progress.ts"
+    },
+    "./tutor/indicators": {
+      "types": "./src/tutor/indicators.ts",
+      "import": "./src/tutor/indicators.ts",
+      "default": "./src/tutor/indicators.ts"
+    },
+    "./tutor/roster": {
+      "types": "./src/tutor/roster.ts",
+      "import": "./src/tutor/roster.ts",
+      "default": "./src/tutor/roster.ts"
+    },
+    "./tutor/review-queue": {
+      "types": "./src/tutor/review-queue.ts",
+      "import": "./src/tutor/review-queue.ts",
+      "default": "./src/tutor/review-queue.ts"
+    },
+    "./tutor/overview": {
+      "types": "./src/tutor/overview.ts",
+      "import": "./src/tutor/overview.ts",
+      "default": "./src/tutor/overview.ts"
+    },
+    "./tutor/assessments": {
+      "types": "./src/tutor/assessments.ts",
+      "import": "./src/tutor/assessments.ts",
+      "default": "./src/tutor/assessments.ts"
+    },
+    "./tutor/live": {
+      "types": "./src/tutor/live.ts",
+      "import": "./src/tutor/live.ts",
+      "default": "./src/tutor/live.ts"
     }
   },
   "scripts": {

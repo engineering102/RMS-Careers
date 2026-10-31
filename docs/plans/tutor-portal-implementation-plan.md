@@ -5,7 +5,16 @@ Status: **approved 2026-10-22** (D-1, D-2, D-5 as revised, D-12). Progress:
 - WS-2 (Auth.js `5.0.0-beta.32`): merged, #58.
 - WS-3 (migration 0006): PR #62. **0006 applied to production** (`ep-blue-queen-b4qdn2dc`, `neondb`) by the owner on
   2026-10-29 with the guarded runner; Neon restore branch `pre-0006-2026-10-29`. Also applied to the NonProd test branch.
-- WS-4 (`@rms/academic` shared package): in review.
+- WS-4 (`@rms/academic` shared package): merged, #63. WS-5 (atomic review): merged, #65. WS-6 (D-12): merged, #64.
+- WS-7 (admin tutor management): merged, #66. WS-8 (live sessions): #67. WS-9 (tutor app, auth): #68.
+- WS-10 (tutor features): in review, stacked on WS-8 and WS-9. Choices made while building it:
+  - "Last activity" (roster and signals) is the latest of the batch's XP activity, project submissions and quiz attempts;
+    the activity ledger alone misses submissions and failed attempts.
+  - Signals: inactive from 7 days, no activity after the first week, overdue required items, projects returned for
+    changes; none for a completed batch.
+  - The curriculum page lists items without resource links.
+  - `notFound()` pages render the not-found UI, but the HTTP status is 200 because dashboard routes stream behind
+    `loading.tsx` (a Next.js behaviour); the app is `noindex`.
 - Build hotfix outside the plan: #57 (`--dangerouslyUseUnsupportedNextVersion`, see `docs/architecture/deployment.md`).
 Date: 2026-10-22. Branch inspected: `feat/staging-env`, which has many uncommitted changes. Implementation must start from a
 clean branch off `main`.

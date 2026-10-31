@@ -8,6 +8,7 @@ import { isBatchInScope, tutorScope, type AcademicScope } from '@rms/academic/sc
 import { auth } from '@/lib/auth';
 import { isSessionCurrent } from '@/lib/auth/session-revocation';
 import { SESSION_REVOKED_PATH } from '@/lib/constants/session';
+import { logTutorEvent } from '@/lib/observability';
 import { evaluateTutorAccount } from './tutor-access';
 import { loadTutorAccount } from './tutor-accounts';
 
@@ -85,6 +86,9 @@ export async function requireTutor(): Promise<TutorContext> {
 /** Guard for batch routes: an unassigned batch and an unknown one give the same 404. */
 export async function requireTutorBatch(batchId: string): Promise<TutorContext> {
   const context = await requireTutor();
-  if (!isBatchInScope(context.scope, batchId)) notFound();
+  if (!isBatchInScope(context.scope, batchId)) {
+    logTutorEvent({ evt: 'tutor.authz_denied', resource: 'batch', id: String(batchId).slice(0, 64), tutorId: context.tutorId });
+    notFound();
+  }
   return context;
 }

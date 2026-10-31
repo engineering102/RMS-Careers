@@ -296,3 +296,37 @@ export async function resetTutorPassword(rawToken: string, newPassword: string):
     return { success: false, error: 'This password reset link is invalid or unavailable.' };
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Change password (signed in)
+// ---------------------------------------------------------------------------------------------------------------
+
+export type ChangePasswordResult = { success: true } | { success: false; error: string; field?: 'currentPassword' | 'newPassword' };
+
+/**
+ * Checks the current password, then sets the new one. Stamping users.updated_at ends every tutor session, this one
+ * included, so the caller sends the tutor to sign in again (tutor plan §8 changePasswordAction).
+ */
+export async function changeTutorPassword(userId: string, currentPassword: string, newPassword: string): Promise<ChangePasswordResult> {
+  if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`, field: 'newPassword' };
+  }
+  if (newPassword === currentPassword) {
+    return { success: false, error: 'Choose a password different from the current one.', field: 'newPassword' };
+  }
+  if (!process.env.POSTGRES_URL) return { success: false, error: 'Password change is unavailable right now.' };
+
+  try {
+    const account = await loadTutorAccount(db, { userId });
+    if (!account || evaluateTutorAccount(account, 'active') !== 'ok') return { success: false, error: 'Password change is unavailable right now.' };
+    if (!(await verifyPassword(currentPassword ?? '', account.passwordHash))) {
+      return { success: false, error: 'The current password is incorrect.', field: 'currentPassword' };
+    }
+    const passwordHash = await hashPassword(newPassword);
+    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+    return { success: true };
+  } catch (error) {
+    console.error('[tutor-auth] password change failed:', error instanceof Error ? error.name : 'unknown');
+    return { success: false, error: 'Password change is unavailable right now.' };
+  }
+}

@@ -92,6 +92,7 @@ describe('middleware matcher', () => {
 describe('login error messages', () => {
   it('explains an ended session and a non-tutor account, never echoing the code', () => {
     expect(loginErrorMessage('SessionExpired')).toMatch(/session has ended/);
+    expect(loginErrorMessage('PasswordChanged')).toMatch(/password was changed/);
     expect(loginErrorMessage('Unauthorized')).toMatch(/cannot use the Tutor Portal/);
     expect(loginErrorMessage('<script>')).toBe('Sign-in could not be completed. Please try again.');
     expect(loginErrorMessage(undefined)).toBeNull();
