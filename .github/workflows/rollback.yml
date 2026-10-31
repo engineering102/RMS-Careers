@@ -34,7 +34,7 @@ on:
         description: Which application to roll back.
         type: choice
         required: true
-        options: [web, admin, student]
+        options: [web, admin, student, tutor]
       version_id:
         description: Worker version ID to roll back to (UUID from `wrangler versions list`). Required. In a rehearsal any well-formed UUID is accepted.
         type: string

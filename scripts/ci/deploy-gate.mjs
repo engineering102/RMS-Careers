@@ -31,7 +31,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { APPS, gitIsAncestor } from './deploy-tracking.mjs';
+import { APPS, AUTO_DEPLOY_APPS, gitIsAncestor } from './deploy-tracking.mjs';
 
 export const CI_WORKFLOW = { name: 'CI', path: '.github/workflows/ci.yml', file: 'ci.yml', job: 'ci-gate', branch: 'main' };
 const FULL_SHA = /^[0-9a-f]{40}$/;
@@ -82,7 +82,7 @@ export function evaluateTrigger({ eventName, event, ref, githubSha, repo, inputs
     if (wr.status !== 'completed') throw new GateError('bad-event', `triggering run status is "${wr.status}", not completed`);
     if (wr.conclusion !== 'success') return { proceed: false, reason: `CI concluded "${wr.conclusion}", not success: nothing to deploy`, sha: wr.head_sha };
     if (!sw.enabled) return { proceed: false, reason: `automatic production deploys are disabled: ${sw.reason}`, sha: wr.head_sha };
-    return { proceed: true, source: 'workflow_run', sha: wr.head_sha, triggeringRun: { id: wr.id, attempt: wr.run_attempt }, apps: [...APPS], bootstrap: false, dryRun: false };
+    return { proceed: true, source: 'workflow_run', sha: wr.head_sha, triggeringRun: { id: wr.id, attempt: wr.run_attempt }, apps: [...AUTO_DEPLOY_APPS], bootstrap: false, dryRun: false };
   }
   if (eventName === 'workflow_dispatch') {
     if (ref !== 'refs/heads/main') throw new GateError('not-main', `a deployment may only be dispatched from main (this run is on ${ref})`);
@@ -91,10 +91,10 @@ export function evaluateTrigger({ eventName, event, ref, githubSha, repo, inputs
     if (app !== 'all' && !APPS.includes(app)) throw new GateError('bad-input', `app must be all, ${APPS.join(', ')}`);
     const bootstrap = bool(inputs.bootstrap, 'bootstrap');
     const dryRun = bool(inputs.dry_run, 'dry_run');
-    if (bootstrap && app === 'all') throw new GateError('bootstrap-needs-one-app', 'a bootstrap deploys exactly one app at a time: choose web, admin or student');
+    if (bootstrap && app === 'all') throw new GateError('bootstrap-needs-one-app', `a bootstrap deploys exactly one app at a time: choose one of ${APPS.join(', ')}`);
     // A rehearsal never needs the switch; a REAL deploy always does, however it was started.
     if (!dryRun && !sw.enabled) throw new GateError('deploy-disabled', `a real deployment was requested but ${sw.reason}`);
-    return { proceed: true, source: 'workflow_dispatch', sha: githubSha, triggeringRun: null, apps: app === 'all' ? [...APPS] : [app], bootstrap, dryRun };
+    return { proceed: true, source: 'workflow_dispatch', sha: githubSha, triggeringRun: null, apps: app === 'all' ? [...AUTO_DEPLOY_APPS] : [app], bootstrap, dryRun };
   }
   throw new GateError('bad-event', `unsupported event "${eventName}"`);
 }

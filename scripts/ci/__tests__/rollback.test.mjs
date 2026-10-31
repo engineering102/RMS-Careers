@@ -96,7 +96,7 @@ describe('rollback: command construction', () => {
     for (const forbidden of ['--env', '--var', '--routes', '--domains', '--secrets-file', 'deploy']) assert.ok(!args.includes(forbidden));
   });
   test('every app maps to its own Worker name, and every read is pinned to it', () => {
-    assert.deepEqual(WORKERS, { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' });
+    assert.deepEqual(WORKERS, { web: 'rms-web', admin: 'rms-admin', student: 'rms-student', tutor: 'rms-tutor' });
     assert.deepEqual(versionViewArgs('wr.js', { app: 'student', versionId: VA }), ['wr.js', 'versions', 'view', VA, '--name', 'rms-student', '--json']);
     assert.deepEqual(liveStateArgs('wr.js', { app: 'admin' }), ['wr.js', 'deployments', 'status', '--name', 'rms-admin', '--json']);
   });
@@ -117,7 +117,7 @@ describe('rollback: input validation', () => {
     assert.deepEqual(validateInputs({ app: 'web', versionId: VA, reason: '  bad release ' }), { app: 'web', versionId: VA, reason: 'bad release' });
   });
   for (const [name, input, code] of [
-    ['unknown app', { app: 'tutor', versionId: VA, reason: 'x' }, 'bad-app'],
+    ['unknown app', { app: 'mentor', versionId: VA, reason: 'x' }, 'bad-app'],
     ['missing version id (no "previous" guessing)', { app: 'web', versionId: '', reason: 'x' }, 'bad-version-id'],
     ['non-UUID version id', { app: 'web', versionId: 'latest; rm -rf /', reason: 'x' }, 'bad-version-id'],
     ['uppercase UUID', { app: 'web', versionId: VA.toUpperCase(), reason: 'x' }, 'bad-version-id'],

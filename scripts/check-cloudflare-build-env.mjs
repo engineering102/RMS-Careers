@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Cloudflare/OpenNext build-environment guard (shared by apps/web, apps/student, apps/admin).
+ * Cloudflare/OpenNext build-environment guard (shared by apps/web, apps/student, apps/admin, apps/tutor).
  *
  * WHY: `opennextjs-cloudflare build` reads `.env`, `.env.<mode>`, `.env.local` and
  * `.env.<mode>.local` (mode = production | development | test) from BOTH the app directory and

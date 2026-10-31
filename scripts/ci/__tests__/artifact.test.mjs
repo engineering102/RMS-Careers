@@ -270,9 +270,9 @@ describe('misc', () => {
   test('parseJsonc handles comments, strings with // and trailing commas', () => {
     assert.deepEqual(parseJsonc('{ // c\n "a": "http://x", /* b */ "b": [1,], }'), { a: 'http://x', b: [1] });
   });
-  test('only the three known apps are accepted', async () => {
-    assert.deepEqual(APPS, ['web', 'admin', 'student']);
-    await assert.rejects(packageArtifact({ app: 'tutor', repoRoot: repo, outDir: path.join(repo, 'x') }), /unknown app/);
+  test('only the four known apps are accepted', async () => {
+    assert.deepEqual(APPS, ['web', 'admin', 'student', 'tutor']);
+    await assert.rejects(packageArtifact({ app: 'mentor', repoRoot: repo, outDir: path.join(repo, 'x') }), /unknown app/);
   });
   test('packaging fails closed when a required file is missing', async () => {
     const r = makeRepo();
@@ -365,10 +365,10 @@ describe('hardening', () => {
 
   test('parseExpectedDigest: missing, empty, malformed and cross-application hand-offs fail closed', () => {
     for (const v of [undefined, null, '', '   ']) assert.equal(parseExpectedDigest('web', v).problem.code, 'missing-expectation');
-    for (const v of [GOOD, 'web:' + GOOD.slice(1), 'web:' + GOOD.toUpperCase(), 'web:' + GOOD + 'ff', 'web ' + GOOD, 'tutor:' + GOOD, ':' + GOOD, 'web:' + 'g'.repeat(64)]) {
+    for (const v of [GOOD, 'web:' + GOOD.slice(1), 'web:' + GOOD.toUpperCase(), 'web:' + GOOD + 'ff', 'web ' + GOOD, 'mentor:' + GOOD, ':' + GOOD, 'web:' + 'g'.repeat(64)]) {
       assert.equal(parseExpectedDigest('web', v).problem.code, 'bad-expectation', v);
     }
-    for (const other of ['admin', 'student']) assert.equal(parseExpectedDigest('web', other + ':' + GOOD).problem.code, 'digest-app-mismatch');
+    for (const other of ['admin', 'student', 'tutor']) assert.equal(parseExpectedDigest('web', other + ':' + GOOD).problem.code, 'digest-app-mismatch');
     assert.equal(parseExpectedDigest('student', 'web:' + GOOD).problem.code, 'digest-app-mismatch');
     assert.deepEqual(parseExpectedDigest('web', 'web:' + GOOD), { manifestSha256: GOOD });
   });
@@ -472,7 +472,7 @@ describe('phase 4 building blocks (nothing deploys)', () => {
   });
 
   test('localDevArgs: loopback only, local mode, placeholder variables, never a deploy', () => {
-    for (const app of ['web', 'admin', 'student']) {
+    for (const app of ['web', 'admin', 'student', 'tutor']) {
       const args = localDevArgs('/x/wrangler.js', app, 8791);
       assert.deepEqual(args.slice(0, 8), ['/x/wrangler.js', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8791', '--config']);
       assert.ok(!args.includes('deploy') && !args.includes('--remote'));
@@ -480,7 +480,7 @@ describe('phase 4 building blocks (nothing deploys)', () => {
       assert.ok(vars.some((v) => v.startsWith('POSTGRES_URL:postgres://smoke:smoke@127.0.0.1')), app);
       for (const v of vars) assert.match(v, /127\.0\.0\.1|local-smoke/);
     }
-    assert.throws(() => localDevArgs('w', 'tutor', 1), /unknown app/);
+    assert.throws(() => localDevArgs('w', 'mentor', 1), /unknown app/);
   });
 
   test('localSmoke refuses to start when a Cloudflare/Wrangler variable is present', async () => {

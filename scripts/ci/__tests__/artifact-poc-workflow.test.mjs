@@ -75,9 +75,9 @@ describe('artifact PoC workflows: nothing can deploy', () => {
 });
 
 describe('artifact PoC workflows: explicit per-application digest hand-off', () => {
-  test('the caller has exactly web, admin and student, each passing its OWN app name', () => {
+  test('the caller has exactly web, admin, student and tutor, each passing its OWN app name', () => {
     const jobs = [...callerCode.matchAll(/^  ([a-z-]+):\n    uses: (\S+)\n    with:\n      app: (\S+)\n/gm)];
-    assert.deepEqual(jobs.map((m) => m[1]), ['web', 'admin', 'student']);
+    assert.deepEqual(jobs.map((m) => m[1]), ['web', 'admin', 'student', 'tutor']);
     for (const [, id, uses, appName] of jobs) {
       assert.equal(appName, id, `job ${id} must pass app: ${id}`);
       assert.equal(uses, './.github/workflows/artifact-poc-app.yml');
@@ -89,7 +89,7 @@ describe('artifact PoC workflows: explicit per-application digest hand-off', () 
   test('there is no matrix anywhere, so no shared output map exists', () => {
     assert.doesNotMatch(both, /strategy:|matrix\./);
     assert.doesNotMatch(both, /outputs\[/);
-    assert.doesNotMatch(both, /digest_(web|admin|student)/);
+    assert.doesNotMatch(both, /digest_(web|admin|student|tutor)/);
   });
 
   test('build publishes ONE digest output; verify consumes exactly that and only that', () => {

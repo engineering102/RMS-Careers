@@ -35,7 +35,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { runSmoke } from './smoke.mjs';
 import zlib from 'node:zlib';
 
-export const APPS = ['web', 'admin', 'student'];
+export const APPS = ['web', 'admin', 'student', 'tutor'];
 export const SCHEMA_VERSION = 1;
 export const ROOT_ENTRIES = ['.open-next', 'open-next.config.ts', 'package.json', 'wrangler.jsonc'];
 export const CONFIG_FILES = ['open-next.config.ts', 'package.json', 'wrangler.jsonc'];
@@ -48,7 +48,7 @@ export const REQUIRED_PATHS = [
   { path: 'package.json', type: 'file' },
   { path: 'wrangler.jsonc', type: 'file' }
 ];
-export const EXPECTED_WORKER = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' };
+export const EXPECTED_WORKER = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student', tutor: 'rms-tutor' };
 const TOOL_PACKAGES = { wrangler: 'wrangler', opennextCloudflare: '@opennextjs/cloudflare', next: 'next' };
 const BLOCK = 512;
 const FULL_SHA = /^[0-9a-f]{40}$/;
@@ -640,7 +640,7 @@ export function parseExpectedDigest(app, token) {
   if (token === undefined || token === null || String(token).trim() === '') {
     return { problem: problem('missing-expectation', 'no manifest digest was handed over by the build job (empty hand-off)') };
   }
-  const m = /^(web|admin|student):([0-9a-f]{64})$/.exec(String(token).trim());
+  const m = /^(web|admin|student|tutor):([0-9a-f]{64})$/.exec(String(token).trim());
   if (!m) return { problem: problem('bad-expectation', 'malformed manifest digest hand-off (expected "<app>:<64 lowercase hex>")') };
   if (m[1] !== app) return { problem: problem('digest-app-mismatch', `the digest was published for "${m[1]}" but this job verifies "${app}"`) };
   return { manifestSha256: m[2] };
@@ -948,7 +948,8 @@ export function deployArgs(wranglerBin, { sha, runUrl }) {
 export const LOCAL_DEV_VARS = {
   web: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke' },
   admin: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder', AUTH_GITHUB_ID: 'local-smoke', AUTH_GITHUB_SECRET: 'local-smoke' },
-  student: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder' }
+  student: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder' },
+  tutor: { POSTGRES_URL: 'postgres://smoke:smoke@127.0.0.1:5432/smoke', AUTH_SECRET: 'local-smoke-placeholder' }
 };
 
 export function localDevArgs(wranglerBin, app, port) {

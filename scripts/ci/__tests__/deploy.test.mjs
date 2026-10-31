@@ -661,7 +661,7 @@ describe('deploy: history that is incomplete, interrupted or contradictory is ne
 
 describe('deploy: input validation and helpers', () => {
   for (const [name, over, re] of [
-    ['an unknown app', { app: 'tutor' }, /bad-app/],
+    ['an unknown app', { app: 'mentor' }, /bad-app/],
     ['a short SHA', { sha: 'abc' }, /bad-sha/],
     ['an uppercase SHA', { sha: 'D'.repeat(40) }, /bad-sha/],
     ['an unknown mode', { mode: 'force' }, /bad-mode/],

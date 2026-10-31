@@ -33,7 +33,7 @@ describe('rollback.yml: trigger and token scope', () => {
   });
   test('dry_run defaults to true; the app is a closed choice; version id and reason are required', () => {
     assert.match(code, /dry_run:\n(?: {8}.+\n)*? {8}default: true/);
-    assert.match(code, /options: \[web, admin, student\]/);
+    assert.match(code, /options: \[web, admin, student, tutor\]/);
     assert.match(code, /version_id:\n(?: {8}.+\n)*? {8}required: true/);
     assert.match(code, /reason:\n(?: {8}.+\n)*? {8}required: true/);
   });

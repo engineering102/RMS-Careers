@@ -208,7 +208,7 @@ const sleepMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * @param {object} p
- * @param {string} p.app web | admin | student
+ * @param {string} p.app web | admin | student | tutor
  * @param {string} p.sha full commit SHA the artifact was built from
  * @param {'deploy'|'bootstrap'} p.mode
  * @param {boolean} p.dryRun only an explicit `false` is a real deploy

@@ -1,6 +1,6 @@
 import { test, expect } from '../../support/diagnostics';
 import { redactText, sanitizeUrl } from '../../support/redact';
-import { resolveLocalStudentBaseUrl } from '../../support/targets';
+import { resolveLocalStudentBaseUrl, resolveLocalTutorBaseUrl } from '../../support/targets';
 
 // Needs no application and no network: proves the browser, the diagnostics layer and the guards.
 
@@ -50,6 +50,14 @@ test.describe('playwright tooling', () => {
     expect(resolveLocalStudentBaseUrl('http://127.0.0.1:3002')).toBe('http://127.0.0.1:3002');
     for (const bad of ['https://student.rms-careers.com', 'http://192.168.1.5:3002', 'http://user:pw@localhost:3002', 'ftp://localhost', 'nonsense']) {
       expect(() => resolveLocalStudentBaseUrl(bad), bad).toThrow();
+    }
+  });
+
+  test('tutor target resolver accepts only loopback hosts and defaults to port 3003', () => {
+    expect(resolveLocalTutorBaseUrl(undefined)).toBe('http://localhost:3003');
+    expect(resolveLocalTutorBaseUrl('http://127.0.0.1:8793/x')).toBe('http://127.0.0.1:8793');
+    for (const bad of ['https://tutor.rms-careers.com', 'http://10.0.0.2:3003', 'http://a:b@localhost:3003', 'nonsense']) {
+      expect(() => resolveLocalTutorBaseUrl(bad), bad).toThrow(/E2E_TUTOR_BASE_URL/);
     }
   });
 });

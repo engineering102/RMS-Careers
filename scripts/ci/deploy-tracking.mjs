@@ -15,8 +15,16 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-export const APPS = ['web', 'admin', 'student'];
-export const ENVIRONMENTS = { web: 'production-web', admin: 'production-admin', student: 'production-student' };
+export const APPS = ['web', 'admin', 'student', 'tutor'];
+/**
+ * Apps that have never been deployed and are waiting for their launch (tutor plan §13.5). They are left out of automatic
+ * deploys and of a dispatched `all`, so merges do not fail on a missing baseline; the first deploy is an explicit
+ * single-app bootstrap dispatch. Remove the app from this list in the PR that follows its verified bootstrap.
+ */
+export const PRE_LAUNCH_APPS = ['tutor'];
+/** Apps that automatic deploys and a dispatched `all` cover. */
+export const AUTO_DEPLOY_APPS = APPS.filter((app) => !PRE_LAUNCH_APPS.includes(app));
+export const ENVIRONMENTS = { web: 'production-web', admin: 'production-admin', student: 'production-student', tutor: 'production-tutor' };
 export const RECORD_MARKER = 'rms-deploy-record';
 export const RECORD_KINDS = ['deploy', 'bootstrap', 'rollback'];
 export const TRUSTED_CREATOR = 'github-actions[bot]';
@@ -24,7 +32,7 @@ const PAGE_SIZE = 100;
 const MAX_PAGES = 10;
 const FULL_SHA = /^[0-9a-f]{40}$/;
 export const VERSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-export const WORKER_NAMES = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' };
+export const WORKER_NAMES = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student', tutor: 'rms-tutor' };
 /**
  * A deploy writes TWO records (spec section 5): an `intent` record before the deploy (it can never carry a version id and
  * can never be a diff base or rollback target) and an `evidence` record after the version was observed and verified
@@ -341,7 +349,7 @@ async function main() {
   const [command, ...rest] = process.argv.slice(2);
   const opts = {};
   for (let i = 0; i < rest.length; i += 2) opts[rest[i].replace(/^--/, '')] = rest[i + 1];
-  if (command !== 'last-good') throw new Error('usage: deploy-tracking.mjs last-good --app <web|admin|student> [--repo owner/name]');
+  if (command !== 'last-good') throw new Error('usage: deploy-tracking.mjs last-good --app <web|admin|student|tutor> [--repo owner/name]');
   const repo = opts.repo ?? process.env.GITHUB_REPOSITORY ?? 'engineering102/RMS-Careers';
   const api = githubApi({ repo, token: process.env.GITHUB_TOKEN });
   const result = await lastGood({ api, app: opts.app });

@@ -61,7 +61,7 @@ describe('deploy.yml: triggers', () => {
   test('the dispatch rehearsal defaults to true, and bootstrap defaults to false', () => {
     assert.match(deploy, /dry_run:\n(?: {8}.+\n)*? {8}default: true/);
     assert.match(deploy, /bootstrap:\n(?: {8}.+\n)*? {8}default: false/);
-    assert.match(deploy, /options: \[all, web, admin, student\]/);
+    assert.match(deploy, /options: \[all, web, admin, student, tutor\]/);
   });
   test('deploy-app.yml is workflow_call only and defaults to a rehearsal', () => {
     assert.match(app, /^on:\n {2}workflow_call:\n/m);
@@ -110,8 +110,8 @@ describe('deploy.yml: the gate', () => {
 });
 
 describe('deploy.yml: per-app isolation (no matrix)', () => {
-  const jobs = ['web', 'admin', 'student'];
-  test('exactly gate + web + admin + student, no matrix, no shared output map', () => {
+  const jobs = ['web', 'admin', 'student', 'tutor'];
+  test('exactly gate + web + admin + student + tutor, no matrix, no shared output map', () => {
     assert.deepEqual(jobNames(deploy), ['refuse-non-main', 'gate', ...jobs]);
     assert.doesNotMatch(both, /strategy:|matrix\.|outputs\[/);
   });
@@ -131,7 +131,7 @@ describe('deploy.yml: per-app isolation (no matrix)', () => {
     });
   }
   test('secrets are inherited only by the per-app callers in deploy.yml; deploy-app.yml forwards none', () => {
-    assert.equal([...deploy.matchAll(/secrets/g)].length, 3);
+    assert.equal([...deploy.matchAll(/secrets/g)].length, jobs.length);
     assert.doesNotMatch(app, /^\s+secrets:/m, 'deploy-app.yml passes no secret to artifact-poc-app.yml');
   });
 });

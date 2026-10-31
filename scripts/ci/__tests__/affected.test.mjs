@@ -44,6 +44,8 @@ const FIXTURE = workspaceFromPnpmJson(
   R
 );
 const ALL_APPS = ['admin', 'student', 'web'];
+/** degradedResult() without a workspace graph (detection failed before one existed) lists every real app. */
+const FALLBACK_APPS = ['admin', 'student', 'tutor', 'web'];
 
 const run = (files, ctx) => classifyFiles(files, FIXTURE, ctx);
 
@@ -66,6 +68,16 @@ describe('workspace graph', () => {
     assert.deepEqual(apps('@rms/auth'), ['@rms/admin', '@rms/student', '@rms/tutor']);
     const web = ws.projects.find((p) => p.name === '@rms/web');
     assert.ok(!web.deps.includes('@rms/auth'));
+    // @rms/academic (review, live sessions, tutor queries) never reaches the public site.
+    assert.ok(apps('@rms/academic').includes('@rms/admin') && apps('@rms/academic').includes('@rms/tutor'));
+    assert.ok(!apps('@rms/academic').includes('@rms/web'));
+  });
+
+  test('a packages/academic change on the REAL workspace builds and deploys its consumers, never web', () => {
+    const r = classifyFiles(['packages/academic/src/review.ts'], loadWorkspace(REPO_ROOT));
+    assert.ok(r.deployableApps.includes('admin') && r.deployableApps.includes('tutor'));
+    assert.ok(!r.deployableApps.includes('web'));
+    assert.equal(ciPlan(r).runIntegration, true);
   });
 });
 
@@ -310,7 +322,9 @@ describe('robustness', () => {
     assert.equal(r.ciOnly, false);
     assert.match(r.error, /boom/);
     const noWs = degradedResult(null, 'no pnpm');
-    assert.deepEqual(noWs.deployableApps, ALL_APPS);
+    assert.deepEqual(noWs.deployableApps, FALLBACK_APPS);
+    assert.deepEqual(noWs.knownApps, FALLBACK_APPS);
+    assert.ok(noWs.affectedWorkspaces.includes('@rms/academic') && noWs.affectedWorkspaces.includes('@rms/tutor'));
   });
 
   test('glob matcher semantics', () => {
@@ -427,7 +441,7 @@ describe('git integration (temporary repository)', () => {
     try {
       const r = detect({ root: dir, base: 'HEAD', head: 'HEAD' });
       assert.equal(r.degraded, true);
-      assert.deepEqual(r.deployableApps, ALL_APPS);
+      assert.deepEqual(r.deployableApps, FALLBACK_APPS);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -458,7 +472,7 @@ describe('graph completeness (uninstalled checkout must not look harmless)', () 
       writeFileSync(path.join(dir, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n  - 'packages/*'\n");
       const r = detect({ root: dir, files: ['packages/db/src/x.ts'] });
       assert.equal(r.degraded, true);
-      assert.deepEqual(r.deployableApps, ALL_APPS);
+      assert.deepEqual(r.deployableApps, FALLBACK_APPS);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

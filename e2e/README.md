@@ -6,6 +6,7 @@ Separate from the Vitest tiers: `pnpm test` / `pnpm test:int` never see these fi
 |---|---|
 | `pnpm test:e2e:install` | one-time: download Chromium (`%LOCALAPPDATA%\ms-playwright`) |
 | `pnpm test:e2e` | local suite (`tooling` + `local-student` projects), headless |
+| `E2E_TUTOR_BASE_URL=http://localhost:3003 pnpm test:e2e --project=local-tutor` | public behaviour of a locally running tutor app (`pnpm dev:tutor`); the project exists only while `E2E_TUTOR_BASE_URL` is set (loopback only) |
 | `pnpm test:e2e:headed` / `:ui` | same, visible browser / Playwright UI mode |
 | `pnpm test:e2e:prod` | **read-only** smoke of `https://student.rms-careers.com` |
 | `pnpm test:e2e:report` | open the last local HTML report |
@@ -21,6 +22,7 @@ e2e/
   support/                         diagnostics fixture, redaction, target allow-lists, report lifecycle
   tests/tooling/                   prove browser + diagnostics + guards; no app, no network
   tests/local/                     public behaviour of a locally running student app
+  tests/local-tutor/               public behaviour of a locally running tutor app (opt-in)
   tests/production/                read-only production smoke
   reports/<suite>/                 SUMMARY.md + per-test JSON   (git-ignored, regenerated every run)
   test-results/, playwright-report/                              (git-ignored)

@@ -43,7 +43,7 @@ import { credentialEnvNames } from './artifact.mjs';
 import { APPS, VERSION_ID, createRecord, githubApi, rollbackHistory, setStatus } from './deploy-tracking.mjs';
 import { PRODUCTION_URLS, runSmoke } from './smoke.mjs';
 
-export const WORKERS = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student' };
+export const WORKERS = { web: 'rms-web', admin: 'rms-admin', student: 'rms-student', tutor: 'rms-tutor' };
 export const RECOVERY = {
   inProgress: 'rollback-in-progress',
   failed: 'rollback-failed',
@@ -199,7 +199,7 @@ function readLive(run, wranglerBin, app) {
 
 /**
  * @param {object} p
- * @param {'web'|'admin'|'student'} p.app
+ * @param {'web'|'admin'|'student'|'tutor'} p.app
  * @param {string} p.versionId         the rollback target (Cloudflare version id)
  * @param {string} p.reason
  * @param {boolean} p.dryRun           only an explicit `false` is a real run

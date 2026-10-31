@@ -110,7 +110,12 @@ describe('smoke checks', () => {
 
 describe('inputs', () => {
   test('production URLs are the canonical hyphenated domains', () => {
-    assert.deepEqual(PRODUCTION_URLS, { web: 'https://www.rms-careers.com', admin: 'https://admin.rms-careers.com', student: 'https://student.rms-careers.com' });
+    assert.deepEqual(PRODUCTION_URLS, {
+      web: 'https://www.rms-careers.com',
+      admin: 'https://admin.rms-careers.com',
+      student: 'https://student.rms-careers.com',
+      tutor: 'https://tutor.rms-careers.com'
+    });
     for (const u of Object.values(PRODUCTION_URLS)) assert.doesNotMatch(u, /rmscareers/);
   });
 
@@ -120,7 +125,7 @@ describe('inputs', () => {
   });
 
   test('unknown apps are rejected', async () => {
-    await assert.rejects(runSmoke({ app: 'tutor', baseUrl: 'http://127.0.0.1:1' }), /unknown app/);
+    await assert.rejects(runSmoke({ app: 'mentor', baseUrl: 'http://127.0.0.1:1' }), /unknown app/);
   });
 
   test('judge: content type and redirect rules', () => {
@@ -134,7 +139,7 @@ describe('inputs', () => {
     const r = spawnSync(process.execPath, [cli, '--app', 'web'], { encoding: 'utf8' });
     assert.notEqual(r.status, 0);
     assert.match(r.stderr, /never an implicit default/);
-    const bad = spawnSync(process.execPath, [cli, '--app', 'tutor', '--base-url', 'http://127.0.0.1:1'], { encoding: 'utf8' });
+    const bad = spawnSync(process.execPath, [cli, '--app', 'mentor', '--base-url', 'http://127.0.0.1:1'], { encoding: 'utf8' });
     assert.notEqual(bad.status, 0);
   });
 
