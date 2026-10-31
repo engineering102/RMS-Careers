@@ -101,6 +101,7 @@ describe('BatchNav', () => {
       '/batches/b-1/assessments',
       '/batches/b-1/projects',
       '/batches/b-1/external-assessments',
+      '/batches/b-1/live-lectures',
       '/batches/b-1/analytics'
     ]);
     expect(within(nav).getByRole('link', { name: 'Curriculum' }).getAttribute('aria-current')).toBe('page');

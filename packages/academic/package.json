@@ -40,6 +40,11 @@
       "types": "./src/notifications.ts",
       "import": "./src/notifications.ts",
       "default": "./src/notifications.ts"
+    },
+    "./live-sessions": {
+      "types": "./src/live-sessions.ts",
+      "import": "./src/live-sessions.ts",
+      "default": "./src/live-sessions.ts"
     }
   },
   "scripts": {

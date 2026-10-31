@@ -7,6 +7,7 @@ export type BatchSection =
   | 'assessments'
   | 'projects'
   | 'external-assessments'
+  | 'live-lectures'
   | 'analytics';
 
 export const BATCH_SECTIONS: { id: BatchSection; label: string; path: string }[] = [
@@ -15,6 +16,7 @@ export const BATCH_SECTIONS: { id: BatchSection; label: string; path: string }[]
   { id: 'assessments', label: 'Assessments', path: '/assessments' },
   { id: 'projects', label: 'Projects', path: '/projects' },
   { id: 'external-assessments', label: 'External', path: '/external-assessments' },
+  { id: 'live-lectures', label: 'Live Lectures', path: '/live-lectures' },
   { id: 'analytics', label: 'Analytics', path: '/analytics' }
 ];
 
