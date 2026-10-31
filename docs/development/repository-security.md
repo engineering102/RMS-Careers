@@ -54,7 +54,7 @@ Only someone with admin rights on the repository can do these.
 
 ### 3.3 Production Environments (before any deploy job exists)
 
-Create one Environment per Worker: `production-web`, `production-admin`, `production-student` (*Settings → Environments*):
+Create one Environment per Worker: `production-web`, `production-admin`, `production-student`, `production-tutor` (*Settings → Environments*; `production-tutor` before the tutor launch):
 
 - Deployment branches: only `main`.
 - Required reviewers: someone other than whoever triggers the deploy; prevent self-review.

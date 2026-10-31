@@ -10,7 +10,8 @@
  *   node scripts/ci/smoke.mjs --app student --production
  *
  * Exit 0 only when every check of the app passes within the attempt budget. Expectations were observed on the live
- * sites: www serves /, /robots.txt, /sitemap.xml; admin and student serve /login and redirect / to /login.
+ * sites: www serves /, /robots.txt, /sitemap.xml; admin and student serve /login and redirect / to /login. tutor follows the
+ * same login gate (verified in local workerd; not yet live).
  */
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -18,7 +19,8 @@ import { pathToFileURL } from 'node:url';
 export const PRODUCTION_URLS = {
   web: 'https://www.rms-careers.com',
   admin: 'https://admin.rms-careers.com',
-  student: 'https://student.rms-careers.com'
+  student: 'https://student.rms-careers.com',
+  tutor: 'https://tutor.rms-careers.com'
 };
 
 const html = /^text\/html\b/i;
@@ -34,7 +36,8 @@ export const CHECKS = {
     { path: '/sitemap.xml', status: 200, type: /xml/i }
   ],
   admin: loginGate,
-  student: loginGate
+  student: loginGate,
+  tutor: loginGate
 };
 
 const sleepMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,7 +81,7 @@ export function assertBaseUrl(raw) {
  */
 export async function runSmoke({ app, baseUrl, attempts = 10, delayMs = 6000, timeoutMs = 20000, fetchImpl = fetch, sleep = sleepMs }) {
   const checks = CHECKS[app];
-  if (!checks) throw new Error(`unknown app "${app}" (web | admin | student)`);
+  if (!checks) throw new Error(`unknown app "${app}" (web | admin | student | tutor)`);
   const base = assertBaseUrl(baseUrl);
   const results = [];
   for (const check of checks) {

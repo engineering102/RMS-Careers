@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { APPS, AUTO_DEPLOY_APPS, PRE_LAUNCH_APPS } from '../deploy-tracking.mjs';
 import { CI_WORKFLOW, GateError, assertOnMain, decisionLine, deploySwitch, evaluateCiGate, evaluateTrigger, githubReader, trustedCiRun } from '../deploy-gate.mjs';
 
 const REPO = 'engineering102/RMS-Careers';
@@ -106,13 +107,29 @@ describe('evaluateTrigger: workflow_dispatch', () => {
     const t = dispatch({ bootstrap: 'true', app: 'student', dry_run: 'false' });
     assert.deepEqual([t.bootstrap, t.apps], [true, ['student']]);
   });
+  test('a pre-launch app (tutor) is never part of an automatic run or of "all", only of its own explicit dispatch', () => {
+    assert.deepEqual(APPS, ['web', 'admin', 'student', 'tutor']);
+    assert.deepEqual(PRE_LAUNCH_APPS, ['tutor']);
+    assert.deepEqual(AUTO_DEPLOY_APPS, ['web', 'admin', 'student']);
+    assert.ok(!trigger().apps.includes('tutor'), 'automatic run');
+    assert.ok(!dispatch({ app: 'all', dry_run: 'false' }).apps.includes('tutor'), 'dispatched all');
+    // The launch path: an explicit single-app bootstrap, rehearsed first.
+    assert.deepEqual(dispatch({ app: 'tutor', bootstrap: 'true' }).apps, ['tutor']);
+    const real = dispatch({ app: 'tutor', bootstrap: 'true', dry_run: 'false' });
+    assert.deepEqual([real.apps, real.bootstrap, real.dryRun], [['tutor'], true, false]);
+    assert.throws(() => dispatch({ app: 'tutor', dry_run: 'false' }, { enabled: undefined }), /deploy-disabled/);
+  });
+  test('every pre-launch app is a real app', () => {
+    for (const app of PRE_LAUNCH_APPS) assert.ok(APPS.includes(app), app);
+    assert.deepEqual([...AUTO_DEPLOY_APPS, ...PRE_LAUNCH_APPS].sort(), [...APPS].sort());
+  });
   test('refuses a dispatch from any ref but main (so a branch workflow can never reach the credentials)', () => {
     for (const ref of ['refs/heads/feature', 'refs/heads/main2', 'refs/heads/xmain', 'refs/tags/v1', 'refs/pull/4/merge', undefined]) {
       assert.throws(() => dispatch({}, { ref }), /not-main/, String(ref));
     }
   });
   test('rejects unknown apps and non-boolean flags', () => {
-    assert.throws(() => dispatch({ app: 'tutor' }), /bad-input/);
+    assert.throws(() => dispatch({ app: 'mentor' }), /bad-input/);
     assert.throws(() => dispatch({ app: '' }), /bad-input/);
     for (const bad of ['', 'TRUE', '1', undefined]) {
       assert.throws(() => dispatch({ dry_run: bad }), /bad-input/, String(bad));

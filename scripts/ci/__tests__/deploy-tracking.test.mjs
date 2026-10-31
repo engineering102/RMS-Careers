@@ -118,7 +118,7 @@ describe('lastGood: reading the record', () => {
     const api = { listDeployments: async (env) => (seen.push(env), []), listStatuses: async () => [] };
     for (const app of ['web', 'admin', 'student']) await lastGood({ api, app });
     assert.deepEqual(seen, ['production-web', 'production-admin', 'production-student']);
-    await assert.rejects(lastGood({ api, app: 'tutor' }), /unknown app/);
+    await assert.rejects(lastGood({ api, app: 'mentor' }), /unknown app/);
   });
 });
 
@@ -166,7 +166,7 @@ describe('decide: the deploy decision', () => {
   test('an unreadable or missing record, a bad app and a bad SHA all fail closed', () => {
     assert.equal(decide({ ...base, sha: C, last: null }).code, 'unreadable');
     assert.equal(decide({ ...base, sha: C, last: { status: 'maybe' } }).code, 'unreadable');
-    assert.equal(decide({ ...base, app: 'tutor', sha: C, last: found(A) }).code, 'bad-app');
+    assert.equal(decide({ ...base, app: 'mentor', sha: C, last: found(A) }).code, 'bad-app');
     assert.equal(decide({ ...base, sha: 'abc123', last: found(A) }).code, 'bad-sha');
   });
 
@@ -225,7 +225,7 @@ describe('gitIsAncestor against a real repository', () => {
 
 describe('writers and the GitHub adapter', () => {
   test('payload validation rejects bad apps, short SHAs and unknown kinds', () => {
-    assert.throws(() => recordPayload({ app: 'tutor', sha: A, kind: 'deploy' }), /unknown app/);
+    assert.throws(() => recordPayload({ app: 'mentor', sha: A, kind: 'deploy' }), /unknown app/);
     assert.throws(() => recordPayload({ app: 'web', sha: 'abc', kind: 'deploy' }), /full 40/);
     assert.throws(() => recordPayload({ app: 'web', sha: A.toUpperCase(), kind: 'deploy' }), /full 40/);
     assert.throws(() => recordPayload({ app: 'web', sha: A, kind: 'whatever' }), /kind must be/);

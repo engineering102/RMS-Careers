@@ -418,12 +418,12 @@ export function degradedResult(ws, error, ctx = {}) {
         base: ctx.base ?? null,
         head: ctx.head ?? null,
         changedFiles: 0,
-        affectedApps: ['admin', 'student', 'web'],
-        deployableApps: ['admin', 'student', 'web'],
-        affectedPackages: ['@rms/auth', '@rms/db'],
-        affectedWorkspaces: ['@rms/admin', '@rms/auth', '@rms/db', '@rms/student', '@rms/web'],
-        knownApps: ['admin', 'student', 'web'],
-        knownWorkspaces: ['@rms/admin', '@rms/auth', '@rms/db', '@rms/student', '@rms/web'],
+        affectedApps: ['admin', 'student', 'tutor', 'web'],
+        deployableApps: ['admin', 'student', 'tutor', 'web'],
+        affectedPackages: ['@rms/academic', '@rms/auth', '@rms/db'],
+        affectedWorkspaces: ['@rms/academic', '@rms/admin', '@rms/auth', '@rms/db', '@rms/student', '@rms/tutor', '@rms/web'],
+        knownApps: ['admin', 'student', 'tutor', 'web'],
+        knownWorkspaces: ['@rms/academic', '@rms/admin', '@rms/auth', '@rms/db', '@rms/student', '@rms/tutor', '@rms/web'],
         ciInfra: true,
         ciOnly: false,
         allApps: true,
@@ -446,7 +446,7 @@ export function degradedResult(ws, error, ctx = {}) {
 // ---------------------------------------------------------------------------------------------
 
 /** Apps whose integration suites (`*.int.test.ts`) exist today. Integration also runs for infra/all-app changes. */
-const INTEGRATION_APPS = ['admin', 'student'];
+const INTEGRATION_APPS = ['admin', 'student', 'tutor'];
 
 /**
  * @param {ReturnType<typeof classifyFiles>} r

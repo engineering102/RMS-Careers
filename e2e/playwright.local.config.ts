@@ -11,13 +11,16 @@
  * Projects:
  *   tooling       - proves Playwright and the diagnostics layer work; needs no app at all
  *   local-student - public/unauthenticated behaviour of the app at E2E_STUDENT_BASE_URL (loopback only)
+ *   local-tutor   - the same for the tutor app (`pnpm dev:tutor`). Opt-in: registered only when E2E_TUTOR_BASE_URL is
+ *                   set (loopback only, e.g. http://localhost:3003), so `pnpm test:e2e` does not need a tutor app running.
  */
 import { defineConfig, devices } from '@playwright/test';
-import { resolveLocalStudentBaseUrl } from './support/targets';
+import { resolveLocalStudentBaseUrl, resolveLocalTutorBaseUrl } from './support/targets';
 
 process.env.E2E_SUITE = 'local';
 
 const baseURL = resolveLocalStudentBaseUrl();
+const tutorBaseURL = process.env.E2E_TUTOR_BASE_URL ? resolveLocalTutorBaseUrl() : null;
 
 export default defineConfig({
   testDir: './tests',
@@ -41,6 +44,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'tooling', testDir: './tests/tooling' },
-    { name: 'local-student', testDir: './tests/local' }
+    { name: 'local-student', testDir: './tests/local' },
+    ...(tutorBaseURL ? [{ name: 'local-tutor', testDir: './tests/local-tutor', use: { baseURL: tutorBaseURL } }] : [])
   ]
 });

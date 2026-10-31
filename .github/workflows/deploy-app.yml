@@ -27,7 +27,7 @@ on:
   workflow_call:
     inputs:
       app:
-        description: Which application to deploy (web, admin or student).
+        description: Which application to deploy (web, admin, student or tutor).
         type: string
         required: true
       sha:
@@ -69,7 +69,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          case "$APP" in web|admin|student) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
+          case "$APP" in web|admin|student|tutor) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
           case "$SHA" in *[!0-9a-f]*|"") echo "::error::sha must be a full lowercase commit SHA"; exit 1 ;; esac
           [ "${#SHA}" -eq 40 ] || { echo "::error::sha must be 40 characters"; exit 1; }
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

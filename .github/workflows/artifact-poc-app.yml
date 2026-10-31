@@ -25,7 +25,7 @@ on:
   workflow_call:
     inputs:
       app:
-        description: Which application to build and verify (web, admin or student).
+        description: Which application to build and verify (web, admin, student or tutor).
         type: string
         required: true
       sha:
@@ -56,10 +56,10 @@ jobs:
       APP: ${{ inputs.app }}
       SOURCE_SHA: ${{ inputs.sha || github.sha }}
     steps:
-      # artifact.mjs rejects anything but web|admin|student; fail before spending a build on a bad input.
+      # artifact.mjs rejects anything but web|admin|student|tutor; fail before spending a build on a bad input.
       - name: Validate app input
         run: |
-          case "$APP" in web|admin|student) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
+          case "$APP" in web|admin|student|tutor) ;; *) echo "::error::unknown app '$APP'"; exit 1 ;; esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.sha || github.sha }}
