@@ -23,15 +23,14 @@ RMS-Careers/
 ├── apps/
 │   ├── web/        # Public Corporate Website (www.rms-careers.com, port 3001; deployed to Cloudflare via OpenNext)
 │   ├── student/    # Authenticated Student Learning Portal (student.rms-careers.com, port 3002)
+│   ├── tutor/      # Authenticated Tutor Portal (tutor.rms-careers.com, port 3003; built, not yet launched)
 │   └── admin/      # Institutional Control Plane & Admin Portal (admin.rms-careers.com, port 3000)
 ├── packages/
 │   ├── db/         # @rms/db — Drizzle ORM schema, Neon PostgreSQL client, migrations
-│   └── auth/       # @rms/auth — Password hashing (bcrypt), token hashing (SHA-256), RBAC guards
+│   ├── auth/       # @rms/auth — Password hashing (bcrypt), token hashing (SHA-256), RBAC guards
+│   └── academic/   # @rms/academic — batch scope, project review transaction, live-session rules, tutor queries
 └── docs/           # Architecture specifications, roadmaps, guardrails, and conventions
 ```
-
-### Future Planned Surfaces:
-- `apps/tutor`: Authenticated Tutor Evaluation Workbench (`tutor.rms-careers.com`)
 
 ### Canonical Domain Architecture:
 - **Corporate Website**: `https://www.rms-careers.com` (canonical public identity; apex `rms-careers.com` redirects to `www`)
@@ -44,12 +43,19 @@ RMS-Careers/
 ### Cross-App Data Flow
 - All apps share one Neon database through `@rms/db` (`packages/db/src/schema.ts` is the single schema; `index.ts` exports `db` plus tables). Admin writes the institutional data (colleges, batches, students, content, assessments); the student portal reads it and writes student activity.
 - Each app imports `@rms/db` / `@rms/auth` directly as workspace packages and uses an `@/` path alias rooted at the app directory.
+- `@rms/academic` holds logic two apps must agree on: the batch scope (`adminScope()` / `tutorScope()`), the project-review transaction used by admin and tutor, live-session rules (admin, student, tutor) and the tutor queries. It takes the db client as an argument and never reads env. Apps map its subpaths in `tsconfig.json` `paths` and list it in `transpilePackages`.
 
 ### Student Portal (`apps/student`) Structure
 - **Auth**: Its own Auth.js instance (`lib/auth.ts` + edge-safe `lib/auth/config.ts`), credentials-only, `role: 'student'`, with a dedicated `AUTH_SECRET` that must never be shared with admin/tutor. `middleware.ts` protects everything except `api`, `login`, `activate`, `forgot-password`, `reset-password`, `resend-activation` — update the matcher when adding public routes.
 - **Layering**: `lib/actions/*` (Server Actions) → `lib/services/*` (cross-cutting logic, e.g. activity rewards, resume learning) → `lib/db/queries/*` (server-only Drizzle queries). Shared shapes live in `lib/types/*`.
 - **Multi-batch / cohort model**: A student can belong to several batches. The active cohort is persisted in the `rms_active_cohort` cookie (`lib/constants/cohort.ts`) and resolved server-side; leaderboards, deadlines, overview, and progress are scoped to batch-attributed activity. See `docs/specs/phase-4-multi-batch-alignment.md`.
 - **Domain events**: `lib/events/dispatcher.ts` fans domain events out to consumers (notifications rows, optional email; email reports `provider_not_configured` rather than failing when unset).
+
+### Tutor Portal (`apps/tutor`) Structure
+- **Status**: built, **not yet deployed**. The deploy pipeline holds it back (`PRE_LAUNCH_APPS` in `scripts/ci/deploy-tracking.mjs`); launch steps are in `docs/development/tutor-launch.md`. Architecture: `docs/architecture/tutor-portal.md`.
+- **Auth**: Its own Auth.js instance (`lib/auth.ts` + edge-safe `lib/auth/config.ts`), credentials-only, `role: 'tutor'`, cookie `__Host-tutor-sess`, its own `AUTH_SECRET`. Accounts that also hold `admin`/`super_admin` are refused (`lib/db/tutor-access.ts`).
+- **Access**: every request re-reads the account and assignments (`lib/db/tutor-context.ts`: `requireTutor`, `requireTutorBatch`). Pass `tutor.scope` to every `@rms/academic` query; never use `adminScope()` in this app (a source test forbids it). Revoked sessions go to `/api/session/revoked`.
+- **Shared logic**: project review (`@rms/academic/review`, shared with admin), roster/progress/queue queries (`@rms/academic/tutor/*`). Keep tutor progress in step with the student rules (parity test `apps/student/lib/__tests__/progress-parity.int.test.ts`).
 
 ---
 
@@ -66,9 +72,10 @@ pnpm install
 pnpm dev:admin            # Runs @rms/admin on http://localhost:3000 (Turbopack)
 pnpm dev:web              # Runs @rms/web on http://localhost:3001
 pnpm dev:student          # Runs @rms/student on http://localhost:3002
+pnpm dev:tutor            # Runs @rms/tutor on http://localhost:3003
 
 # Execute tests across all packages
-pnpm test                 # Unit tier only: Vitest in every workspace (web, admin, student, auth, db); cannot open a DB connection
+pnpm test                 # Unit tier only: Vitest in every workspace (web, admin, student, tutor, auth, db, academic); cannot open a DB connection
 pnpm test:int             # Integration tier (*.int.test.ts); requires TEST_DATABASE_URL + TEST_DATABASE_ENDPOINT (RMS-Careers-NonProd/test), aborts otherwise
 
 # Run TypeScript type checking
@@ -92,6 +99,8 @@ pnpm --filter @rms/admin test
 pnpm --filter @rms/web test
 pnpm --filter @rms/auth test
 pnpm --filter @rms/student test
+pnpm --filter @rms/tutor test
+pnpm --filter @rms/academic test
 
 # Single test file / single test (Vitest; tests live in lib/__tests__/*.test.ts)
 pnpm --filter @rms/student exec vitest run lib/__tests__/cohort.test.ts
@@ -101,6 +110,7 @@ pnpm --filter @rms/admin exec vitest run -t "test name substring"
 pnpm --filter @rms/admin typecheck
 pnpm --filter @rms/web typecheck
 pnpm --filter @rms/student typecheck
+pnpm --filter @rms/tutor typecheck
 pnpm --filter @rms/db typecheck
 
 # Database migrations & tools (packages/db)
@@ -109,7 +119,7 @@ pnpm --filter @rms/db db:migrate     # Apply migrations to database
 pnpm --filter @rms/db db:studio      # Open Drizzle Studio visual editor
 pnpm --filter @rms/db db:push        # Push schema directly (avoid for shared DBs; prefer generate + migrate)
 
-# Cloudflare (apps/web only, via @opennextjs/cloudflare + wrangler.jsonc)
+# Cloudflare (each app has wrangler.jsonc + cf:build; production deploys run through .github/workflows/deploy.yml)
 pnpm --filter @rms/web preview       # Build with OpenNext and preview locally in workerd
 pnpm --filter @rms/web deploy        # Build and deploy to Cloudflare (outward-facing — confirm first)
 ```
