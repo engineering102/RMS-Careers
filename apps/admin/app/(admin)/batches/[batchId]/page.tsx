@@ -6,8 +6,11 @@ import {
   getCollegeById,
   getProgramById,
   getBatchRoster,
-  getProgramEnrollmentCount
+  getProgramEnrollmentCount,
+  getBatchTutors,
+  getAssignableTutors
 } from '@/lib/db/queries';
+import { BatchTutorsCard } from './tutors/batch-tutors-card';
 import { enrollmentLinkAvailability } from '@/lib/enrollment/link-availability';
 import { AddStudentsMenu } from './add-students-menu';
 import { ExportRosterButton } from './export-roster-button';
@@ -43,11 +46,13 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
   const batch = await getBatchById(batchId);
   if (!batch) notFound();
 
-  const [college, program, roster, programEnrolledCount] = await Promise.all([
+  const [college, program, roster, programEnrolledCount, batchTutors, assignableTutors] = await Promise.all([
     getCollegeById(batch.collegeId),
     getProgramById(batch.programId),
     getBatchRoster(batch.id),
-    getProgramEnrollmentCount(batch.programId)
+    getProgramEnrollmentCount(batch.programId),
+    getBatchTutors(batch.id),
+    getAssignableTutors()
   ]);
   const summary = summarizeRoster(roster);
 
@@ -128,6 +133,8 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
           </p>
         ) : null}
       </section>
+
+      <BatchTutorsCard batchId={batch.id} batchName={batch.name} assigned={batchTutors} assignable={assignableTutors} />
 
       <section aria-labelledby="roster-heading" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
