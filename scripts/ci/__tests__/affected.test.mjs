@@ -59,11 +59,11 @@ describe('workspace graph', () => {
     ]);
   });
 
-  test('the REAL workspace (pnpm) has the expected consumers: db -> all, auth -> admin+student, web !-> auth', () => {
+  test('the REAL workspace (pnpm) has the expected consumers: db -> all, auth -> admin+student+tutor, web !-> auth', () => {
     const ws = loadWorkspace(REPO_ROOT);
     const apps = (name) => [...dependentsOf(ws, name)].filter((n) => ws.projects.find((p) => p.name === n)?.kind === 'app').sort();
-    assert.deepEqual(apps('@rms/db'), ['@rms/admin', '@rms/student', '@rms/web']);
-    assert.deepEqual(apps('@rms/auth'), ['@rms/admin', '@rms/student']);
+    assert.deepEqual(apps('@rms/db'), ['@rms/admin', '@rms/student', '@rms/tutor', '@rms/web']);
+    assert.deepEqual(apps('@rms/auth'), ['@rms/admin', '@rms/student', '@rms/tutor']);
     const web = ws.projects.find((p) => p.name === '@rms/web');
     assert.ok(!web.deps.includes('@rms/auth'));
   });
@@ -537,7 +537,7 @@ describe('CLI', () => {
     });
     const r = JSON.parse(out);
     assert.equal(r.schemaVersion, 1);
-    assert.deepEqual(r.deployableApps, ['admin', 'student']);
+    assert.deepEqual(r.deployableApps, ['admin', 'student', 'tutor']);
     assert.equal(r.degraded, false);
   });
 

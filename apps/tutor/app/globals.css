@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * RMS Careers design tokens, shared contract with apps/web and apps/admin
+ * (keep the three files' token values in sync). The student portal is dark-only
+ * today: app/layout.tsx sets class="dark" on <html>, so the .dark values apply.
+ */
+@layer base {
+  :root {
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 215 28% 93%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 215 28% 95%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 215 28% 93%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Status colours: AA contrast as text on --background and --card */
+    --success: 163 94% 24%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 26 90% 37%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 201 96% 32%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 214 32% 90%;
+    --input: 214 32% 90%;
+    --ring: 221 83% 53%;
+
+    /* Web uses 0.75rem; student/admin stay at 0.5rem until radius is unified with visual QA. */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Native scrollbars and form controls follow the dark theme. */
+    color-scheme: dark;
+
+    --background: 224 71% 4%;
+    --foreground: 213 31% 96%;
+
+    --card: 222 47% 7%;
+    --card-foreground: 213 31% 96%;
+
+    --popover: 222 47% 7%;
+    --popover-foreground: 213 31% 96%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    /* accent = hover fill (slate-700); input = field borders (slate-600) */
+    --accent: 215 25% 27%;
+    --accent-foreground: 210 40% 98%;
+
+    /* red-500 with dark text: readable as text, border and button on dark surfaces */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 222 47% 11%;
+
+    --success: 158 64% 52%;
+    --success-foreground: 222 47% 11%;
+
+    --warning: 43 96% 56%;
+    --warning-foreground: 222 47% 11%;
+
+    --info: 198 93% 60%;
+    --info-foreground: 222 47% 11%;
+
+    --border: 217 33% 17%;
+    --input: 215 19% 35%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-width: 320px;
+  }
+  input,
+  button {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  /* Horizontal strips (workspace tabs, library filters) scroll without a visible scrollbar. */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* vaul drawers / sheets: no slide under reduced motion (they appear and leave in place; drag still tracks the finger). */
+@media (prefers-reduced-motion: reduce) {
+  [data-vaul-drawer],
+  [data-vaul-overlay] {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Native feel on touch devices: no grey tap flash and no double-tap-zoom delay on controls.
+ * ------------------------------------------------------------------------------------------------ */
+@layer base {
+  a,
+  button,
+  [role='button'],
+  summary,
+  label,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Reduced transparency: translucent chrome becomes solid and nothing blurs. */
+@media (prefers-reduced-transparency: reduce) {
+  *,
+  *::before,
+  *::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .material-chrome {
+    background-color: hsl(var(--background)) !important;
+  }
+}
+
+/* Increased contrast: stronger edges and secondary text on the dark theme the portal uses. */
+@media (prefers-contrast: more) {
+  .dark {
+    --border: 215 20% 42%;
+    --input: 215 20% 55%;
+    --muted-foreground: 215 25% 80%;
+  }
+}
