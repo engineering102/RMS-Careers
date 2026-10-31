@@ -8,7 +8,9 @@ import { sessionCookiesToClear } from '@/lib/auth/sign-out';
  * middleware matcher.
  */
 export function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL('/login?error=SessionExpired', request.url));
+  // After the tutor changed their own password the ending is expected; say so instead of "session has ended".
+  const code = request.nextUrl.searchParams.get('reason') === 'password-changed' ? 'PasswordChanged' : 'SessionExpired';
+  const response = NextResponse.redirect(new URL(`/login?error=${code}`, request.url));
   for (const name of sessionCookiesToClear(request.cookies.getAll().map((c) => c.name))) {
     response.cookies.set(name, '', { path: '/', maxAge: 0, httpOnly: true, sameSite: 'lax', secure: true });
   }

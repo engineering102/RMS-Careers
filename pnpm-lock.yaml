@@ -186,6 +186,9 @@ importers:
       '@radix-ui/react-tooltip':
         specifier: ^1.1.6
         version: 1.2.16(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@rms/academic':
+        specifier: workspace:*
+        version: link:../../packages/academic
       '@rms/auth':
         specifier: workspace:*
         version: link:../../packages/auth
