@@ -6,11 +6,16 @@
 // To add a sheet, append a definition here (any new problems go in dsa-problem-bank.ts first). Company sheets use
 // category 'company' and a `company` label, and must come from a verified source the content team can stand behind:
 // never publish an invented list as a company's real interview questions.
-import type { DSAQuestion, DSASheet, DsaSheetCategory } from '@/lib/types/dsa';
+import type { DSAQuestion, DSASheet, DsaSheetCategory, PatternCard } from '@/lib/types/dsa';
+import { PATTERN_PATH_SHEET } from './dsa-pattern-path';
 
 export interface SheetGroupDefinition {
   pattern: string;
   slugs: string[];
+  /** Optional guidance shown when the group is opened. */
+  card?: PatternCard;
+  /** Optional one-line note per problem (keyed by slug): why it comes next in this sheet. */
+  notes?: Record<string, string>;
 }
 
 export interface SheetDefinition {
@@ -346,22 +351,30 @@ export const CURATED_SHEET_DEFINITIONS: SheetDefinition[] = [
         ]
       }
     ]
-  }
+  },
+  PATTERN_PATH_SHEET
 ];
 
 /**
  * Resolves a definition against the problem bank. Each problem keeps its record (same slug, so the same progress)
- * and takes the sheet's group name as its pattern. Unknown slugs fail loudly: a sheet must never silently lose a
- * problem.
+ * and takes the sheet's group name as its pattern, plus the group's note for it when there is one. Unknown slugs
+ * fail loudly: a sheet must never silently lose a problem, or carry a note for one it does not list.
  */
 export function resolveSheet(definition: SheetDefinition, bank: ReadonlyMap<string, DSAQuestion>): DSASheet {
-  const questions = definition.groups.flatMap((group) =>
-    group.slugs.map((slug) => {
+  const questions = definition.groups.flatMap((group) => {
+    for (const noted of Object.keys(group.notes ?? {})) {
+      if (!group.slugs.includes(noted)) {
+        throw new Error(`DSA sheet "${definition.slug}" has a note for "${noted}", which "${group.pattern}" does not list`);
+      }
+    }
+    return group.slugs.map((slug) => {
       const question = bank.get(slug);
       if (!question) throw new Error(`DSA sheet "${definition.slug}" lists unknown problem "${slug}"`);
-      return { ...question, pattern: group.pattern };
-    })
-  );
+      const sheetNote = group.notes?.[slug];
+      return sheetNote ? { ...question, pattern: group.pattern, sheetNote } : { ...question, pattern: group.pattern };
+    });
+  });
+  const cards = definition.groups.filter((group) => group.card).map((group) => [group.pattern, group.card!] as const);
   return {
     id: `sheet-${definition.slug}`,
     slug: definition.slug,
@@ -373,6 +386,7 @@ export function resolveSheet(definition: SheetDefinition, bank: ReadonlyMap<stri
     // Same rule as the DSA Sheet: about one focused hour per problem.
     estimatedHours: questions.length,
     patternCount: definition.groups.length,
-    questions
+    questions,
+    ...(cards.length > 0 ? { patternCards: Object.fromEntries(cards) } : {})
   };
 }

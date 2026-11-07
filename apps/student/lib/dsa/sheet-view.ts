@@ -1,6 +1,13 @@
 // Pure view helpers for DSA Practice: the sheet catalog, and a selected sheet's filtering, pattern groups and links.
 // Kept free of React so the sheet behaviour can be unit tested.
-import type { DSAQuestion, DSASheet, Difficulty, DsaSheetCategory, StudentProblemProgress } from '@/lib/types/dsa';
+import type {
+  DSAQuestion,
+  DSASheet,
+  Difficulty,
+  DsaSheetCategory,
+  PatternCard,
+  StudentProblemProgress
+} from '@/lib/types/dsa';
 
 export type StatusFilter = 'all' | 'solved' | 'unsolved';
 
@@ -87,6 +94,8 @@ export interface PatternGroup {
   /** Progress over the whole pattern, independent of filters. */
   solvedCount: number;
   totalCount: number;
+  /** The sheet's pattern card for this group, when it has one. */
+  card?: PatternCard;
 }
 
 /**
@@ -100,6 +109,8 @@ export function groupByPattern(sheet: DSASheet, visible: DSAQuestion[], progress
     let group = groups[groups.length - 1];
     if (!group || group.pattern !== q.pattern) {
       group = { pattern: q.pattern, questions: [], positions: {}, solvedCount: 0, totalCount: 0 };
+      const card = sheet.patternCards?.[q.pattern];
+      if (card) group.card = card;
       groups.push(group);
     }
     group.totalCount += 1;

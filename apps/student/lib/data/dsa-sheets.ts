@@ -6,6 +6,7 @@
 // XP rewards.
 import type { DSASheet, DSAQuestion } from '@/lib/types/dsa';
 import { EXTRA_DSA_QUESTIONS } from './dsa-problem-bank';
+import { RMS_PRACTICE_QUESTIONS } from './dsa-rms-problems';
 import { CURATED_SHEET_DEFINITIONS, resolveSheet } from './dsa-curated-sheets';
 
 export const DSA_SHEET: DSASheet = {
@@ -2952,9 +2953,12 @@ export const DSA_SHEET: DSASheet = {
   ]
 };
 
-/** Every problem any sheet can list, keyed by slug: the DSA Sheet's problems plus the extra problem bank. */
+/**
+ * Every problem any sheet can list, keyed by slug: the DSA Sheet's problems, the extra problem bank, and the
+ * RMS-written practice problems (no LeetCode page).
+ */
 export const DSA_PROBLEM_BANK: ReadonlyMap<string, DSAQuestion> = new Map(
-  [...DSA_SHEET.questions, ...EXTRA_DSA_QUESTIONS].map((q) => [q.slug, q])
+  [...DSA_SHEET.questions, ...EXTRA_DSA_QUESTIONS, ...RMS_PRACTICE_QUESTIONS].map((q) => [q.slug, q])
 );
 
 /** The DSA Practice catalog, in display order. The DSA Sheet stays first; curated sheets follow. */

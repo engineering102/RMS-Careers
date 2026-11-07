@@ -2,7 +2,28 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ProblemRow, PROBLEM_GRID } from './problem-row';
 import { patternAnchorId, percentOf, type PatternGroup, type ProgressMap } from '@/lib/dsa/sheet-view';
-import type { DSAQuestion } from '@/lib/types/dsa';
+import type { DSAQuestion, PatternCard } from '@/lib/types/dsa';
+
+const CARD_FIELDS: { key: keyof PatternCard; label: string }[] = [
+  { key: 'signal', label: 'Signal' },
+  { key: 'coreMove', label: 'Core move' },
+  { key: 'buildsOn', label: 'Builds on' },
+  { key: 'trap', label: 'Trap' }
+];
+
+/** How to recognise and approach the group's pattern, read before its problems. */
+function PatternCardPanel({ card }: { card: PatternCard }) {
+  return (
+    <dl className="mb-3 grid gap-x-6 gap-y-2 rounded-lg border border-border bg-secondary/30 px-4 py-3 text-sm sm:grid-cols-2">
+      {CARD_FIELDS.map(({ key, label }) => (
+        <div key={key} className="min-w-0">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</dt>
+          <dd className="mt-0.5 text-foreground/85">{card[key]}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 interface PatternAccordionProps {
   sheetSlug: string;
@@ -80,6 +101,7 @@ export function PatternAccordion({
 
       {/* The panel stays in the DOM (hidden) so aria-controls always resolves; rows render only while open. */}
       <div id={panelId} role="region" aria-labelledby={buttonId} hidden={!isOpen} className="px-2 pb-3 sm:px-4">
+        {isOpen && group.card && <PatternCardPanel card={group.card} />}
         {isOpen && (
           <div className="overflow-hidden rounded-lg border border-border bg-background/40">
             <div

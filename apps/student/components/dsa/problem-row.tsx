@@ -30,6 +30,22 @@ export const DIFFICULTY_PILL: Record<string, string> = {
 export const PROBLEM_GRID =
   'grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-x-3 md:grid-cols-[3rem_2.75rem_minmax(0,1fr)_4.5rem_4.5rem_5.5rem]';
 
+/**
+ * A sheet's note on why the problem comes next. Notes may lead with a role ("Warm-up · ..."), shown in bold so a
+ * student can tell a warm-up from an optional stretch at a glance.
+ */
+export function SheetNote({ note, className = '' }: { note: string; className?: string }) {
+  const split = note.indexOf(' · ');
+  const role = split > 0 && split <= 24 ? note.slice(0, split) : null;
+  const text = role ? note.slice(split + 3) : note;
+  return (
+    <p className={`mt-0.5 text-xs leading-relaxed text-muted-foreground ${className}`}>
+      {role && <span className="font-semibold text-foreground/70">{role} · </span>}
+      {text}
+    </p>
+  );
+}
+
 const iconButton =
   'inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
@@ -84,6 +100,7 @@ export function ProblemRow({ question, position, progress, isSaving = false, onS
         >
           {question.title}
         </button>
+        {question.sheetNote && <SheetNote note={question.sheetNote} />}
         {/* Details that do not have their own column at this width (the pattern is the group heading) */}
         {(isSolved && progress?.completedAt) || position !== undefined ? (
           <p className="mt-0.5 flex min-w-0 items-center gap-x-2 text-xs text-muted-foreground">
