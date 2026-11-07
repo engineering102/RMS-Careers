@@ -24,6 +24,23 @@ export interface DSAQuestion {
   timeComplexity: string;
   spaceComplexity: string;
   externalUrl?: string;
+  /**
+   * Why the problem sits where it does in the sheet showing it (e.g. "Builds on Two Sum: ..."). Set by the sheet,
+   * not the problem bank, so the same problem can carry a different note in another sheet.
+   */
+  sheetNote?: string;
+}
+
+/** Guidance shown at the top of a sheet group: how to recognise and approach its pattern. */
+export interface PatternCard {
+  /** Words or shapes in a problem statement that suggest the pattern. */
+  signal: string;
+  /** The one idea or template the pattern rests on. */
+  coreMove: string;
+  /** Earlier groups whose ideas this one reuses. */
+  buildsOn: string;
+  /** The most common beginner mistake. */
+  trap: string;
 }
 
 /** Catalog grouping of a problem sheet. */
@@ -41,6 +58,8 @@ export interface DSASheet {
   estimatedHours: number;
   patternCount: number;
   questions: DSAQuestion[];
+  /** Pattern cards keyed by group (pattern) name, for sheets that teach their patterns in order. */
+  patternCards?: Record<string, PatternCard>;
 }
 
 export interface StudentProblemProgress {

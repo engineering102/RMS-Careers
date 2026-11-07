@@ -60,8 +60,13 @@ describe('DSA Sheet', () => {
 });
 
 describe('Student DSA catalog', () => {
-  it('lists the DSA Sheet first, then Blind 75 and LeetCode 150, with unique slugs', () => {
-    expect(STUDENT_DSA_SHEETS.map((s) => s.slug)).toEqual(['dsa-sheet', 'blind-75', 'leetcode-150']);
+  it('lists the DSA Sheet first, then Blind 75, LeetCode 150 and the Pattern Path, with unique slugs', () => {
+    expect(STUDENT_DSA_SHEETS.map((s) => s.slug)).toEqual([
+      'dsa-sheet',
+      'blind-75',
+      'leetcode-150',
+      'pattern-path-26-weeks'
+    ]);
     expect(STUDENT_DSA_SHEETS[0]).toBe(DSA_SHEET);
     for (const sheet of STUDENT_DSA_SHEETS) {
       // A sheet slug that is also a problem slug would make /dsa?sheet=<slug> ambiguous.

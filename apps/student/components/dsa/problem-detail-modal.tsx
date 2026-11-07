@@ -19,6 +19,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { recordDsaProblemSolved } from '@/lib/actions/dsa';
 import type { DSAQuestion, StudentProblemProgress } from '@/lib/types/dsa';
+import { SheetNote } from './problem-row';
+
+/** An example's input or output; multi-line values (code, printed patterns) keep their line breaks on their own lines. */
+function ExampleValue({ value }: { value: string }) {
+  return value.includes('\n') ? (
+    <span className="mt-1 block overflow-x-auto whitespace-pre">{value}</span>
+  ) : (
+    <>{value}</>
+  );
+}
 
 interface ProblemDetailModalProps {
   question: DSAQuestion | null;
@@ -164,6 +174,16 @@ export function ProblemDetailModal({
 
             {/* Modal Body */}
             <div className="p-5 sm:p-6 space-y-6 overflow-y-auto overscroll-contain flex-1">
+              {/* Why this problem comes next in the sheet */}
+              {question.sheetNote && (
+                <div className="space-y-1 rounded-lg border border-border bg-secondary/30 px-4 py-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Why this problem
+                  </h4>
+                  <SheetNote note={question.sheetNote} className="text-xs sm:text-sm" />
+                </div>
+              )}
+
               {/* Problem Statement */}
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -186,8 +206,8 @@ export function ProblemDetailModal({
                         key={idx}
                         className="p-3 rounded-lg bg-background/60 border border-border text-xs font-mono space-y-1"
                       >
-                        <p className="text-foreground/80"><span className="text-muted-foreground">Input:</span> {ex.input}</p>
-                        <p className="text-success"><span className="text-muted-foreground">Output:</span> {ex.output}</p>
+                        <p className="text-foreground/80"><span className="text-muted-foreground">Input:</span> <ExampleValue value={ex.input} /></p>
+                        <p className="text-success"><span className="text-muted-foreground">Output:</span> <ExampleValue value={ex.output} /></p>
                         {ex.explanation && (
                           <p className="text-muted-foreground font-sans text-[11px] pt-1 border-t border-border/60">
                             {ex.explanation}
