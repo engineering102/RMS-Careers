@@ -246,7 +246,15 @@ describe('Slice 6: Student Overview Dashboard & getStudentOverview', () => {
     });
 
     it('constructs a complete 30-day activity heatmap and populates missing days with 0', async () => {
-      const overview = await getStudentOverview(studentId, [accessibleBatchId]);
+      // The activity fixtures are dated 2026-10-04/05; pin "today" so they stay inside the 30-day window.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-05T12:00:00Z'));
+      let overview: Awaited<ReturnType<typeof getStudentOverview>>;
+      try {
+        overview = await getStudentOverview(studentId, [accessibleBatchId]);
+      } finally {
+        vi.useRealTimers();
+      }
 
       expect(overview.heatmap.days).toHaveLength(30);
 
