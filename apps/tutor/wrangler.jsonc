@@ -9,7 +9,8 @@
         "binding": "ASSETS"
     },
     // The first deploy creates the custom domain (and its DNS record) for tutor.rms-careers.com.
-    // Nothing deploys this Worker until the deploy pipeline knows the tutor app (tutor plan WS-11).
+    // Pre-launch: automatic deploys skip this Worker (PRE_LAUNCH_APPS in scripts/ci/deploy-tracking.mjs) until the
+    // explicit bootstrap in docs/development/tutor-launch.md.
     "routes": [
         {
             "pattern": "tutor.rms-careers.com",
