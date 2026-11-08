@@ -1,111 +1,56 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardCheck, CheckCircle2, Award, Zap } from 'lucide-react';
-import type { PracticeQuizSummary } from '@/lib/types/assessments';
+import { CalendarClock, CheckCircle2, ListTodo, Target } from 'lucide-react';
 
-interface AssessmentsHeaderProps {
-  quizzes: PracticeQuizSummary[];
-  formalAssessments?: import('@/lib/types/assessments').FormalAssessmentSummary[];
-}
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import { formatDate } from '@/lib/format/datetime';
+import type { AssessmentHubStats } from '@/lib/types/assessment-hub';
 
-export function AssessmentsHeader({ quizzes, formalAssessments = [] }: AssessmentsHeaderProps) {
-  const totalPractice = quizzes.length;
-  const passedPractice = quizzes.filter((q) => q.isPassed).length;
-
-  const totalFormal = formalAssessments.length;
-  const completedFormal = formalAssessments.filter(
-    (f) => f.status === 'submitted' || f.status === 'auto_submitted'
-  ).length;
-
-  const allTotal = totalPractice + totalFormal;
-  const allCompleted = passedPractice + completedFormal;
-
-  const attemptedPractice = quizzes.filter((q) => q.attemptCount > 0);
-  const attemptedFormal = formalAssessments.filter((f) => f.attempt?.score !== undefined);
-
-  const totalPercentages = [
-    ...attemptedPractice.map((q) => q.bestPercentage ?? 0),
-    ...attemptedFormal.map((f) => f.attempt?.percentage ?? 0)
-  ];
-
-  const averagePercentage =
-    totalPercentages.length > 0
-      ? Math.round(totalPercentages.reduce((a, b) => a + b, 0) / totalPercentages.length)
-      : 0;
-
-  // Each first pass awards 20 XP
-  const estimatedXp = (passedPractice + formalAssessments.filter((f) => f.attempt?.isPassed).length) * 20;
-
+/** Page title plus four at-a-glance counts, all derived from the same rows the list shows. */
+export function AssessmentsHeader({ stats }: { stats: AssessmentHubStats }) {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-              <ClipboardCheck className="h-3.5 w-3.5" />
-              Assessment Center
-            </span>
-            <span className="text-xs text-muted-foreground font-mono">Formal & Practice</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Assessment Center
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Timed formal cohort examinations and self-paced practice knowledge checks.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Assessment center"
+        title="Assessments"
+        description="Timed exams, practice quizzes, projects and external tests in one place. What needs you first is at the top."
+      />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-border bg-card/60">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Total Assessments</p>
-              <p className="text-2xl font-bold text-foreground mt-0.5 tabular-nums">{allTotal}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <ClipboardCheck className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card/60">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-success mt-0.5 tabular-nums">{allCompleted}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-success/10 border border-success/20 text-success">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card/60">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Avg. Score</p>
-              <p className="text-2xl font-bold text-primary mt-0.5 tabular-nums">
-                {totalPercentages.length > 0 ? `${averagePercentage}%` : '—'}
-              </p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20 text-primary">
-              <Award className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card/60">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground">Quiz XP Earned</p>
-              <p className="text-2xl font-bold text-warning mt-0.5 tabular-nums">+{estimatedXp}</p>
-            </div>
-            <div className="p-2.5 rounded-xl bg-warning/10 border border-warning/20 text-warning">
-              <Zap className="h-5 w-5" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        <StatCard
+          label="To do"
+          value={stats.todo}
+          icon={ListTodo}
+          tone={stats.dueSoon > 0 ? 'warning' : 'info'}
+          hint={stats.dueSoon > 0 ? `${stats.dueSoon} need attention soon` : 'Nothing due in the next 3 days'}
+        />
+        <StatCard
+          label="Upcoming"
+          value={stats.upcoming}
+          icon={CalendarClock}
+          hint={
+            stats.nextOpensAt
+              ? `Next opens ${formatDate(stats.nextOpensAt, { day: 'numeric', month: 'short' })}`
+              : 'Nothing scheduled yet'
+          }
+        />
+        <StatCard
+          label="Done"
+          value={stats.done}
+          icon={CheckCircle2}
+          tone="success"
+          hint={`of ${stats.total} in total`}
+        />
+        <StatCard
+          label="Average score"
+          value={stats.averagePercentage !== null ? `${stats.averagePercentage}%` : '—'}
+          icon={Target}
+          tone="info"
+          hint={
+            stats.scoredCount > 0
+              ? `Across ${stats.scoredCount} scored ${stats.scoredCount === 1 ? 'item' : 'items'}`
+              : 'No scores yet'
+          }
+        />
       </div>
     </div>
   );

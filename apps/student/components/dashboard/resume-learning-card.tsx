@@ -225,7 +225,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
     target.contentType === 'dsa_sheet'
       ? buildDsaHref(target.contentSlug, target.batchId)
       : target.contentType === 'external_test'
-        ? '/assessments#external-tests'
+        ? '/assessments?type=external'
         : `/content/${encodeURIComponent(target.contentItemId)}?batchId=${encodeURIComponent(
           target.batchId || ''
         )}`;

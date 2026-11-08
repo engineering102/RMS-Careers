@@ -1,250 +1,159 @@
-import React from 'react';
+import Link from 'next/link';
+import { ClipboardCheck, SearchX } from 'lucide-react';
+
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
-import {
-  getStudentPracticeQuizzes,
-  getStudentFormalAssessments
-} from '@/lib/db/queries/assessments';
+import { getStudentPracticeQuizzes, getStudentFormalAssessments } from '@/lib/db/queries/assessments';
 import { getStudentProjectAssignments } from '@/lib/db/queries/projects';
 import { getStudentExternalAssessments } from '@/lib/db/queries/external-assessments';
 import { getStudentExternalTests } from '@/lib/db/queries/external-tests';
+import {
+  assessmentHref,
+  buildAssessmentItems,
+  buildAssessmentView,
+  parseAssessmentQuery
+} from '@/lib/services/assessment-hub';
+import type { AssessmentBucket, AssessmentHubItem } from '@/lib/types/assessment-hub';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { AssessmentsHeader } from '@/components/assessments/assessments-header';
-import { PracticeQuizCard } from '@/components/assessments/practice-quiz-card';
-import { FormalAssessmentCard } from '@/components/assessments/formal-assessment-card';
-import { ProjectAssignmentCard } from '@/components/projects/project-assignment-card';
-import { ExternalAssessmentCard } from '@/components/assessments/external-assessment-card';
-import { ExternalTestCard } from '@/components/assessments/external-test-card';
-import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardCheck, Timer, FolderGit2, Award, ExternalLink } from 'lucide-react';
+import { AssessmentRow } from '@/components/assessments/assessment-row';
+import { AssessmentSearch } from '@/components/assessments/assessment-search';
+import { ExternalTestsHashRedirect } from '@/components/assessments/external-tests-hash-redirect';
+import {
+  AssessmentStatusFilters,
+  AssessmentTypeTabs,
+  BUCKET_HEADINGS
+} from '@/components/assessments/assessment-tabs';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
+import { PaginationNav } from '@/components/ui/pagination-nav';
 
 export const metadata = {
-  title: 'Assessments & Practice Checks — RMS Student Portal',
-  description: 'Timed formal cohort examinations and self-paced practice knowledge checks.'
+  title: 'Assessments — RMS Student Portal',
+  description: 'Timed exams, practice quizzes, projects and external tests across your enrolled batches.'
 };
 
-export default async function AssessmentsPage() {
+interface AssessmentsPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/** Consecutive rows of the same bucket, so a sorted page renders as headed groups. */
+function groupByBucket(items: AssessmentHubItem[]): { bucket: AssessmentBucket; items: AssessmentHubItem[] }[] {
+  const groups: { bucket: AssessmentBucket; items: AssessmentHubItem[] }[] = [];
+  for (const item of items) {
+    const last = groups[groups.length - 1];
+    if (last && last.bucket === item.bucket) last.items.push(item);
+    else groups.push({ bucket: item.bucket, items: [item] });
+  }
+  return groups;
+}
+
+export default async function AssessmentsPage({ searchParams }: AssessmentsPageProps) {
   const context = await requireStudentEntitlement();
 
   if (!context.hasActiveEntitlement || !context.student) {
     return <EmptyEnrollmentView context={context} />;
   }
 
-  const [formalAssessments, practiceQuizzes, projectAssignments, externalAssessments, externalTests] =
-    await Promise.all([
-      getStudentFormalAssessments(context.student.id),
-      getStudentPracticeQuizzes(context.student.id),
-      getStudentProjectAssignments(context.student.id),
-      getStudentExternalAssessments(context.student.id),
-      getStudentExternalTests(context.student.id)
-    ]);
+  const studentId = context.student.id;
+  const [query, formal, practice, projects, reports, externalTests] = await Promise.all([
+    searchParams.then(parseAssessmentQuery),
+    getStudentFormalAssessments(studentId),
+    getStudentPracticeQuizzes(studentId),
+    getStudentProjectAssignments(studentId),
+    getStudentExternalAssessments(studentId),
+    getStudentExternalTests(studentId)
+  ]);
+
+  const now = new Date();
+  const allItems = buildAssessmentItems({ formal, practice, projects, externalTests, reports }, now);
+  const view = buildAssessmentView(allItems, query, now);
+  const q = view.query;
+
+  const isFiltered = Boolean(q.q || q.batchId || q.tab !== 'all' || q.status !== 'all');
+  const firstShown = view.totalCount === 0 ? 0 : (view.page - 1) * view.pageSize + 1;
+  const lastShown = firstShown === 0 ? 0 : firstShown + view.items.length - 1;
+  // Group headings only help when the list mixes statuses.
+  const showGroupHeadings = q.status === 'all';
 
   return (
-    <div className="space-y-10 max-w-6xl mx-auto pb-12">
-      {/* 1. Unified Assessment Center Header with aggregated metrics */}
-      <AssessmentsHeader
-        quizzes={practiceQuizzes}
-        formalAssessments={formalAssessments}
-      />
+    <div className="mx-auto max-w-6xl space-y-8 pb-12">
+      <ExternalTestsHashRedirect />
+      <AssessmentsHeader stats={view.stats} />
 
-      {/* 2. Formal Timed Assessments Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Timer className="h-4 w-4 text-warning" />
-              <span>Formal Timed Assessments</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Scheduled examinations with authoritative countdown timers and single-attempt lifecycle.
-            </p>
+      {allItems.length === 0 ? (
+        <EmptyState
+          icon={ClipboardCheck}
+          title="No assessments yet"
+          description="Exams, practice quizzes, projects and external tests appear here as your batch reaches them in the curriculum."
+        />
+      ) : (
+        <section aria-labelledby="assessment-list-heading" className="space-y-4">
+          <h2 id="assessment-list-heading" className="sr-only">
+            Assessment list
+          </h2>
+
+          <AssessmentTypeTabs view={view} />
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <AssessmentStatusFilters view={view} />
+            <AssessmentSearch currentQuery={q.q} currentBatchId={q.batchId} batches={view.batches} />
           </div>
 
-          <span className="text-xs text-muted-foreground font-mono">
-            {formalAssessments.length}{' '}
-            {formalAssessments.length === 1 ? 'assessment' : 'assessments'}
-          </span>
-        </div>
-
-        {formalAssessments.length === 0 ? (
-          <Card className="border-border bg-card/40">
-            <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
-                <Timer className="h-5 w-5" />
+          {view.totalCount === 0 ? (
+            <EmptyState
+              icon={SearchX}
+              title="Nothing matches these filters"
+              description={
+                q.q
+                  ? `No assessments match “${q.q}”. Try another title or program code.`
+                  : 'Try another status or type.'
+              }
+              action={
+                isFiltered ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href="/assessments">Clear filters</Link>
+                  </Button>
+                ) : null
+              }
+            />
+          ) : (
+            <>
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                {groupByBucket(view.items).map((group, index) => (
+                  <section
+                    key={`${group.bucket}-${index}`}
+                    aria-label={showGroupHeadings ? BUCKET_HEADINGS[group.bucket] : undefined}
+                  >
+                    {showGroupHeadings ? (
+                      <h3 className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-5">
+                        <span>{BUCKET_HEADINGS[group.bucket]}</span>
+                        <span className="tabular-nums">{view.statusCounts[group.bucket]}</span>
+                      </h3>
+                    ) : null}
+                    <ul className="divide-y divide-border">
+                      {group.items.map((item) => (
+                        <AssessmentRow key={item.key} item={item} />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
               </div>
-              <h3 className="text-sm font-semibold text-foreground">
-                No Formal Assessments Scheduled
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                There are currently no formal examinations scheduled in your active batch timelines.
-                New assessments will unlock as your cohort reaches curriculum milestones.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {formalAssessments.map((assessment) => (
-              <FormalAssessmentCard key={assessment.id} assessment={assessment} />
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* 2b. External (proctored) tests sat on a partner platform; hidden when the batch has none */}
-      {externalTests.length > 0 && (
-        <div id="external-tests" className="space-y-4 scroll-mt-24">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <ExternalLink className="h-4 w-4 text-rose-400" />
-                <span>External Tests</span>
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Proctored tests on a partner platform. Open the link during the window; your score appears here once imported.
-              </p>
-            </div>
-
-            <span className="text-xs text-muted-foreground font-mono">
-              {externalTests.length} {externalTests.length === 1 ? 'test' : 'tests'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {externalTests.map((test) => (
-              <ExternalTestCard key={test.placementId} test={test} />
-            ))}
-          </div>
-        </div>
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+                <p className="text-xs text-muted-foreground" aria-live="polite">
+                  Showing <span className="font-medium tabular-nums text-foreground">{firstShown}–{lastShown}</span> of{' '}
+                  <span className="font-medium tabular-nums text-foreground">{view.totalCount}</span>
+                </p>
+                <PaginationNav
+                  page={view.page}
+                  totalPages={view.totalPages}
+                  hrefFor={(page) => assessmentHref(q, { page })}
+                />
+              </div>
+            </>
+          )}
+        </section>
       )}
-
-      {/* 3. Practice Knowledge Checks Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <ClipboardCheck className="h-4 w-4 text-purple-400" />
-              <span>Practice Knowledge Checks</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Untimed quizzes with instant explanations, repeatable practice, and placement preparation.
-            </p>
-          </div>
-
-          <span className="text-xs text-muted-foreground font-mono">
-            {practiceQuizzes.length}{' '}
-            {practiceQuizzes.length === 1 ? 'assessment' : 'assessments'}
-          </span>
-        </div>
-
-        {practiceQuizzes.length === 0 ? (
-          <Card className="border-border bg-card/40">
-            <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
-                <ClipboardCheck className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-semibold text-foreground">
-                No Practice Knowledge Checks Available
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                There are currently no practice knowledge checks assigned to your enrolled programs.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {practiceQuizzes.map((quiz) => (
-              <PracticeQuizCard key={quiz.id} quiz={quiz} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 4. Project Assignments Section (Slice 13) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <FolderGit2 className="h-4 w-4 text-warning" />
-              <span>Project Assignments</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Industry-grade project deliverables evaluated against git workflows and technical rubrics.
-            </p>
-          </div>
-
-          <span className="text-xs text-muted-foreground font-mono">
-            {projectAssignments.length}{' '}
-            {projectAssignments.length === 1 ? 'project' : 'projects'}
-          </span>
-        </div>
-
-        {projectAssignments.length === 0 ? (
-          <Card className="border-border bg-card/40">
-            <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
-                <FolderGit2 className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-semibold text-foreground">
-                No Project Deliverables Assigned
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Project assignments and repository submission briefs will appear here as your batch progresses.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {projectAssignments.map((project) => (
-              <ProjectAssignmentCard
-                key={`${project.contentItemId}-${project.batchId}`}
-                project={project}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* 5. External Standardized Assessments Section (Slice 14) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Award className="h-4 w-4 text-success" />
-              <span>External Standardized Assessments</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Official standardized placement benchmarks and third-party proctored test report cards.
-            </p>
-          </div>
-
-          <span className="text-xs text-muted-foreground font-mono">
-            {externalAssessments.length}{' '}
-            {externalAssessments.length === 1 ? 'report card' : 'report cards'}
-          </span>
-        </div>
-
-        {externalAssessments.length === 0 ? (
-          <Card className="border-border bg-card/40">
-            <CardContent className="p-8 text-center space-y-2.5">
-              <div className="mx-auto w-10 h-10 rounded-full bg-secondary/80 border border-input flex items-center justify-center text-muted-foreground">
-                <Award className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-semibold text-foreground">
-                No External Assessments Ingested
-              </h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Standardized test scores conducted on partner assessment platforms (such as HackerEarth,
-                AMCAT, or TCS iON) will appear here once verified and imported by administrators.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {externalAssessments.map((record) => (
-              <ExternalAssessmentCard key={record.id} record={record} />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
