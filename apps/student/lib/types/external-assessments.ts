@@ -25,6 +25,8 @@ export interface ExternalTestSummary {
   title: string;
   description: string | null;
   provider: string;
+  /** Lower-cased assessment code the import matches on; empty when the item has none. */
+  codeKey: string;
   /** Only while the window is open, and only a validated https link. */
   url: string | null;
   durationMinutes: number | null;

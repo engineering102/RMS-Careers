@@ -17,6 +17,8 @@ export function curriculumItemHref(item: CurriculumItemLinkTarget): string {
     case 'quiz':
       return `/assessments?${batchParam}`;
     case 'external_test':
+      // Kept as a #fragment: deadline notifications dedupe on this exact URL, so changing it would re-send
+      // alerts. The Assessments page maps the fragment to its External tab (ExternalTestsHashRedirect).
       return '/assessments#external-tests';
     case 'lecture':
     case 'project':

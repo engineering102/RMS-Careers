@@ -49,7 +49,7 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
   // External tests are sat on another platform; their link, window and result live on Assessments.
   if (item.contentType === 'external_test') {
-    redirect('/assessments#external-tests');
+    redirect('/assessments?type=external');
   }
 
   const effectiveBatchId = batchId || item.relatedBatchContext?.batchId;

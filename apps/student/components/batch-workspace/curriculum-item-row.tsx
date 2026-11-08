@@ -86,7 +86,7 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
         badgeClass: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
         actionLabel: 'View Test',
         // Sat on the external platform; the link, window and imported result live on Assessments.
-        defaultHref: '/assessments#external-tests'
+        defaultHref: '/assessments?type=external'
       };
     case 'resource':
     default:

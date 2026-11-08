@@ -82,6 +82,7 @@ export async function getStudentExternalTests(studentId: number, now: Date = new
         title: row.title,
         description: row.description,
         provider: meta.provider,
+        codeKey: meta.codeKey,
         url: windowState === 'open' ? meta.url : null,
         durationMinutes: meta.durationMinutes,
         availableFrom,
