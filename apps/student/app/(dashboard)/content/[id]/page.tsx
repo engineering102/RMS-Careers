@@ -37,6 +37,13 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
   const { id } = await params;
   const { batchId } = await searchParams;
 
+  // The next lesson loads alongside the item. It is only used once getContentItem has authorized the item, and
+  // getNextCurriculumItem never rejects (it returns null on error), so a notFound() below leaves nothing dangling.
+  // relatedBatchContext is only ever set from the batchId param, so the param alone decides the batch here.
+  const nextItemPromise = batchId
+    ? getNextCurriculumItem(context.student.id, id, batchId)
+    : Promise.resolve(null);
+
   // Server-authoritative query (validates entitlement, throws notFound() if unauthorized)
   const item = await getContentItem(context.student.id, id, batchId);
 
@@ -46,9 +53,7 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
   }
 
   const effectiveBatchId = batchId || item.relatedBatchContext?.batchId;
-  const nextItem = effectiveBatchId
-    ? await getNextCurriculumItem(context.student.id, item.id, effectiveBatchId)
-    : null;
+  const nextItem = await nextItemPromise;
 
   const isLecture = item.contentType === 'lecture';
   const isResource = item.contentType === 'notes' || item.contentType === 'resource';

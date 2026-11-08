@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import {
   db,
@@ -217,8 +218,12 @@ export async function getStudentPracticeQuizzes(
  * Authoritative correctOptionIds and explanationText are excluded from the client payload.
  *
  * Anti-probing: If not entitled, unauthenticated, unpublished, or nonexistent, throws notFound().
+ *
+ * Memoized per request with React cache(): the runner page's generateMetadata and the page itself both load it.
+ * Read-only, so sharing the result (or the thrown notFound()) within one request changes nothing.
+ * Outside a React render (Server Actions) cache() does not memoize.
  */
-export async function getPracticeQuizForRunner(
+export const getPracticeQuizForRunner = cache(async function getPracticeQuizForRunner(
   studentId: number,
   quizOrContentId: string,
   batchId?: string
@@ -417,12 +422,13 @@ export async function getPracticeQuizForRunner(
     hasPassedPreviously,
     relatedBatchContext
   };
-}
+});
 
 /**
  * Detects whether a quiz identifier corresponds to a 'practice' or 'formal' assessment.
+ * Memoized per request (see getPracticeQuizForRunner).
  */
-export async function getAssessmentType(
+export const getAssessmentType = cache(async function getAssessmentType(
   quizOrContentId: string
 ): Promise<'practice' | 'formal' | null> {
   if (!isValidUuid(quizOrContentId)) {
@@ -441,7 +447,7 @@ export async function getAssessmentType(
     .limit(1);
 
   return (row?.quizType as 'practice' | 'formal') ?? null;
-}
+});
 
 /**
  * Retrieves formal timed assessments scheduled for the student's active enrolled batches.
@@ -640,8 +646,10 @@ export async function getStudentFormalAssessments(
  * Authoritative correctOptionIds and explanationText are excluded from the client payload during attempt.
  *
  * Anti-probing: If not entitled, unauthenticated, unpublished, or nonexistent, throws notFound().
+ *
+ * Memoized per request (see getPracticeQuizForRunner).
  */
-export async function getFormalAssessmentForRunner(
+export const getFormalAssessmentForRunner = cache(async function getFormalAssessmentForRunner(
   studentId: number,
   quizOrContentId: string,
   batchId?: string
@@ -892,7 +900,7 @@ export async function getFormalAssessmentForRunner(
     activeAttempt,
     completedAttempt
   };
-}
+});
 
 /**
  * Server-side inputs for the practice-quiz answer-key policy: the quiz's configured policy and the
