@@ -4,10 +4,12 @@
     "main": ".open-next/worker.js",
     "compatibility_date": "2026-10-04",
     "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-    // Smart Placement: run the Worker near the database rather than at the visitor's PoP. Every dashboard page
-    // makes several sequential Neon round-trips; from the user's PoP each one pays the PoP→DB distance
-    // (Lighthouse 2026-10: ~1.2–5.6 s server response vs ~0.2 s for /login, which makes no DB call).
-    "placement": { "mode": "smart" },
+    // Targeted Placement: always run the Worker next to the production database (Neon aws-ap-southeast-1,
+    // Singapore; moved from us-east-2 in 2026-11, see docs/runbooks/prod-db-singapore-move-2026-11.md). Every
+    // dashboard page makes several sequential Neon round-trips; from the visitor's PoP each one pays the PoP→DB
+    // distance. Smart Placement only moved busy routes and left the rest at ~2 s. Keep this region equal to the
+    // database region: if the database ever moves, change it here (and in admin/tutor) in the same change.
+    "placement": { "mode": "targeted", "region": "aws:ap-southeast-1" },
     "assets": {
         "directory": ".open-next/assets",
         "binding": "ASSETS"
