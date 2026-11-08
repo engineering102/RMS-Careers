@@ -10,7 +10,7 @@ import {
   activities,
   batches
 } from '@rms/db';
-import { eq, and, or, sql, inArray } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import type { ContentItemMetadata } from '@/lib/types/library';
 import type {
   ContentPlayerItem,
@@ -53,50 +53,31 @@ export async function getContentItem(
   }
 
   try {
-    // 1. Resolve student's enrollments to establish entitlement boundaries
-    const activeEnrollments = await db
-      .select({
-        programId: enrollments.programId,
-        batchId: enrollments.batchId,
-        status: enrollments.status
-      })
-      .from(enrollments)
-      .where(
-        and(
-          eq(enrollments.studentId, studentId),
-          enrollmentGrantsAccess({ includeCompleted: true })
-        )
-      );
+    // The student's access-granting enrollments (completed included: read-only history stays viewable), as
+    // subqueries, so every read below can start at once instead of waiting for the enrollment list first.
+    const enrolledProgramIds = sql`SELECT ${enrollments.programId} FROM ${enrollments} WHERE ${enrollments.studentId} = ${studentId} AND ${enrollmentGrantsAccess({ includeCompleted: true })}`;
+    const enrolledBatchIds = sql`SELECT ${enrollments.batchId} FROM ${enrollments} WHERE ${enrollments.studentId} = ${studentId} AND ${enrollments.batchId} IS NOT NULL AND ${enrollmentGrantsAccess({ includeCompleted: true })}`;
+    const requestedBatchId = batchId && isValidUuid(batchId) ? batchId : null;
 
-    if (activeEnrollments.length === 0) {
-      notFound();
-    }
-
-    const programIds = Array.from(new Set(activeEnrollments.map((e) => e.programId).filter(Boolean)));
-    const batchIds = Array.from(
-      new Set(activeEnrollments.map((e) => e.batchId).filter((id): id is string => Boolean(id)))
-    );
-
-    // 2. Build entitlement authorization conditions
-    // Content is accessible if it belongs to an enrolled program OR is scheduled in an enrolled batch
-    const entitlementConditions = [];
-    if (programIds.length > 0) {
-      entitlementConditions.push(inArray(contentItems.programId, programIds));
-    }
-    if (batchIds.length > 0) {
-      entitlementConditions.push(
-        sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN ${batchIds})`
-      );
-    }
-
-    if (entitlementConditions.length === 0) {
-      notFound();
-    }
-
-    // 3. Check release date availability if placed in student's batch(es)
-    let batchPlacements: { batchId: string; availableFrom: Date | null }[] = [];
-    if (batchIds.length > 0) {
-      batchPlacements = await db
+    // One round-trip (was up to five sequential). Nothing is returned unless every check below passes; the extra
+    // reads (completion, batch name) are discarded when one fails, so they reveal nothing.
+    const [activeEnrollments, batchPlacements, [row], [completedActivity], [requestedBatch]] = await Promise.all([
+      // 1. Student's enrollments: entitlement boundaries
+      db
+        .select({
+          programId: enrollments.programId,
+          batchId: enrollments.batchId,
+          status: enrollments.status
+        })
+        .from(enrollments)
+        .where(
+          and(
+            eq(enrollments.studentId, studentId),
+            enrollmentGrantsAccess({ includeCompleted: true })
+          )
+        ),
+      // 2. Placements of this item in the student's batches (release dates)
+      db
         .select({
           batchId: batchCurriculum.batchId,
           availableFrom: batchCurriculum.availableFrom
@@ -105,10 +86,74 @@ export async function getContentItem(
         .where(
           and(
             eq(batchCurriculum.contentItemId, contentItemId),
-            inArray(batchCurriculum.batchId, batchIds)
+            sql`${batchCurriculum.batchId} IN (${enrolledBatchIds})`
           )
-        );
+        ),
+      // 3. The content item joined with its program (leftJoin so global content works). Accessible if it belongs
+      // to an enrolled program OR is scheduled in an enrolled batch.
+      db
+        .select({
+          id: contentItems.id,
+          programId: contentItems.programId,
+          programName: programs.name,
+          programCode: programs.code,
+          title: contentItems.title,
+          slug: contentItems.slug,
+          contentType: contentItems.contentType,
+          description: contentItems.description,
+          metadata: contentItems.metadata,
+          isPublished: contentItems.isPublished
+        })
+        .from(contentItems)
+        .leftJoin(programs, eq(programs.id, contentItems.programId))
+        .where(
+          and(
+            eq(contentItems.id, contentItemId),
+            eq(contentItems.isPublished, true),
+            or(
+              sql`${contentItems.programId} IN (${enrolledProgramIds})`,
+              sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN (${enrolledBatchIds}))`
+            )!
+          )
+        )
+        .limit(1),
+      // 4. Student's completion record
+      db
+        .select({
+          createdAt: activities.createdAt
+        })
+        .from(activities)
+        .where(
+          and(
+            eq(activities.studentId, studentId),
+            eq(activities.activityType, 'lecture_completed'),
+            eq(activities.referenceId, contentItemId)
+          )
+        )
+        .limit(1),
+      // 5. Name of the requested batch (used only if the student is enrolled in it and the item is placed there)
+      requestedBatchId
+        ? db
+            .select({
+              id: batches.id,
+              name: batches.name
+            })
+            .from(batches)
+            .where(eq(batches.id, requestedBatchId))
+            .limit(1)
+        : Promise.resolve([] as { id: string; name: string }[])
+    ]);
 
+    if (activeEnrollments.length === 0) {
+      notFound();
+    }
+
+    const batchIds = Array.from(
+      new Set(activeEnrollments.map((e) => e.batchId).filter((id): id is string => Boolean(id)))
+    );
+
+    // Release date availability if placed in student's batch(es)
+    if (batchIds.length > 0) {
       if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
         // When accessed with specific enrolled batchId, verify release availability for that batch
         const targetPlacement = batchPlacements.find((p) => p.batchId === batchId);
@@ -126,73 +171,22 @@ export async function getContentItem(
       }
     }
 
-    // 4. Query the content item joined with its program (leftJoin so global content works)
-    const [row] = await db
-      .select({
-        id: contentItems.id,
-        programId: contentItems.programId,
-        programName: programs.name,
-        programCode: programs.code,
-        title: contentItems.title,
-        slug: contentItems.slug,
-        contentType: contentItems.contentType,
-        description: contentItems.description,
-        metadata: contentItems.metadata,
-        isPublished: contentItems.isPublished
-      })
-      .from(contentItems)
-      .leftJoin(programs, eq(programs.id, contentItems.programId))
-      .where(
-        and(
-          eq(contentItems.id, contentItemId),
-          eq(contentItems.isPublished, true),
-          or(...entitlementConditions)!
-        )
-      )
-      .limit(1);
-
     if (!row) {
       notFound();
     }
 
-    // 4. Query student's completion record from activities table
-    const [completedActivity] = await db
-      .select({
-        createdAt: activities.createdAt
-      })
-      .from(activities)
-      .where(
-        and(
-          eq(activities.studentId, studentId),
-          eq(activities.activityType, 'lecture_completed'),
-          eq(activities.referenceId, contentItemId)
-        )
-      )
-      .limit(1);
-
     const isCompleted = Boolean(completedActivity);
     const completedAt = completedActivity?.createdAt ?? null;
 
-    // 5. If batchId is provided, verify student has access and retrieve batch metadata
+    // If batchId is provided, verify student has access and attach batch metadata
     let relatedBatchContext: RelatedBatchContext | null = null;
     if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
       const isPlacedInBatch = batchPlacements.some((p) => p.batchId === batchId);
-      if (isPlacedInBatch) {
-        const [batchRecord] = await db
-          .select({
-            id: batches.id,
-            name: batches.name
-          })
-          .from(batches)
-          .where(eq(batches.id, batchId))
-          .limit(1);
-
-        if (batchRecord) {
-          relatedBatchContext = {
-            batchId: batchRecord.id,
-            batchName: batchRecord.name
-          };
-        }
+      if (isPlacedInBatch && requestedBatch) {
+        relatedBatchContext = {
+          batchId: requestedBatch.id,
+          batchName: requestedBatch.name
+        };
       }
     }
 
