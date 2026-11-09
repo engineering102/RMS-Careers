@@ -3,10 +3,11 @@ import { sectionTitleFor } from '../../components/shell/nav-items';
 
 describe('sectionTitleFor (header wayfinding)', () => {
   it('names the nav section a path belongs to, including nested routes', () => {
-    expect(sectionTitleFor('/overview')).toBe('Overview');
-    expect(sectionTitleFor('/batches/9462b578')).toBe('Batch Workspace');
-    expect(sectionTitleFor('/assessments/quiz-1')).toBe('Assessments');
-    expect(sectionTitleFor('/dsa')).toBe('DSA Practice');
+    expect(sectionTitleFor('/overview')).toBe('Home');
+    expect(sectionTitleFor('/batches/9462b578')).toBe('Curriculum');
+    expect(sectionTitleFor('/assessments/quiz-1')).toBe('Tests');
+    expect(sectionTitleFor('/dsa')).toBe('DSA practice');
+    expect(sectionTitleFor('/profile')).toBe('Profile');
   });
 
   it('uses overrides for routes outside the nav and a neutral fallback otherwise', () => {

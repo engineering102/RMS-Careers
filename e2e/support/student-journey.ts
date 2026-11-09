@@ -16,15 +16,15 @@ import type { Diagnostics } from './diagnostics';
 import type { Credentials } from './credentials';
 import { Workflow } from './workflow';
 
-/** Top-level student sections, from apps/student/components/shell/nav-items.ts (links are discovered, not assumed). */
+/** Top-level student sections, named as in apps/student/components/shell/nav-items.ts (links are found by href). */
 export const SECTIONS: Array<{ path: string; title: string; feature: string }> = [
-  { path: '/overview', title: 'Overview', feature: 'dashboard / XP / streak / deadlines' },
+  { path: '/overview', title: 'Home', feature: 'dashboard / XP / streak / deadlines' },
   { path: '/profile', title: 'Profile', feature: 'profile and statistics' },
-  { path: '/batches', title: 'Batch Workspace', feature: 'accessible batches' },
-  { path: '/library', title: 'My Library', feature: 'library / learning resources (list only)' },
-  { path: '/dsa', title: 'DSA Practice', feature: 'practice problems (list only)' },
-  { path: '/assessments', title: 'Assessments', feature: 'assessments (list only)' },
-  { path: '/leaderboards', title: 'Leaderboards', feature: 'leaderboard' },
+  { path: '/batches', title: 'Curriculum', feature: 'accessible batches' },
+  { path: '/library', title: 'Library', feature: 'library / learning resources (list only)' },
+  { path: '/dsa', title: 'DSA practice', feature: 'practice problems (list only)' },
+  { path: '/assessments', title: 'Tests', feature: 'assessments (list only)' },
+  { path: '/leaderboards', title: 'Leaderboard', feature: 'leaderboard' },
   { path: '/notifications', title: 'Notifications', feature: 'notifications (view only)' }
 ];
 

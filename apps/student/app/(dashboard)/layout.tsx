@@ -12,7 +12,7 @@ import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
 import type { BellNotificationSummary } from '@/lib/types/notifications';
 
 export const metadata = {
-  title: 'Student Dashboard — RMS Careers',
+  title: 'RMS Careers Student Portal',
   description: 'Enterprise technical learning portal and career readiness workbench.'
 };
 

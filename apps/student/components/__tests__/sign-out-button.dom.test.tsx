@@ -150,16 +150,21 @@ describe('SignOutButton (browser behaviour)', () => {
   });
 });
 
-describe('Sign-out from the mobile navigation drawer', () => {
+describe('Sign-out from the phone "More" sheet', () => {
   const context = {
     student: { fullName: 'Test Student', collegeName: 'Test College' },
     activeBatches: []
   } as unknown as StudentEntitlementContext;
 
-  it('confirms on top of the drawer, and Cancel leaves the drawer open', async () => {
+  async function openMore() {
     const user = userEvent.setup();
-    const onClose = vi.fn();
-    render(<MobileNav context={context} open onClose={onClose} />);
+    render(<MobileNav context={context} />);
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    return user;
+  }
+
+  it('confirms on top of the sheet, and Cancel leaves the sheet open', async () => {
+    const user = await openMore();
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     expect(screen.getByRole('alertdialog')).toBeTruthy();
@@ -167,14 +172,12 @@ describe('Sign-out from the mobile navigation drawer', () => {
 
     await user.click(cancelButton());
     expect(screen.queryByRole('alertdialog')).toBeNull();
-    expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole('navigation', { name: 'Mobile Navigation' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'More' })).toBeTruthy();
     expect(requestSubmit).not.toHaveBeenCalled();
   });
 
-  it('confirming from the drawer submits the sign-out form', async () => {
-    const user = userEvent.setup();
-    render(<MobileNav context={context} open onClose={vi.fn()} />);
+  it('confirming from the sheet submits the sign-out form', async () => {
+    const user = await openMore();
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
     await user.click(confirmButton());

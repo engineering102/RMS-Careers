@@ -9,11 +9,10 @@ import {
   Clock,
   Flame,
   Award,
-  Sparkles,
+  BookOpen,
   ExternalLink,
   Check,
-  X,
-  BookOpen
+  X
 } from 'lucide-react';
 import {
   markNotificationAsReadAction,
@@ -50,11 +49,16 @@ export function NotificationBell({
         setIsOpen(false);
       }
     }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false);
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 
@@ -63,9 +67,7 @@ export function NotificationBell({
     const wasUnread = notifications.some((n) => n.id === id && !n.isRead);
     if (wasUnread) {
       // Optimistic UI update
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
 
       await markNotificationAsReadAction(id);
@@ -93,27 +95,26 @@ export function NotificationBell({
   };
 
   const getEventIcon = (type: string) => {
+    // Neutral icons: the unread dot and the title weight carry the state, not a colour per event type.
+    const cls = 'h-4 w-4 text-muted-foreground';
     switch (type) {
       case 'PROJECT_REVIEWED':
-        return <CheckCircle2 className="h-4 w-4 text-success" />;
+        return <CheckCircle2 className={cls} aria-hidden="true" />;
       case 'ASSESSMENT_DUE_SOON':
-        return <Clock className="h-4 w-4 text-warning" />;
+        return <Clock className={cls} aria-hidden="true" />;
       case 'STREAK_MILESTONE':
-        return <Flame className="h-4 w-4 text-orange-400" />;
-      case 'MILESTONE_UNLOCKED':
-        return <Award className="h-4 w-4 text-purple-400" />;
-      case 'STUDENT_ACTIVATED':
-        return <Sparkles className="h-4 w-4 text-primary" />;
+        return <Flame className={cls} aria-hidden="true" />;
       case 'CONTENT_PUBLISHED':
-        return <BookOpen className="h-4 w-4 text-info" />;
+        return <BookOpen className={cls} aria-hidden="true" />;
+      case 'MILESTONE_UNLOCKED':
+        return <Award className={cls} aria-hidden="true" />;
       default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
+        return <Bell className={cls} aria-hidden="true" />;
     }
   };
 
   return (
     <div className="relative" ref={containerRef}>
-      {/* Bell Trigger Button */}
       <button
         type="button"
         onClick={() => {
@@ -122,108 +123,92 @@ export function NotificationBell({
           if (!isOpen) router.refresh();
           setIsOpen((prev) => !prev);
         }}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground/80 hover:bg-secondary hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 focus:outline-none focus:ring-2 focus:ring-ring/40"
-        aria-label="Open notifications"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:active:scale-100"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         aria-expanded={isOpen}
       >
-        <Bell className="h-4 w-4" />
+        <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-sm ring-2 ring-background animate-pulse">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" aria-hidden="true" />
         )}
       </button>
 
-      {/* Popover Drawer */}
       {isOpen && (
-        <div className="absolute -right-2 sm:right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-sm sm:w-96 rounded-xl border border-border bg-card/95 p-0 shadow-2xl backdrop-blur-xl z-50 overflow-hidden origin-top-right animate-in fade-in zoom-in-95 duration-150 ease-out-quint">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background/60">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[11px] font-medium text-primary">
-                  {unreadCount} unread
-                </span>
-              )}
-            </div>
-
+        <div
+          role="dialog"
+          aria-label="Recent notifications"
+          className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-1.5rem))] origin-top-right overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl duration-150 ease-out-quint animate-in fade-in-0 zoom-in-[0.97]"
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+            <p className="text-sm font-semibold">
+              Notifications
+              {unreadCount > 0 && <span className="ml-2 font-normal text-muted-foreground">{unreadCount} unread</span>}
+            </p>
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={handleMarkAllAsRead}
                   disabled={isMarkingAll}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground transition disabled:opacity-50"
-                  title="Mark all as read"
+                  className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                 >
-                  <Check className="h-3.5 w-3.5" />
-                  <span>Mark all read</span>
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  Mark all read
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 aria-label="Close notifications"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          {/* Notification List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-border/60">
+          <ul className="max-h-80 divide-y divide-border overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="py-8 text-center px-4">
-                <Bell className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-xs font-medium text-foreground/80">You have no unread notifications.</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">We will alert you on assignments, milestones and deadlines.</p>
-              </div>
+              <li className="px-4 py-8 text-center">
+                <p className="text-sm font-medium">You're all caught up</p>
+                <p className="mt-1 text-xs text-muted-foreground">Reviews, deadlines and new weeks show up here.</p>
+              </li>
             ) : (
               notifications.slice(0, 5).map((n) => (
-                <div
-                  key={n.id}
-                  onClick={() => handleMarkAsRead(n.id, n.actionUrl)}
-                  className={`flex gap-3 p-3.5 transition cursor-pointer hover:bg-secondary/60 ${
-                    !n.isRead ? 'bg-primary/5' : ''
-                  }`}
-                >
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary/80 border border-input/50">
-                    {getEventIcon(n.type)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-xs font-medium truncate ${!n.isRead ? 'text-foreground font-semibold' : 'text-foreground/80'}`}>
-                        {n.title}
-                      </p>
-                      {!n.isRead && (
-                        <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">
-                      {n.body}
-                    </p>
-                    {n.actionUrl && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-primary font-medium mt-1">
-                        View item <ExternalLink className="h-2.5 w-2.5" />
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleMarkAsRead(n.id, n.actionUrl)}
+                    className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
+                  >
+                    <span className="mt-0.5 shrink-0">{getEventIcon(n.type)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className={`truncate text-[13px] ${n.isRead ? 'text-muted-foreground' : 'font-medium text-foreground'}`}>
+                          {n.title}
+                        </span>
+                        {!n.isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" aria-label="Unread" />}
                       </span>
-                    )}
-                  </div>
-                </div>
+                      <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{n.body}</span>
+                      {n.actionUrl && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                          Open <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
               ))
             )}
-          </div>
+          </ul>
 
-          {/* Footer */}
-          <div className="border-t border-border px-4 py-2.5 bg-background/80 text-center">
+          <div className="border-t border-border px-4 py-2.5">
             <Link
               href="/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-medium text-primary hover:text-primary transition inline-flex items-center gap-1"
+              className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
             >
-              View all notifications →
+              All notifications
             </Link>
           </div>
         </div>

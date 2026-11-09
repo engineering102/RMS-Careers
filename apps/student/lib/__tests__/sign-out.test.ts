@@ -154,7 +154,8 @@ describe('student sign-out', () => {
     expect((sources.get('sign-out-button.tsx')!.match(formPattern) ?? []).length).toBe(1);
     expect((all.match(formPattern) ?? []).length).toBe(1);
     // ...and every place that offers sign-out renders it.
-    for (const site of ['header.tsx', 'sidebar.tsx', 'mobile-nav.tsx', 'empty-enrollment.tsx']) {
+    // Sign-out is offered once per layout: the sidebar (desktop), the "More" sheet (phones) and the no-batch page.
+    for (const site of ['sidebar.tsx', 'mobile-nav.tsx', 'empty-enrollment.tsx']) {
       expect(sources.get(site), site).toMatch(/<SignOutButton\b/);
     }
   });
