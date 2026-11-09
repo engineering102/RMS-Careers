@@ -17,7 +17,7 @@ const THEMES = ['graphite', 'notebook', 'transcript'];
 const MODES = ['light', 'dark'];
 const PUBLIC = ['/login', '/activate', '/forgot-password', '/resend-activation', '/reset-password'];
 const STATIC = ['/overview', '/batches', '/library', '/dsa', '/assessments', '/leaderboards', '/notifications', '/profile', '/this-page-does-not-exist'];
-const DYNAMIC = [/^\/batches\/[^/?#]+$/, /^\/content\/[^/?#]+/, /^\/assessments\/[^/?#]+/, /^\/dsa\/[^/?#]+/];
+const DYNAMIC = [/^\/batches\/[^/?#]+$/, /^\/batches\/[^/?#]+\/live$/, /^\/content\/[^/?#]+/, /^\/assessments\/[^/?#]+/, /^\/dsa\/[^/?#]+/];
 
 async function scan(page) {
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
@@ -68,9 +68,18 @@ try {
           for (const re of DYNAMIC) if (re.test(path.split('?')[0]) && ![...found].some((f) => re.test(f.split('?')[0]))) found.add(path);
         }
       }
-      for (const route of found) {
-        await page.goto(baseUrl + route);
-        results.push({ theme, mode, route, violations: await scan(page) });
+      const scanned = new Set();
+      for (let pass = 0; pass < 3; pass++) {
+        for (const route of [...found]) {
+          if (scanned.has(route)) continue;
+          scanned.add(route);
+          await page.goto(baseUrl + route);
+          results.push({ theme, mode, route, violations: await scan(page) });
+          for (const href of await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')))) {
+            const path = (href || '').split('#')[0];
+            for (const re of DYNAMIC) if (re.test(path.split('?')[0]) && ![...found].some((f) => re.test(f.split('?')[0]))) found.add(path);
+          }
+        }
       }
       await context.close();
       process.stdout.write(`${theme}/${mode} done\n`);
