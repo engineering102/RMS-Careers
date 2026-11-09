@@ -151,10 +151,10 @@ function TimeGrid({
   const isEmpty = days.every((d) => !eventsByDay.get(d)?.length);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       {/* Day headers */}
       <div className="grid border-b border-border" style={columns}>
-        <div className="flex items-end justify-center pb-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="flex items-end justify-center pb-2 text-xs font-medium text-muted-foreground">
           IST
         </div>
         {days.map((date) => {
@@ -186,7 +186,7 @@ function TimeGrid({
             i === 0 ? null : (
               <span
                 key={hour}
-                className="absolute right-2 -translate-y-1/2 text-[11px] tabular-nums text-muted-foreground"
+                className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-muted-foreground"
                 style={{ top: i * HOUR_PX }}
               >
                 {formatHour(hour)}
@@ -235,7 +235,7 @@ function TimeGrid({
                   >
                     <span className="block truncate text-xs font-semibold">{lecture.title}</span>
                     {!compact && (
-                      <span className="block truncate text-[11px] text-muted-foreground">
+                      <span className="block truncate text-xs text-muted-foreground">
                         {formatTimeRange(event.startMinutes, event.endMinutes)}
                       </span>
                     )}
@@ -281,7 +281,7 @@ function MonthGrid({
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="grid grid-cols-7 border-b border-border">
         {days.slice(0, 7).map((date) => (
           <div key={date} className="border-l border-border px-3 py-2 text-xs font-medium text-muted-foreground first:border-l-0">
@@ -361,7 +361,7 @@ function MonthGrid({
 function Agenda({ days, today, eventsByDay, lectureById, onSelect, emptyLabel }: GridProps & { emptyLabel: string }) {
   const withEvents = days.filter((d) => eventsByDay.get(d)?.length);
   if (withEvents.length === 0) {
-    return <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{emptyLabel}</p>;
+    return <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{emptyLabel}</p>;
   }
 
   return (
@@ -371,7 +371,7 @@ function Agenda({ days, today, eventsByDay, lectureById, onSelect, emptyLabel }:
           <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             {formatShortDate(date)}
             {date === today && (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
+              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
                 Today
               </span>
             )}
