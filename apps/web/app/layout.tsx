@@ -1,14 +1,22 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { fontVariables } from './fonts';
 import { AnnouncementBar } from '@/components/homepage/announcement-bar';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { ServiceWorkerRegister } from '@/components/service-worker-register';
 
 const GA_MEASUREMENT_ID = 'G-LXYJZEJ8QE';
 /** Fallback for visitors who never interact: load analytics this long after the page's load event. */
 const GA_LOAD_DELAY_MS = 5000;
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8f9fc' },
+    { media: '(prefers-color-scheme: dark)', color: '#030711' }
+  ]
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.rms-careers.com'),
@@ -48,7 +56,12 @@ export const metadata: Metadata = {
   icons: {
     icon: '/images/homepage/branding/favicon.ico',
     shortcut: '/images/homepage/branding/favicon.ico',
-    apple: '/images/homepage/branding/favicon.ico'
+    apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'RMS Careers',
+    statusBarStyle: 'default'
   },
   openGraph: {
     type: 'website',
@@ -110,6 +123,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <ServiceWorkerRegister />
         {/* gtag.js costs ~500 ms of main-thread time on mobile (Lighthouse 2026-10). Even at browser idle it landed
             inside the page's interactive window, so it now loads on the visitor's first interaction, or
             GA_LOAD_DELAY_MS after the load event. Calls are queued in dataLayer meanwhile, so the page_view is

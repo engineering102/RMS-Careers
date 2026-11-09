@@ -1,0 +1,5 @@
+# Cloudflare Workers static assets headers (served before the Worker runs).
+# The service worker must always be revalidated so fixes (and the kill switch) reach users promptly.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: application/javascript; charset=utf-8
