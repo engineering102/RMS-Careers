@@ -53,6 +53,8 @@ erDiagram
 9. **`batches`**: Cohort batch allocations under a specific program and college.
 10. **`tutor_batch_assignments`**: Many-to-many relationship linking tutors to cohort batches.
 11. **`enrollments`**: Registration records linking a student to a program and optional batch with status tracking.
+12. **`assignment_submissions`**: Project submissions per student, assignment and batch. Review state (`submitted`, `under_review`, `resubmission_requested`, `approved`), score, feedback, and the reviewer: `reviewed_by_user_id` (any admin or tutor, migration 0006) plus the legacy `reviewed_by_tutor_id`. `updated_at` is the optimistic-concurrency token of the review transaction.
+13. **`batch_live_sessions`**: Weekly or one-off live classes per batch (Zoom link, IST schedule, publish flag; migration 0006). Students see published sessions; tutors and admins see all.
 
 ---
 
