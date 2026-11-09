@@ -24,40 +24,21 @@ export function CategoryHeader({ category, totalCount }: CategoryHeaderProps) {
         All categories
       </Link>
 
-      <div
-        className={cn(
-          'relative overflow-hidden rounded-2xl border p-6 shadow-sm md:p-8',
-          theme.surface
-        )}
-      >
-        <div
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full opacity-70 blur-3xl',
-            theme.glow
-          )}
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div
-            className={cn(
-              'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-lg ring-1 ring-inset ring-white/20',
-              theme.iconTile
-            )}
-          >
-            <Icon className="h-7 w-7" strokeWidth={1.75} />
+      <div className="border-b border-border pb-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-md', theme.iconTile)} aria-hidden="true">
+            <Icon className="h-5 w-5" strokeWidth={1.75} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className={cn('text-[11px] font-semibold uppercase tracking-widest', theme.accent)}>
-              My Library · {category.tagline}
-            </p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            <p className="text-sm text-muted-foreground">Library</p>
+            <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">
               {category.label}
             </h1>
-            <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-muted-foreground md:text-sm">
+            <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
               {category.description}
             </p>
           </div>
-          <div className="self-start rounded-xl border border-foreground/[0.08] bg-background/60 px-4 py-2.5 text-xs backdrop-blur sm:self-center">
+          <div className="self-start text-sm sm:self-center">
             <span className="font-semibold text-foreground">
               {formatCategoryCount(category, totalCount)}
             </span>

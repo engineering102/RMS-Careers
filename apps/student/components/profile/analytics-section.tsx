@@ -61,9 +61,9 @@ export function AnalyticsSection({
         };
       case 'quizzes':
         return {
-          bar: 'bg-purple-500',
-          dot: 'bg-purple-500',
-          text: 'text-purple-400'
+          bar: 'bg-foreground/60',
+          dot: 'bg-foreground/60',
+          text: 'text-muted-foreground'
         };
       case 'projects':
         return {
@@ -91,51 +91,51 @@ export function AnalyticsSection({
       {/* 1. High-Level Milestone Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Total XP */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
+        <div className="rounded-lg border border-border bg-card p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Zap className="h-4 w-4 text-warning" />
             <span>Total XP</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{formatNumber(stats.totalXp)}</p>
-          <p className="mt-0.5 text-[11px] text-warning/80">Level {stats.currentLevel}</p>
+          <p className="mt-0.5 text-xs text-warning/80">Level {stats.currentLevel}</p>
         </div>
 
         {/* Current Streak */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
+        <div className="rounded-lg border border-border bg-card p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Flame className="h-4 w-4 text-orange-400" />
+            <Flame className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <span>Current Streak</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.currentStreak} days</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Asia/Kolkata IST</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Asia/Kolkata IST</p>
         </div>
 
         {/* Longest Streak */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
+        <div className="rounded-lg border border-border bg-card p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Trophy className="h-4 w-4 text-purple-400" />
+            <Trophy className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <span>Best Streak</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.longestStreak} days</p>
-          <p className="mt-0.5 text-[11px] text-purple-400/80">Record achievement</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Your best so far</p>
         </div>
 
         {/* DSA Solved */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 shadow-md">
+        <div className="rounded-lg border border-border bg-card p-4 shadow-md">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-success" />
             <span>DSA Solved</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.dsaSolvedCount}</p>
-          <p className="mt-0.5 text-[11px] text-success/80">Verified solutions</p>
+          <p className="mt-0.5 text-xs text-success/80">Verified solutions</p>
         </div>
       </div>
 
       {/* 2. 30-Day Activity Heatmap */}
-      <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 border border-success/20 text-success">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 border border-success/20 text-success">
               <Calendar className="h-5 w-5" />
             </div>
             <div>
@@ -171,9 +171,9 @@ export function AnalyticsSection({
                 />
                 {/* Floating tooltip */}
                 <div className="pointer-events-none absolute bottom-full mb-2 hidden -translate-x-1/2 left-1/2 flex-col items-center z-30 group-hover:flex">
-                  <div className="rounded-lg bg-background border border-border px-2.5 py-1.5 text-center text-[11px] text-foreground shadow-xl whitespace-nowrap">
+                  <div className="rounded-lg bg-background border border-border px-2.5 py-1.5 text-center text-xs text-foreground shadow-sm whitespace-nowrap">
                     <p className="font-semibold">{day.formattedDate}</p>
-                    <p className="text-muted-foreground text-[10px]">
+                    <p className="text-muted-foreground text-xs">
                       {day.count} {day.count === 1 ? 'action' : 'actions'} · +{day.xp} XP
                     </p>
                   </div>
@@ -202,9 +202,9 @@ export function AnalyticsSection({
       {/* 3. Dual Section: Topic Completion Progress & Category XP Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* A. Topic Completion Progress Bars */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
+        <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-3 border-b border-border/80 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
               <Code2 className="h-5 w-5" />
             </div>
             <div>
@@ -227,7 +227,7 @@ export function AnalyticsSection({
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-background border border-border/60">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-500"
+                    className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none"
                     style={{ width: `${topic.percentage}%` }}
                   />
                 </div>
@@ -237,9 +237,9 @@ export function AnalyticsSection({
         </div>
 
         {/* B. Category XP Breakdown */}
-        <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
+        <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-3 border-b border-border/80 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
               <PieChart className="h-5 w-5" />
             </div>
             <div>
@@ -271,22 +271,22 @@ export function AnalyticsSection({
                 return (
                   <div
                     key={cat.category}
-                    className="rounded-xl border border-border/80 bg-background/40 p-3.5 flex items-center justify-between"
+                    className="rounded-lg border border-border/80 bg-background/40 p-3.5 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2.5">
                       <span className={`h-2.5 w-2.5 rounded-full ${colors.dot} shrink-0`} />
-                      <span className="text-xs font-medium text-foreground/80">{cat.label}</span>
+                      <span className="text-xs font-medium text-foreground">{cat.label}</span>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold text-foreground">+{cat.xp} XP</span>
-                      <span className="text-[10px] text-muted-foreground block">({cat.percentage}%)</span>
+                      <span className="text-xs text-muted-foreground block">({cat.percentage}%)</span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="rounded-xl bg-background/60 border border-border/60 p-3 flex items-center justify-between text-xs">
+            <div className="rounded-lg bg-background/60 border border-border/60 p-3 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Total Gamification Ledger</span>
               <span className="font-bold text-warning">{formatNumber(stats.totalXp)} XP</span>
             </div>

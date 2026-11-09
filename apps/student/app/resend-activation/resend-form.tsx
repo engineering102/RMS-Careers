@@ -13,7 +13,7 @@ export function ResendActivationForm() {
   if (state.success) {
     return (
       <div className="space-y-4">
-        <div role="status" className="rounded-xl border border-success/40 bg-success/10 p-5 text-sm text-foreground">
+        <div role="status" className="rounded-lg border border-success/40 bg-success/10 p-5 text-sm text-foreground">
           <p className="font-semibold text-foreground">Request Processed</p>
           <p className="mt-1">{state.message}</p>
         </div>

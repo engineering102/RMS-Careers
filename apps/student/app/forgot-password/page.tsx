@@ -1,18 +1,22 @@
+import { BrandMark } from '@/components/shell/sidebar';
 import Link from 'next/link';
 import { ForgotPasswordForm } from './forgot-password-form';
 
 export const metadata = {
-  title: 'Reset Password — RMS Student Portal',
+  title: 'Forgot password — RMS Student Portal',
   description: 'Request a password reset link for your RMS Careers student account.'
 };
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="grid min-h-dvh place-items-center p-5 bg-background text-foreground">
-      <section className="w-full max-w-md rounded-2xl border border-input bg-card p-7 shadow-2xl">
-        <p className="text-sm font-semibold tracking-wider text-primary uppercase">RMS Careers</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Forgot password?</h1>
-        <p className="mt-2 text-foreground/80">
+    <main className="bg-paper grid min-h-dvh place-items-center bg-background p-5 text-foreground">
+      <section className="w-full max-w-md rounded-lg border border-border bg-card p-7 shadow-sm sm:p-8">
+        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <BrandMark />
+          RMS Careers
+        </p>
+        <h1 className="mt-6 text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight">Forgot password?</h1>
+        <p className="mt-2 text-foreground">
           Enter your registered institutional email to receive a secure password reset link.
         </p>
 

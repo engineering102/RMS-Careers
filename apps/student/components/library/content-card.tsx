@@ -33,14 +33,12 @@ export function getContentTypeMeta(type: ContentType, itemId?: string, slug?: st
   }
 }
 
-const DIFFICULTY_STYLES: Record<string, { label: string; dot: string }> = {
-  beginner: { label: 'Beginner', dot: 'bg-emerald-500' },
-  intermediate: { label: 'Intermediate', dot: 'bg-amber-500' },
-  advanced: { label: 'Advanced', dot: 'bg-rose-500' }
+// Difficulty as a short bar count (1-3), the way problem sheets show it, in neutral ink.
+const DIFFICULTY_STYLES: Record<string, { label: string; level: number }> = {
+  beginner: { label: 'Beginner', level: 1 },
+  intermediate: { label: 'Intermediate', level: 2 },
+  advanced: { label: 'Advanced', level: 3 }
 };
-
-const metaChipClass =
-  'inline-flex items-center gap-1 rounded-md border border-foreground/[0.08] bg-background/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur';
 
 export function ContentCard({ item }: ContentCardProps) {
   const meta = getContentTypeMeta(item.contentType, item.id, item.slug);
@@ -56,95 +54,62 @@ export function ContentCard({ item }: ContentCardProps) {
       href={meta.defaultHref}
       aria-label={`${meta.actionLabel}: ${item.title}`}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-2xl border p-5 shadow-sm',
-        'transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:transform-none',
+        'group flex flex-col rounded-lg border p-5 transition-[border-color,transform] duration-150 active:scale-[0.99] motion-reduce:transform-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         theme.surface,
         theme.ring
       )}
     >
-      {/* Decorative glow + hairline highlight */}
-      <div
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full opacity-40 blur-3xl transition-opacity duration-300 group-hover:opacity-90',
-          theme.glow
-        )}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent dark:via-white/20"
-      />
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-md', theme.iconTile)} aria-hidden="true">
+            <Icon className="h-4 w-4" strokeWidth={1.75} />
+          </span>
+          <span className="truncate">{meta.label}</span>
+        </span>
+        {item.topic && <span className="max-w-[50%] truncate text-sm text-muted-foreground">{item.topic}</span>}
+      </div>
 
-      {/* Type + topic */}
-      <div className="relative flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-md ring-1 ring-inset ring-white/20',
-              theme.iconTile
-            )}
-          >
-            <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
-          </div>
-          <span
-            className={cn('truncate text-[11px] font-semibold uppercase tracking-widest', theme.accent)}
-          >
-            {meta.label}
-          </span>
-        </div>
-        {item.topic && (
-          <span className="max-w-[45%] truncate rounded-full border border-foreground/[0.08] bg-background/60 px-2.5 py-0.5 text-[11px] font-medium text-foreground/80 backdrop-blur">
-            {item.topic}
-          </span>
+      <div className="mt-4 flex-1">
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">{item.title}</h3>
+        {item.description && (
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
         )}
       </div>
 
-      {/* Title & description */}
-      <div className="relative mt-4 flex-1">
-        <h3 className="text-base font-semibold leading-snug tracking-tight text-foreground line-clamp-2">
-          {item.title}
-        </h3>
-        {item.description ? (
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-            {item.description}
-          </p>
-        ) : (
-          <p className="mt-1.5 text-xs italic text-muted-foreground">No description provided.</p>
-        )}
-      </div>
-
-      {/* Meta chips */}
-      <div className="relative mt-4 flex flex-wrap items-center gap-1.5">
-        <span className={metaChipClass}>
-          <Layers className="h-3 w-3" />
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <Layers className="h-3.5 w-3.5" aria-hidden="true" />
           {item.programCode || 'RMS'}
         </span>
         {duration ? (
-          <span className={metaChipClass}>
-            <Clock className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" />
             {duration} min
           </span>
         ) : null}
         {difficulty && (
-          <span className={metaChipClass}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', difficulty.dot)} />
+          <span className="inline-flex items-center gap-1.5">
+            <span className="flex items-end gap-px" aria-hidden="true">
+              {[1, 2, 3].map((l) => (
+                <span
+                  key={l}
+                  className={cn('w-[3px] rounded-sm', l <= difficulty.level ? 'bg-foreground' : 'bg-border-strong')}
+                  style={{ height: `${4 + l * 3}px` }}
+                />
+              ))}
+            </span>
             {difficulty.label}
           </span>
         )}
       </div>
 
-      {/* Action */}
-      <div className="relative mt-4 flex items-center justify-between border-t border-foreground/[0.06] pt-3.5">
-        <span className={cn('text-xs font-semibold', theme.accent)}>{meta.actionLabel}</span>
-        <span
-          className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full border border-foreground/[0.08] bg-background/60',
-            theme.accent
-          )}
-        >
-          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transform-none" />
-        </span>
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
+        <span className={cn('font-medium', theme.accent)}>{meta.actionLabel}</span>
+        <ArrowRight
+          className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transform-none"
+          aria-hidden="true"
+        />
       </div>
     </Link>
   );

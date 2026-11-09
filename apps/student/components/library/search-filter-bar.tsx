@@ -93,7 +93,7 @@ export function SearchFilterBar({
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               placeholder={placeholder}
-              className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-card/80 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition"
+              className="w-full h-10 pl-10 pr-10 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition"
             />
             {searchVal && (
               <button
@@ -116,7 +116,7 @@ export function SearchFilterBar({
               <select
                 value={currentTopic}
                 onChange={(e) => updateFilters({ topic: e.target.value })}
-                className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-card/80 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition appearance-none cursor-pointer"
+                className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-card text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary transition appearance-none cursor-pointer"
               >
                 <option value="all">All Topics</option>
                 {availableTopics.map((topic) => (
@@ -134,7 +134,7 @@ export function SearchFilterBar({
               variant="outline"
               size="sm"
               onClick={handleClearAll}
-              className="h-10 border-border bg-card/60 text-muted-foreground hover:text-foreground text-xs px-3"
+              className="h-10 border-border bg-card text-muted-foreground hover:text-foreground text-xs px-3"
             >
               Clear
             </Button>
@@ -143,7 +143,7 @@ export function SearchFilterBar({
       </div>
 
       {isPending && (
-        <div className="text-[11px] text-primary flex items-center gap-1.5 animate-pulse">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
           <BookOpen className="h-3 w-3" />
           <span>Updating library results...</span>
         </div>

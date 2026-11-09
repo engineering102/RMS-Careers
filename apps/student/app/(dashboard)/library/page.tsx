@@ -7,12 +7,12 @@ import { LibraryEmptyState } from '@/components/library/library-empty-state';
 import { CategoryCard } from '@/components/library/category-card';
 import { CategoryHeader } from '@/components/library/category-header';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Library as LibraryIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getLibraryCategory, LIBRARY_CATEGORIES } from '@/lib/data/library-categories';
 
 export const metadata = {
-  title: 'My Library — RMS Student Portal',
+  title: 'Library — RMS Student Portal',
   description:
     'Searchable, topic-categorized, self-paced learning resources across your enrolled programs.'
 };
@@ -52,7 +52,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const summariesPromise = getLibraryCategorySummaries({ enrolledProgramIds, enrolledBatchIds });
 
   const enrolledProgramsBadge = (
-    <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card/60 px-3.5 py-2 text-xs text-muted-foreground">
+    <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-muted-foreground">
       <span>Enrolled Programs:</span>
       <span className="font-semibold text-foreground">
         {context.enrollments.map((e) => e.programCode).join(', ') || 'Active'}
@@ -63,16 +63,11 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const hubHeader = (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
       <div>
-        <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
-          <LibraryIcon className="h-4 w-4" />
-          <span>Resource Catalog · Self-Paced</span>
-        </div>
-        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-          My Library
+        <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">
+          Library
         </h1>
-        <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
-          Recorded lectures, study notes, practice sheets, and learning resources across your
-          enrolled programs. Pick a category to dive in, or search everything at once.
+        <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+          Recorded lectures, notes, practice sheets and resources from your programmes, to go through at your own pace.
         </p>
       </div>
       {enrolledProgramsBadge}
@@ -219,7 +214,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             disabled={result.page <= 1}
             variant="outline"
             size="sm"
-            className="text-xs border-border bg-card/80 text-foreground/80 gap-1.5"
+            className="text-xs border-border bg-card text-foreground gap-1.5"
           >
             {result.page > 1 ? (
               <Link href={buildPageUrl(result.page - 1)}>
@@ -243,7 +238,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             disabled={result.page >= result.totalPages}
             variant="outline"
             size="sm"
-            className="text-xs border-border bg-card/80 text-foreground/80 gap-1.5"
+            className="text-xs border-border bg-card text-foreground gap-1.5"
           >
             {result.page < result.totalPages ? (
               <Link href={buildPageUrl(result.page + 1)}>

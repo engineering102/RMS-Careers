@@ -81,10 +81,10 @@ export function CareerForm({ career }: CareerFormProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
+    <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border/80 pb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
           <Briefcase className="h-5 w-5" />
         </div>
         <div>
@@ -100,7 +100,7 @@ export function CareerForm({ career }: CareerFormProps) {
         {/* GitHub & LinkedIn URLs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
               <Github className="h-3.5 w-3.5 text-muted-foreground" />
               <span>GitHub Profile</span>
             </label>
@@ -109,13 +109,13 @@ export function CareerForm({ career }: CareerFormProps) {
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
               placeholder="https://github.com/username"
-              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
-              <Linkedin className="h-3.5 w-3.5 text-sky-400" />
+            <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <Linkedin className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <span>LinkedIn Profile</span>
             </label>
             <input
@@ -123,14 +123,14 @@ export function CareerForm({ career }: CareerFormProps) {
               value={linkedinUrl}
               onChange={(e) => setLinkedinUrl(e.target.value)}
               placeholder="https://linkedin.com/in/username"
-              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
         </div>
 
         {/* Portfolio Website */}
         <div>
-          <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+          <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
             <Globe className="h-3.5 w-3.5 text-success" />
             <span>Personal Portfolio / Blog URL</span>
           </label>
@@ -139,14 +139,14 @@ export function CareerForm({ career }: CareerFormProps) {
             value={portfolioUrl}
             onChange={(e) => setPortfolioUrl(e.target.value)}
             placeholder="https://myportfolio.dev"
-            className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-lg border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
         {/* Target Companies & Primary Language */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-warning" />
               <span>Target Companies</span>
             </label>
@@ -156,14 +156,14 @@ export function CareerForm({ career }: CareerFormProps) {
               onChange={(e) => setTargetCompanies(e.target.value)}
               placeholder="e.g. Google, Microsoft, Amazon, Atlassian"
               maxLength={255}
-              className="w-full rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">Comma-separated target companies</p>
+            <p className="mt-1 text-xs text-muted-foreground">Comma-separated target companies</p>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground/80 mb-1.5 flex items-center gap-1.5">
-              <Code2 className="h-3.5 w-3.5 text-purple-400" />
+            <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+              <Code2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <span>Primary Language</span>
             </label>
             <div className="flex gap-2">
@@ -173,7 +173,7 @@ export function CareerForm({ career }: CareerFormProps) {
                 onChange={(e) => setPrimaryLanguage(e.target.value)}
                 placeholder="e.g. TypeScript, Java, Python"
                 maxLength={50}
-                className="flex-1 rounded-xl border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="flex-1 rounded-lg border border-border bg-background/80 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             {/* Quick language chips */}
@@ -183,7 +183,7 @@ export function CareerForm({ career }: CareerFormProps) {
                   key={lang}
                   type="button"
                   onClick={() => setPrimaryLanguage(lang)}
-                  className={`rounded-md px-2 py-0.5 text-[10px] font-medium transition ${
+                  className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
                     primaryLanguage === lang
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground'
@@ -199,7 +199,7 @@ export function CareerForm({ career }: CareerFormProps) {
         {/* Feedback alert */}
         {feedback && (
           <div
-            className={`flex items-center gap-2 rounded-xl p-3.5 text-xs ${
+            className={`flex items-center gap-2 rounded-lg p-3.5 text-xs ${
               feedback.type === 'success'
                 ? 'border border-success/20 bg-success/10 text-success'
                 : 'border border-destructive/20 bg-destructive/10 text-destructive'
@@ -219,7 +219,7 @@ export function CareerForm({ career }: CareerFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition active:scale-[0.97] motion-reduce:active:scale-100 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition active:scale-[0.97] motion-reduce:active:scale-100 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

@@ -1,10 +1,11 @@
+import { BrandMark } from '@/components/shell/sidebar';
 import Link from 'next/link';
 import { LoginForm } from './login-form';
 import { toSafeCallbackPath } from '@/lib/auth/callback-url';
 import { loginErrorMessage } from '@/lib/auth/login-errors';
 
 export const metadata = {
-  title: 'Sign In — RMS Student Portal',
+  title: 'Sign in — RMS Student Portal',
   description: 'Sign in to access your RMS Careers Student Learning Portal.'
 };
 
@@ -18,11 +19,14 @@ export default async function LoginPage({
   const errorMessage = loginErrorMessage(error);
 
   return (
-    <main className="grid min-h-dvh place-items-center p-5 bg-background text-foreground">
-      <section className="w-full max-w-md rounded-2xl border border-input bg-card p-7 shadow-2xl">
-        <p className="text-sm font-semibold tracking-wider text-primary uppercase">RMS Careers</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Student Portal</h1>
-        <p className="mt-2 text-foreground/80">Sign in with the account provisioned by your institution.</p>
+    <main className="bg-paper grid min-h-dvh place-items-center bg-background p-5 text-foreground">
+      <section className="w-full max-w-md rounded-lg border border-border bg-card p-7 shadow-sm sm:p-8">
+        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <BrandMark />
+          RMS Careers
+        </p>
+        <h1 className="mt-6 text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight">Sign in</h1>
+        <p className="mt-2 text-muted-foreground">Use the account your college set up for you.</p>
 
         {errorMessage && (
           <p role="alert" className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-foreground">

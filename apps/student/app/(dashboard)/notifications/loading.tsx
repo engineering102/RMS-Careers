@@ -21,8 +21,8 @@ export default function NotificationsLoading() {
       {/* Notifications List Skeleton */}
       <div className="space-y-3">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-24 rounded-xl border border-border bg-card/40 p-4 sm:p-5 flex items-start gap-4">
-            <div className="h-10 w-10 rounded-xl bg-secondary shrink-0" />
+          <div key={i} className="h-24 rounded-lg border border-border bg-card p-4 sm:p-5 flex items-start gap-4">
+            <div className="h-10 w-10 rounded-lg bg-secondary shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="h-4 w-48 rounded bg-secondary" />
