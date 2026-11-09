@@ -17,7 +17,10 @@ const nextConfig: NextConfig = {
     ]
   },
   async headers() {
-    return [{ source: '/:path*', headers: buildSecurityHeaders({ isDev: process.env.NODE_ENV === 'development' }) }];
+    return [
+      { source: '/:path*', headers: buildSecurityHeaders({ isDev: process.env.NODE_ENV === 'development' }) },
+      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }] }
+    ];
   }
 };
 
