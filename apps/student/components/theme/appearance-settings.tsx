@@ -3,39 +3,11 @@
 import * as React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  COLOR_MODE_COOKIE,
-  COLOR_MODE_OPTIONS,
-  THEME_COOKIE,
-  THEME_OPTIONS,
-  parseColorMode,
-  parseTheme,
-  preferenceCookie,
-  type ColorMode,
-  type ThemeName
-} from '@/lib/theme/preferences';
-
-/**
- * Applies a preference to <html> and stores it. The switch is instant: transitions are suppressed for two frames so
- * colours don't fade one element at a time.
- */
-function apply(attribute: 'theme' | 'mode', value: string, cookieName: string) {
-  const root = document.documentElement;
-  root.classList.add('theme-switching');
-  root.dataset[attribute] = value;
-  document.cookie = preferenceCookie(cookieName, value, window.location.protocol === 'https:');
-  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
-}
+import { COLOR_MODE_OPTIONS, THEME_OPTIONS } from '@/lib/theme/preferences';
+import { useAppearance } from './use-appearance';
 
 export function AppearanceSettings({ className }: { className?: string }) {
-  const [theme, setTheme] = React.useState<ThemeName | null>(null);
-  const [mode, setMode] = React.useState<ColorMode | null>(null);
-
-  // The server already rendered the attributes; read them back instead of passing props through every page.
-  React.useEffect(() => {
-    setTheme(parseTheme(document.documentElement.dataset.theme));
-    setMode(parseColorMode(document.documentElement.dataset.mode));
-  }, []);
+  const { theme, mode, setTheme, setMode } = useAppearance();
 
   return (
     <section id="appearance" className={cn('scroll-mt-20 space-y-6', className)} aria-labelledby="appearance-heading">
@@ -65,10 +37,7 @@ export function AppearanceSettings({ className }: { className?: string }) {
                   name="theme"
                   value={option.id}
                   checked={selected}
-                  onChange={() => {
-                    setTheme(option.id);
-                    apply('theme', option.id, THEME_COOKIE);
-                  }}
+                  onChange={() => setTheme(option.id)}
                   className="sr-only"
                 />
                 {/* A live miniature in the option's own theme and the current colour mode. */}
@@ -124,10 +93,7 @@ export function AppearanceSettings({ className }: { className?: string }) {
                   name="color-mode"
                   value={option.id}
                   checked={selected}
-                  onChange={() => {
-                    setMode(option.id);
-                    apply('mode', option.id, COLOR_MODE_COOKIE);
-                  }}
+                  onChange={() => setMode(option.id)}
                   className="sr-only"
                 />
                 {option.label}

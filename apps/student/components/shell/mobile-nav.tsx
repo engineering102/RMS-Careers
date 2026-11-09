@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Drawer } from 'vaul';
 import { usePathname } from 'next/navigation';
-import { LogOut, Menu, Palette } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 import {
   STUDENT_NAV_ITEMS,
   STUDENT_SECONDARY_NAV_ITEMS,
@@ -107,14 +107,6 @@ export function MobileNav({ context, activeCohort = null, bellNotifications }: M
                     onNavigate={() => setOpen(false)}
                   />
                 ))}
-                <Link
-                  href="/profile#appearance"
-                  onClick={() => setOpen(false)}
-                  className="flex h-10 items-center gap-2.5 rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-                >
-                  <Palette className="h-4 w-4" aria-hidden="true" />
-                  Appearance
-                </Link>
               </nav>
 
               <div className="mt-2 border-t border-border pt-2">

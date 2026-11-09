@@ -42,7 +42,7 @@ async function loadBellNotifications(context: StudentEntitlementContext): Promis
   }
 
   try {
-    const summary = await getStudentNotifications(context.student.userId, { limit: 5 });
+    const summary = await getStudentNotifications(context.student.userId, { limit: 5, unreadOnly: true });
     return { notifications: summary.notifications, unreadCount: summary.unreadCount };
   } catch (err) {
     console.error('[DashboardLayout] Failed to load notification summary:', err);

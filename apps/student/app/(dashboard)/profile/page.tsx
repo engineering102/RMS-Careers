@@ -5,7 +5,6 @@ import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { AcademicCard } from '@/components/profile/academic-card';
 import { CareerForm } from '@/components/profile/career-form';
 import { AnalyticsSection } from '@/components/profile/analytics-section';
-import { AppearanceSettings } from '@/components/theme/appearance-settings';
 import { Avatar } from '@/components/ui/avatar';
 import { User, ShieldCheck } from 'lucide-react';
 import { formatNumber } from '@/lib/format/datetime';
@@ -98,9 +97,6 @@ export default async function ProfilePage() {
         heatmap={profileData.heatmap}
         xpBreakdown={profileData.xpBreakdown}
       />
-
-      {/* 4. Appearance (theme and colour mode, stored per device) */}
-      <AppearanceSettings className="rounded-lg border border-border bg-card p-6" />
     </div>
   );
 }

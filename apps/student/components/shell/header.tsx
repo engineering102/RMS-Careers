@@ -7,6 +7,7 @@ import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
 import { NotificationBell } from './notification-bell';
 import { sectionTitleFor } from './nav-items';
 import { BrandMark } from './brand-mark';
+import { AppearanceMenu } from '@/components/theme/appearance-menu';
 import { Avatar } from '@/components/ui/avatar';
 import type { BellNotificationSummary } from '@/lib/types/notifications';
 import { cn } from '@/lib/utils';
@@ -23,8 +24,8 @@ function StreamedNotificationBell({ summary }: { summary: Promise<BellNotificati
 }
 
 /**
- * Top bar: where you are, notifications, and you. Batch, college and sign-out live once, in the sidebar (or the
- * "More" sheet on phones), instead of being repeated here.
+ * Top bar: where you are, appearance (theme and colour mode), notifications, and you. Batch, college and sign-out
+ * live once, in the sidebar (or the "More" sheet on phones), instead of being repeated here.
  */
 export function Header({ context, bellNotifications }: HeaderProps) {
   const student = context.student;
@@ -52,6 +53,8 @@ export function Header({ context, bellNotifications }: HeaderProps) {
         <BrandMark />
       </Link>
       <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{sectionTitle}</p>
+
+      <AppearanceMenu />
 
       {/* An empty bell holds its place while the summary streams in. */}
       {bellNotifications ? (

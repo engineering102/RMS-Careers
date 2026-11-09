@@ -2,71 +2,73 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  Bell,
-  CheckCircle2,
-  Clock,
-  Flame,
-  Award,
-  Check,
-  CheckCheck,
-  ExternalLink,
-  Filter,
-  BookOpen
-} from 'lucide-react';
-import {
-  markNotificationAsReadAction,
-  markAllNotificationsAsReadAction
-} from '@/lib/actions/notifications';
-import type { NotificationItem, NotificationFilter } from '@/lib/types/notifications';
+import { Bell, CheckCircle2, Clock, Flame, Award, Check, CheckCheck, ArrowRight, BookOpen } from 'lucide-react';
+import { markNotificationAsReadAction, markAllNotificationsAsReadAction } from '@/lib/actions/notifications';
+import type { NotificationItem } from '@/lib/types/notifications';
 import { formatDate } from '@/lib/format/datetime';
 
 interface NotificationsViewProps {
+  /** Unread notifications only: a notification leaves the list as soon as it is read. */
   initialNotifications: NotificationItem[];
-  initialUnreadCount: number;
-  initialTotalCount: number;
 }
 
-export function NotificationsView({
-  initialNotifications,
-  initialUnreadCount,
-  initialTotalCount
-}: NotificationsViewProps) {
-  const [filter, setFilter] = useState<NotificationFilter>('all');
+function getEventIcon(type: string) {
+  // Neutral icons: the title carries the meaning, not a colour per event type.
+  const cls = 'h-4 w-4 text-muted-foreground';
+  switch (type) {
+    case 'PROJECT_REVIEWED':
+      return <CheckCircle2 className={cls} aria-hidden="true" />;
+    case 'ASSESSMENT_DUE_SOON':
+      return <Clock className={cls} aria-hidden="true" />;
+    case 'STREAK_MILESTONE':
+      return <Flame className={cls} aria-hidden="true" />;
+    case 'MILESTONE_UNLOCKED':
+      return <Award className={cls} aria-hidden="true" />;
+    case 'CONTENT_PUBLISHED':
+      return <BookOpen className={cls} aria-hidden="true" />;
+    default:
+      return <Bell className={cls} aria-hidden="true" />;
+  }
+}
+
+function formatTimestamp(dateInput: Date | string) {
+  const d = new Date(dateInput);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return formatDate(d, {
+    month: 'short',
+    day: 'numeric',
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+  });
+}
+
+/**
+ * An inbox, not an archive: only unread notifications are listed, and marking one read (or opening it) removes it.
+ */
+export function NotificationsView({ initialNotifications }: NotificationsViewProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications);
-  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
-  const [markingIds, setMarkingIds] = useState<Set<string>>(new Set());
 
-  const handleMarkAsRead = async (id: string) => {
-    if (markingIds.has(id)) return;
-    setMarkingIds((prev) => new Set(prev).add(id));
-
-    // Optimistic UI update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-
-    try {
-      await markNotificationAsReadAction(id);
-    } finally {
-      setMarkingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }
+  const dismiss = (id: string) => {
+    // Optimistic: the item leaves the list straight away.
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    void markNotificationAsReadAction(id);
   };
 
   const handleMarkAllAsRead = async () => {
-    if (isMarkingAll || unreadCount === 0) return;
+    if (isMarkingAll || notifications.length === 0) return;
     setIsMarkingAll(true);
-
-    // Optimistic UI update
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
-
+    setNotifications([]);
     try {
       await markAllNotificationsAsReadAction();
     } finally {
@@ -74,222 +76,85 @@ export function NotificationsView({
     }
   };
 
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case 'PROJECT_REVIEWED':
-        return <CheckCircle2 className="h-5 w-5 text-success" />;
-      case 'ASSESSMENT_DUE_SOON':
-        return <Clock className="h-5 w-5 text-warning" />;
-      case 'STREAK_MILESTONE':
-        return <Flame className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
-      case 'MILESTONE_UNLOCKED':
-        return <Award className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
-      case 'STUDENT_ACTIVATED':
-        return <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
-      case 'CONTENT_PUBLISHED':
-        return <BookOpen className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
-      default:
-        return <Bell className="h-5 w-5 text-muted-foreground" />;
-    }
-  };
-
-  const formatTimestamp = (dateInput: Date | string) => {
-    const d = new Date(dateInput);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    return formatDate(d, {
-      month: 'short',
-      day: 'numeric',
-      year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
-  };
-
-  const filteredNotifications = notifications.filter((n) => {
-    if (filter === 'unread') return !n.isRead;
-    return true;
-  });
+  const count = notifications.length;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
+    <div className="mx-auto max-w-3xl space-y-6 pb-12">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Notifications</h1>
-            {unreadCount > 0 && (
-              <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
-                {unreadCount} unread
-              </span>
-            )}
-          </div>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">Notifications</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Real-time updates on your assignments, milestones, deadlines, and learning progress.
+            {count > 0
+              ? `${count} unread. Reviews, deadlines and new content land here.`
+              : 'Reviews, deadlines and new content land here.'}
           </p>
         </div>
 
-        {unreadCount > 0 && (
+        {count > 0 && (
           <button
             type="button"
             onClick={handleMarkAllAsRead}
             disabled={isMarkingAll}
-            className="inline-flex items-center gap-2 self-start sm:self-auto rounded-lg border border-input bg-secondary/80 px-3.5 py-2 text-xs font-medium text-foreground hover:bg-accent hover:text-foreground transition active:scale-[0.97] motion-reduce:active:scale-100 disabled:opacity-50 shadow-sm"
+            className="inline-flex h-9 items-center gap-2 self-start rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition-[background-color,transform] duration-150 hover:bg-accent active:scale-[0.97] disabled:opacity-50 motion-reduce:active:scale-100 sm:self-auto"
           >
-            <CheckCheck className="h-4 w-4 text-primary" />
-            <span>Mark all as read</span>
+            <CheckCheck className="h-4 w-4" aria-hidden="true" />
+            Mark all as read
           </button>
         )}
       </div>
 
-      {/* 2. Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-border/80 pb-3">
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
-            filter === 'all'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-          }`}
-        >
-          <span>All</span>
-          <span
-            className={`rounded-full px-1.5 py-0.2 text-xs ${
-              filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-            }`}
-          >
-            {notifications.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setFilter('unread')}
-          className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
-            filter === 'unread'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-          }`}
-        >
-          <span>Unread</span>
-          {unreadCount > 0 && (
-            <span
-              className={`rounded-full px-1.5 py-0.2 text-xs ${
-                filter === 'unread' ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'
-              }`}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* 3. Notification List or Empty State */}
-      {filteredNotifications.length === 0 ? (
-        <div className="rounded-lg border border-border bg-card p-12 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-secondary/70 border border-input/60 text-muted-foreground mb-4">
-            <Bell className="h-7 w-7 text-muted-foreground" />
+      {count === 0 ? (
+        <div className="rounded-lg border border-border bg-card px-6 py-12 text-center">
+          <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted">
+            <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
           </div>
-          <h3 className="text-base font-semibold text-foreground">
-            {filter === 'unread'
-              ? 'You have no unread notifications.'
-              : 'You have no notifications yet.'}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-            {filter === 'unread'
-              ? 'You are all caught up! Check back later for assignment feedback and milestone updates.'
-              : 'Activity notifications regarding quizzes, projects, batch curriculum, and streaks will show up here.'}
+          <h2 className="text-base font-semibold text-foreground">You're all caught up</h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+            New reviews, deadlines and course content will show up here.
           </p>
-          {filter === 'unread' && notifications.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setFilter('all')}
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary transition"
-            >
-              <Filter className="h-3.5 w-3.5" />
-              <span>View all notifications</span>
-            </button>
-          )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {filteredNotifications.map((n) => (
-            <div
-              key={n.id}
-              className={`group relative rounded-lg border p-4 sm:p-5 transition-all ${
-                !n.isRead
-                  ? 'border-primary/30 bg-primary/5 shadow-md shadow-primary/30'
-                  : 'border-border bg-card hover:bg-card/70'
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                {/* Event Type Icon */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/80 border border-input/60 shadow-sm mt-0.5">
-                  {getEventIcon(n.type)}
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {notifications.map((n) => (
+            <li key={n.id} className="flex items-start gap-3 p-4 sm:px-5">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted">
+                {getEventIcon(n.type)}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-sm font-medium text-foreground">{n.title}</h2>
+                  {/* Relative time can tick over between the server render and hydration ("6h" vs "7h"). */}
+                  <span className="shrink-0 text-xs text-muted-foreground" suppressHydrationWarning>
+                    {formatTimestamp(n.createdAt)}
+                  </span>
                 </div>
+                <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{n.body}</p>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <h4
-                        className={`text-sm ${
-                          !n.isRead ? 'font-semibold text-foreground' : 'font-medium text-foreground'
-                        }`}
-                      >
-                        {n.title}
-                      </h4>
-                      {!n.isRead && (
-                        <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {formatTimestamp(n.createdAt)}
-                    </span>
-                  </div>
-
-                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                    {n.body}
-                  </p>
-
-                  {/* Actions Bar */}
-                  <div className="mt-3 flex flex-wrap items-center gap-3 pt-1">
-                    {n.actionUrl && (
-                      <Link
-                        href={n.actionUrl}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary transition"
-                      >
-                        <span>View item</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    )}
-
-                    {!n.isRead && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkAsRead(n.id)}
-                        disabled={markingIds.has(n.id)}
-                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition disabled:opacity-50"
-                      >
-                        <Check className="h-3 w-3" />
-                        <span>Mark as read</span>
-                      </button>
-                    )}
-                  </div>
+                <div className="mt-2 flex flex-wrap items-center gap-4">
+                  {n.actionUrl && (
+                    <Link
+                      href={n.actionUrl}
+                      onClick={() => dismiss(n.id)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      Open
+                      <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => dismiss(n.id)}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Check className="h-3 w-3" aria-hidden="true" />
+                    Mark as read
+                  </button>
                 </div>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

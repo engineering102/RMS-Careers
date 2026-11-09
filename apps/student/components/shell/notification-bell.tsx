@@ -25,9 +25,13 @@ interface NotificationBellProps {
   initialNotifications?: NotificationItem[];
 }
 
+// One shared empty list: a fresh `[]` default per render would re-fire the props-sync effect below on every
+// render (setState -> render -> new [] -> effect) and loop while the bell is the Suspense fallback.
+const NO_NOTIFICATIONS: NotificationItem[] = [];
+
 export function NotificationBell({
   initialUnreadCount = 0,
-  initialNotifications = []
+  initialNotifications = NO_NOTIFICATIONS
 }: NotificationBellProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -62,16 +66,11 @@ export function NotificationBell({
     };
   }, [isOpen]);
 
-  const handleMarkAsRead = async (id: string, actionUrl?: string | null) => {
-    // Only an unread item changes the count; re-opening a read one just navigates.
-    const wasUnread = notifications.some((n) => n.id === id && !n.isRead);
-    if (wasUnread) {
-      // Optimistic UI update
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-
-      await markNotificationAsReadAction(id);
-    }
+  // The list holds unread notifications only (the layout queries unreadOnly): reading one removes it.
+  const handleOpen = (id: string, actionUrl?: string | null) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+    void markNotificationAsReadAction(id);
 
     if (actionUrl) {
       setIsOpen(false);
@@ -83,8 +82,8 @@ export function NotificationBell({
     if (isMarkingAll || unreadCount === 0) return;
     setIsMarkingAll(true);
 
-    // Optimistic UI update
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    // Optimistic: everything was unread, so the list empties.
+    setNotifications([]);
     setUnreadCount(0);
 
     try {
@@ -95,7 +94,7 @@ export function NotificationBell({
   };
 
   const getEventIcon = (type: string) => {
-    // Neutral icons: the unread dot and the title weight carry the state, not a colour per event type.
+    // Neutral icons: the title carries the meaning, not a colour per event type.
     const cls = 'h-4 w-4 text-muted-foreground';
     switch (type) {
       case 'PROJECT_REVIEWED':
@@ -137,7 +136,8 @@ export function NotificationBell({
         <div
           role="dialog"
           aria-label="Recent notifications"
-          className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-1.5rem))] origin-top-right overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl duration-150 ease-out-quint animate-in fade-in-0 zoom-in-[0.97]"
+          // Phones: pinned under the header across the screen; anchored to the bell it would run off the left edge.
+          className="fixed inset-x-3 top-14 z-50 origin-top-right sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl duration-150 ease-out-quint animate-in fade-in-0 zoom-in-[0.97]"
         >
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
             <p className="text-sm font-semibold">
@@ -178,23 +178,26 @@ export function NotificationBell({
                 <li key={n.id}>
                   <button
                     type="button"
-                    onClick={() => handleMarkAsRead(n.id, n.actionUrl)}
+                    onClick={() => handleOpen(n.id, n.actionUrl)}
                     className="flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
                   >
                     <span className="mt-0.5 shrink-0">{getEventIcon(n.type)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
-                        <span className={`truncate text-[13px] ${n.isRead ? 'text-muted-foreground' : 'font-medium text-foreground'}`}>
-                          {n.title}
-                        </span>
-                        {!n.isRead && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground" aria-label="Unread" />}
+                        <span className="truncate text-[13px] font-medium text-foreground">{n.title}</span>
                       </span>
                       <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">{n.body}</span>
-                      {n.actionUrl && (
-                        <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground">
-                          Open <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                        </span>
-                      )}
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-foreground">
+                        {n.actionUrl ? (
+                          <>
+                            Open <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                          </>
+                        ) : (
+                          <>
+                            Mark as read <Check className="h-3 w-3" aria-hidden="true" />
+                          </>
+                        )}
+                      </span>
                     </span>
                   </button>
                 </li>
