@@ -3,96 +3,305 @@
 @tailwind utilities;
 
 /*
- * RMS Careers design tokens, shared contract with apps/web and apps/admin
- * (keep the three files' token values in sync). The student portal is dark-only
- * today: app/layout.tsx sets class="dark" on <html>, so the .dark values apply.
+ * Student portal design tokens.
+ *
+ * The student portal has its own identity (decision D-7 of the redesign plan), so these values no longer mirror
+ * apps/web and apps/admin. Token NAMES stay shadcn-compatible (background, card, primary, muted-foreground, …), so
+ * every component re-themes from here.
+ *
+ * Themes × colour modes. <html> carries data-theme (graphite | notebook | transcript) and data-mode (system | light | dark),
+ * written by app/layout.tsx from the visitor's cookies (lib/theme/preferences.ts). "system" follows
+ * prefers-color-scheme with no script. The selectors are not tied to <html>, so any element can preview a theme by
+ * carrying both attributes (the /styleguide route does this).
+ *
+ * --font-display sets page titles and large numbers; it is the sans face except in Transcript, which uses a serif.
+ *
+ * Every text colour was checked for WCAG AA against the surfaces it sits on: muted-foreground ≥ 6:1, status colours
+ * ≥ 5.3:1, primary-foreground on primary ≥ 4.5:1, field borders (input) ≥ 3:1. faint (≥ 3.5:1) is only for
+ * secondary metadata next to stronger text, never for anything a student must read to act.
  */
 @layer base {
-  :root {
-    --background: 220 33% 98%;
-    --foreground: 222 47% 11%;
-
+  /* ---------------------------------------------------------------- Graphite (default) */
+  :root,
+  [data-theme='graphite'] {
+    --background: 0 0% 98.4%;
+    --foreground: 240 5.6% 7.1%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 215 28% 93%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 215 28% 95%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 215 28% 93%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    /* Status colours: AA contrast as text on --background and --card */
-    --success: 163 94% 24%;
+    --primary: 240 5.6% 7.1%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 7.1% 94.5%;
+    --secondary-foreground: 240 5.6% 7.1%;
+    --muted: 240 4% 95.1%;
+    --muted-foreground: 240 4% 38.8%;
+    --faint: 240 3.8% 53.9%;
+    --accent: 240 5.6% 92.9%;
+    --accent-foreground: 240 5.6% 7.1%;
+    --destructive: 7 72.7% 44.5%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 151 66.9% 28.4%;
     --success-foreground: 0 0% 100%;
-
-    --warning: 26 90% 37%;
+    --warning: 33 100% 31.6%;
     --warning-foreground: 0 0% 100%;
-
-    --info: 201 96% 32%;
+    --info: 223 68.4% 50.4%;
     --info-foreground: 0 0% 100%;
-
-    --border: 214 32% 90%;
-    --input: 214 32% 90%;
-    --ring: 221 83% 53%;
-
-    /* Web uses 0.75rem; student/admin stay at 0.5rem until radius is unified with visual QA. */
+    --border: 240 6.7% 91.2%;
+    --border-strong: 240 6.2% 84.1%;
+    --input: 240 4% 55.9%;
+    --ring: 223 68.4% 50.4%;
     --radius: 0.5rem;
+    --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-display: var(--font-sans);
+    --paper: none;
+    color-scheme: light;
+  }
+  [data-theme='graphite'][data-mode='dark'] {
+    --background: 240 7.7% 5.1%;
+    --foreground: 240 9.1% 93.5%;
+    --card: 240 7.3% 8%;
+    --popover: 240 5.9% 10%;
+    --primary: 240 9.1% 93.5%;
+    --primary-foreground: 240 7.7% 5.1%;
+    --secondary: 240 6.7% 11.8%;
+    --secondary-foreground: 240 9.1% 93.5%;
+    --muted: 240 7.4% 10.6%;
+    --muted-foreground: 240 4.8% 63.3%;
+    --faint: 240 3.7% 47.3%;
+    --accent: 240 5.4% 14.5%;
+    --accent-foreground: 240 9.1% 93.5%;
+    --destructive: 6 81.7% 67.8%;
+    --destructive-foreground: 240 7.7% 5.1%;
+    --success: 151 49.8% 53.1%;
+    --success-foreground: 240 7.7% 5.1%;
+    --warning: 35 74.8% 59.6%;
+    --warning-foreground: 240 7.7% 5.1%;
+    --info: 224 100% 76.3%;
+    --info-foreground: 240 7.7% 5.1%;
+    --border: 240 5.6% 14.1%;
+    --border-strong: 240 5% 19.8%;
+    --input: 240 4.4% 40.2%;
+    --ring: 224 100% 76.3%;
+    color-scheme: dark;
   }
 
-  .dark {
-    /* Native scrollbars and form controls follow the dark theme. */
+  /* ---------------------------------------------------------------- Lab notebook */
+  [data-theme='notebook'] {
+    --background: 225 28.6% 97.3%;
+    --foreground: 223 39.7% 12.4%;
+    --card: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --primary: 224 65.5% 39.8%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 33.3% 94.7%;
+    --secondary-foreground: 223 39.7% 12.4%;
+    --muted: 220 33.3% 94.7%;
+    --muted-foreground: 222 18.4% 39.4%;
+    --faint: 224 18% 56.5%;
+    --accent: 224 65.5% 94.3%;
+    --accent-foreground: 223 39.7% 12.4%;
+    --destructive: 3 62% 43.3%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 155 63.9% 28.2%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 100% 29.6%;
+    --warning-foreground: 0 0% 100%;
+    --info: 224 65.5% 39.8%;
+    --info-foreground: 0 0% 100%;
+    --border: 220 27.3% 89.2%;
+    --border-strong: 221 23.9% 82%;
+    --input: 224 19.6% 60%;
+    --ring: 224 65.5% 39.8%;
+    --radius: 0.25rem;
+    --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-display: var(--font-sans);
+    --paper-line: 224 65% 40% / 0.065;
+    --paper: linear-gradient(hsl(var(--paper-line)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--paper-line)) 1px, transparent 1px);
+    color-scheme: light;
+  }
+  [data-theme='notebook'][data-mode='dark'] {
+    --background: 227 40.4% 9.2%;
+    --foreground: 228 42.9% 93.1%;
+    --card: 225 37.5% 12.5%;
+    --popover: 225 35% 15.7%;
+    --primary: 227 100% 77.8%;
+    --primary-foreground: 227 40.4% 9.2%;
+    --secondary: 226 40.2% 19%;
+    --secondary-foreground: 228 42.9% 93.1%;
+    --muted: 225 35% 15.7%;
+    --muted-foreground: 225 21.9% 70.4%;
+    --faint: 227 15.7% 52.5%;
+    --accent: 226 35.8% 21.4%;
+    --accent-foreground: 228 42.9% 93.1%;
+    --destructive: 6 79.7% 71%;
+    --destructive-foreground: 227 40.4% 9.2%;
+    --success: 153 48.8% 58.6%;
+    --success-foreground: 227 40.4% 9.2%;
+    --warning: 36 77.4% 63.5%;
+    --warning-foreground: 227 40.4% 9.2%;
+    --info: 227 100% 77.8%;
+    --info-foreground: 227 40.4% 9.2%;
+    --border: 226 29.5% 20.6%;
+    --border-strong: 227 26.6% 27.3%;
+    --input: 227 21.2% 47.3%;
+    --ring: 227 100% 77.8%;
+    --paper-line: 227 100% 78% / 0.055;
     color-scheme: dark;
+  }
 
-    --background: 224 71% 4%;
-    --foreground: 213 31% 96%;
+  /* ---------------------------------------------------------------- Transcript */
+  [data-theme='transcript'] {
+    --background: 0 0% 100%;
+    --foreground: 120 7.7% 7.6%;
+    --card: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --primary: 158 50% 23.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 135 13.3% 94.1%;
+    --secondary-foreground: 120 7.7% 7.6%;
+    --muted: 120 9.1% 95.7%;
+    --muted-foreground: 135 4.5% 34.5%;
+    --faint: 135 3.2% 51.4%;
+    --accent: 140 18.7% 93.7%;
+    --accent-foreground: 120 7.7% 7.6%;
+    --destructive: 4 60% 41.2%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 155 57.4% 26.7%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 79.9% 31.2%;
+    --warning-foreground: 0 0% 100%;
+    --info: 207 63.3% 33.1%;
+    --info-foreground: 0 0% 100%;
+    --border: 105 7.4% 89.4%;
+    --border-strong: 110 6.2% 81.2%;
+    --input: 137 3% 53.5%;
+    --ring: 158 50% 23.5%;
+    --radius: 0.375rem;
+    --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+    --paper: none;
+    color-scheme: light;
+  }
+  [data-theme='transcript'][data-mode='dark'] {
+    --background: 150 11.8% 6.7%;
+    --foreground: 132 10.6% 90.8%;
+    --card: 144 11.1% 8.8%;
+    --popover: 137 12.3% 11.2%;
+    --primary: 150 41.5% 66.5%;
+    --primary-foreground: 150 11.8% 6.7%;
+    --secondary: 140 13.8% 12.7%;
+    --secondary-foreground: 132 10.6% 90.8%;
+    --muted: 143 14.3% 11%;
+    --muted-foreground: 138 5.4% 63.9%;
+    --faint: 138 4.2% 47.1%;
+    --accent: 142 15.1% 14.3%;
+    --accent-foreground: 132 10.6% 90.8%;
+    --destructive: 6 76.7% 71.4%;
+    --destructive-foreground: 150 11.8% 6.7%;
+    --success: 149 47.1% 65.9%;
+    --success-foreground: 150 11.8% 6.7%;
+    --warning: 35 70.7% 63.9%;
+    --warning-foreground: 150 11.8% 6.7%;
+    --info: 211 76.9% 74.5%;
+    --info-foreground: 150 11.8% 6.7%;
+    --border: 140 11.7% 15.1%;
+    --border-strong: 142 10.5% 20.6%;
+    --input: 140 5.9% 39.6%;
+    --ring: 150 41.5% 66.5%;
+    color-scheme: dark;
+  }
 
-    --card: 222 47% 7%;
-    --card-foreground: 213 31% 96%;
-
-    --popover: 222 47% 7%;
-    --popover-foreground: 213 31% 96%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-
-    --secondary: 217 33% 15%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 12%;
-    --muted-foreground: 215 20% 65%;
-
-    /* accent = hover fill (slate-700); input = field borders (slate-600) */
-    --accent: 215 25% 27%;
-    --accent-foreground: 210 40% 98%;
-
-    /* red-500 with dark text: readable as text, border and button on dark surfaces */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 222 47% 11%;
-
-    --success: 158 64% 52%;
-    --success-foreground: 222 47% 11%;
-
-    --warning: 43 96% 56%;
-    --warning-foreground: 222 47% 11%;
-
-    --info: 198 93% 60%;
-    --info-foreground: 222 47% 11%;
-
-    --border: 217 33% 17%;
-    --input: 215 19% 35%;
-    --ring: 217 91% 60%;
+  /* ---------------------------------------------------------------- "System" mode follows the OS */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-mode]),
+    [data-theme='graphite'][data-mode='system'] {
+      --background: 240 7.7% 5.1%;
+      --foreground: 240 9.1% 93.5%;
+      --card: 240 7.3% 8%;
+      --popover: 240 5.9% 10%;
+      --primary: 240 9.1% 93.5%;
+      --primary-foreground: 240 7.7% 5.1%;
+      --secondary: 240 6.7% 11.8%;
+      --secondary-foreground: 240 9.1% 93.5%;
+      --muted: 240 7.4% 10.6%;
+      --muted-foreground: 240 4.8% 63.3%;
+      --faint: 240 3.7% 47.3%;
+      --accent: 240 5.4% 14.5%;
+      --accent-foreground: 240 9.1% 93.5%;
+      --destructive: 6 81.7% 67.8%;
+      --destructive-foreground: 240 7.7% 5.1%;
+      --success: 151 49.8% 53.1%;
+      --success-foreground: 240 7.7% 5.1%;
+      --warning: 35 74.8% 59.6%;
+      --warning-foreground: 240 7.7% 5.1%;
+      --info: 224 100% 76.3%;
+      --info-foreground: 240 7.7% 5.1%;
+      --border: 240 5.6% 14.1%;
+      --border-strong: 240 5% 19.8%;
+      --input: 240 4.4% 40.2%;
+      --ring: 224 100% 76.3%;
+      color-scheme: dark;
+    }
+    [data-theme='notebook'][data-mode='system'] {
+      --background: 227 40.4% 9.2%;
+      --foreground: 228 42.9% 93.1%;
+      --card: 225 37.5% 12.5%;
+      --popover: 225 35% 15.7%;
+      --primary: 227 100% 77.8%;
+      --primary-foreground: 227 40.4% 9.2%;
+      --secondary: 226 40.2% 19%;
+      --secondary-foreground: 228 42.9% 93.1%;
+      --muted: 225 35% 15.7%;
+      --muted-foreground: 225 21.9% 70.4%;
+      --faint: 227 15.7% 52.5%;
+      --accent: 226 35.8% 21.4%;
+      --accent-foreground: 228 42.9% 93.1%;
+      --destructive: 6 79.7% 71%;
+      --destructive-foreground: 227 40.4% 9.2%;
+      --success: 153 48.8% 58.6%;
+      --success-foreground: 227 40.4% 9.2%;
+      --warning: 36 77.4% 63.5%;
+      --warning-foreground: 227 40.4% 9.2%;
+      --info: 227 100% 77.8%;
+      --info-foreground: 227 40.4% 9.2%;
+      --border: 226 29.5% 20.6%;
+      --border-strong: 227 26.6% 27.3%;
+      --input: 227 21.2% 47.3%;
+      --ring: 227 100% 77.8%;
+      --paper-line: 227 100% 78% / 0.055;
+      color-scheme: dark;
+    }
+    [data-theme='transcript'][data-mode='system'] {
+      --background: 150 11.8% 6.7%;
+      --foreground: 132 10.6% 90.8%;
+      --card: 144 11.1% 8.8%;
+      --popover: 137 12.3% 11.2%;
+      --primary: 150 41.5% 66.5%;
+      --primary-foreground: 150 11.8% 6.7%;
+      --secondary: 140 13.8% 12.7%;
+      --secondary-foreground: 132 10.6% 90.8%;
+      --muted: 143 14.3% 11%;
+      --muted-foreground: 138 5.4% 63.9%;
+      --faint: 138 4.2% 47.1%;
+      --accent: 142 15.1% 14.3%;
+      --accent-foreground: 132 10.6% 90.8%;
+      --destructive: 6 76.7% 71.4%;
+      --destructive-foreground: 150 11.8% 6.7%;
+      --success: 149 47.1% 65.9%;
+      --success-foreground: 150 11.8% 6.7%;
+      --warning: 35 70.7% 63.9%;
+      --warning-foreground: 150 11.8% 6.7%;
+      --info: 211 76.9% 74.5%;
+      --info-foreground: 150 11.8% 6.7%;
+      --border: 140 11.7% 15.1%;
+      --border-strong: 142 10.5% 20.6%;
+      --input: 140 5.9% 39.6%;
+      --ring: 150 41.5% 66.5%;
+      color-scheme: dark;
+    }
   }
 }
 
@@ -109,6 +318,10 @@
   button {
     font: inherit;
   }
+  /* Digits that line up in tables, counters and stats. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @layer utilities {
@@ -118,6 +331,11 @@
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+  /* Graph-paper ground. Draws nothing in themes whose --paper is none. */
+  .bg-paper {
+    background-image: var(--paper);
+    background-size: 20px 20px;
   }
 }
 
@@ -160,11 +378,20 @@
   }
 }
 
-/* Increased contrast: stronger edges and secondary text on the dark theme the portal uses. */
+/* Increased contrast: hairlines take the field-border strength and secondary text moves toward the foreground. */
 @media (prefers-contrast: more) {
-  .dark {
-    --border: 215 20% 42%;
-    --input: 215 20% 55%;
-    --muted-foreground: 215 25% 80%;
+  [data-theme],
+  :root {
+    --border: var(--input);
+    --border-strong: var(--input);
+    --faint: var(--muted-foreground);
   }
+}
+
+/* Theme switches are instant: the appearance picker sets this class for two frames while it swaps tokens. */
+.theme-switching,
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
 }
