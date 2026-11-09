@@ -3,11 +3,20 @@ import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { fontVariables } from './fonts';
 import { COLOR_MODE_COOKIE, THEME_COOKIE, parseColorMode, parseTheme } from '@/lib/theme/preferences';
+import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register';
 
 export const metadata: Metadata = {
   title: 'RMS Careers Student Portal',
   description: 'RMS Careers authenticated student portal.',
-  robots: { index: false, follow: false }
+  robots: { index: false, follow: false },
+  icons: {
+    apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'RMS Student',
+    statusBarStyle: 'default'
+  }
 };
 
 // viewport-fit=cover lets the phone tab bar and sheets reach the screen edge; they pad themselves with
@@ -15,7 +24,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover'
+  viewportFit: 'cover',
+  // Browser/installed-app chrome; matches the default (graphite) theme's background in each colour scheme.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fbfbfb' },
+    { media: '(prefers-color-scheme: dark)', color: '#0c0c0e' }
+  ]
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -27,7 +41,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     // The theme picker updates these attributes in place after a change, so React must not reset them.
     <html lang="en" className={fontVariables} data-theme={theme} data-mode={mode} suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorkerRegister />
+      </body>
     </html>
   );
 }
