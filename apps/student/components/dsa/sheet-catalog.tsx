@@ -74,7 +74,7 @@ export function SheetCatalog({ cards, batchId, progressUnavailable = false }: Sh
                   aria-pressed={category === c}
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     category === c
-                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      ? 'border-foreground bg-foreground text-background'
                       : 'border-border bg-card text-foreground/80 hover:border-input hover:text-foreground'
                   }`}
                 >

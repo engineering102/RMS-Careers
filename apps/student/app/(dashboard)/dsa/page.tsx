@@ -8,7 +8,7 @@ import { DsaHeader } from '@/components/dsa/dsa-header';
 import { SheetCatalog } from '@/components/dsa/sheet-catalog';
 
 export const metadata = {
-  title: 'DSA Practice — RMS Student Portal',
+  title: 'DSA practice — RMS Student Portal',
   description: 'Curated, pattern-based DSA problem sheets with progress tracking.'
 };
 

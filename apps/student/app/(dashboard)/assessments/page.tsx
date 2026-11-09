@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button';
 import { PaginationNav } from '@/components/ui/pagination-nav';
 
 export const metadata = {
-  title: 'Assessments — RMS Student Portal',
-  description: 'Timed exams, practice quizzes, projects and external tests across your enrolled batches.'
+  title: 'Tests — RMS Student Portal',
+  description: 'Timed tests, practice quizzes, projects and external tests across your batches.'
 };
 
 interface AssessmentsPageProps {
@@ -125,7 +125,7 @@ export default async function AssessmentsPage({ searchParams }: AssessmentsPageP
                     aria-label={showGroupHeadings ? BUCKET_HEADINGS[group.bucket] : undefined}
                   >
                     {showGroupHeadings ? (
-                      <h3 className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-5">
+                      <h3 className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-2 text-xs font-semibold text-muted-foreground sm:px-5">
                         <span>{BUCKET_HEADINGS[group.bucket]}</span>
                         <span className="tabular-nums">{view.statusCounts[group.bucket]}</span>
                       </h3>

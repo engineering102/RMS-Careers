@@ -6,7 +6,7 @@ import type { AssessmentHubView, AssessmentStatusFilter, AssessmentTab } from '@
 
 const TAB_LABELS: Record<AssessmentTab, string> = {
   all: 'All',
-  exams: 'Timed exams',
+  exams: 'Timed tests',
   practice: 'Practice',
   projects: 'Projects',
   external: 'External'
@@ -51,8 +51,8 @@ export function AssessmentTypeTabs({ view }: { view: AssessmentHubView }) {
                 {TAB_LABELS[tab]}
                 <span
                   className={cn(
-                    'rounded-full px-1.5 py-px text-[11px] font-semibold tabular-nums',
-                    active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                    'rounded-full px-1.5 py-px text-xs font-semibold tabular-nums',
+                    active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
                   )}
                 >
                   {tabCounts[tab]}

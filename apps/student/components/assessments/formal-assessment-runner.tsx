@@ -273,7 +273,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-primary/10 text-primary border border-primary/20">
+          <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
             {initialData.programCode}
           </span>
           <span className="px-2 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
@@ -285,7 +285,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
       {/* Error Message Alert */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2.5">
+        <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2.5">
           <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
           <span>{errorMessage}</span>
         </div>
@@ -298,11 +298,11 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
         <Card className="border-border bg-card/60">
           <CardContent className="p-6 sm:p-8 space-y-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-purple-400">
-                <Timer className="h-4 w-4" />
-                <span>Timed Formal Examination</span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Timer className="h-4 w-4" aria-hidden="true" />
+                <span>Timed test</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">
                 {initialData.title}
               </h1>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
@@ -314,7 +314,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             {/* Exam Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-4 border-y border-border">
               <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Duration</span>
+                <span className="text-xs text-muted-foreground font-medium">Duration</span>
                 <p className="text-sm font-bold text-warning flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {initialData.timeLimitMinutes} Minutes
@@ -322,7 +322,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               </div>
 
               <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Total Questions</span>
+                <span className="text-xs text-muted-foreground font-medium">Total Questions</span>
                 <p className="text-sm font-bold text-foreground flex items-center gap-1">
                   <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   {totalQuestions} Questions
@@ -330,7 +330,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               </div>
 
               <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Total Points</span>
+                <span className="text-xs text-muted-foreground font-medium">Total Points</span>
                 <p className="text-sm font-bold text-foreground flex items-center gap-1">
                   <Award className="h-3.5 w-3.5 text-muted-foreground" />
                   {initialData.totalPoints} Points
@@ -338,7 +338,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               </div>
 
               <div className="p-3 rounded-lg bg-background/40 border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Pass Threshold</span>
+                <span className="text-xs text-muted-foreground font-medium">Pass Threshold</span>
                 <p className="text-sm font-bold text-success flex items-center gap-1">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {initialData.passingScorePercent}%
@@ -347,10 +347,10 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             </div>
 
             {/* Exam Instructions & Integrity Policy */}
-            <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-semibold text-purple-300">
-                <AlertTriangle className="h-4 w-4 text-purple-400" />
-                <span>Examination Protocol & Policies</span>
+            <div className="space-y-2.5 rounded-lg border border-warning/30 bg-warning/[0.07] p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <AlertTriangle className="h-4 w-4 text-warning" aria-hidden="true" />
+                <span>Before you start</span>
               </div>
               <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-5 leading-relaxed">
                 <li>
@@ -407,9 +407,9 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
         <>
           {/* Prominent Authoritative Countdown Banner */}
           <div
-            className={`sticky top-20 z-20 p-4 rounded-xl border backdrop-blur-md shadow-xl flex items-center justify-between gap-4 transition-all ${
+            className={`sticky top-16 z-20 flex items-center justify-between gap-4 rounded-lg border p-4 shadow-md backdrop-blur-md transition-[background-color,border-color] duration-300 ${
               remainingSeconds < 60
-                ? 'bg-[color-mix(in_srgb,hsl(var(--destructive))_18%,hsl(var(--card)))] border-destructive/50 text-foreground animate-pulse'
+                ? 'bg-[color-mix(in_srgb,hsl(var(--destructive))_18%,hsl(var(--card)))] border-destructive/50 text-foreground'
                 : remainingSeconds < 300
                   ? 'bg-[color-mix(in_srgb,hsl(var(--warning))_14%,hsl(var(--card)))] border-warning/50 text-foreground'
                   : 'bg-card/90 border-input text-foreground'
@@ -422,17 +422,17 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                     ? 'bg-destructive/20 text-destructive'
                     : remainingSeconds < 300
                       ? 'bg-warning/20 text-warning'
-                      : 'bg-primary/20 text-primary'
+                      : 'bg-muted text-foreground'
                 }`}
               >
                 <Timer className="h-5 w-5" />
               </div>
 
               <div>
-                <span className="text-[11px] font-medium uppercase tracking-wider opacity-75">
-                  Time Remaining
+                <span className="text-xs text-muted-foreground">
+                  Time left
                 </span>
-                <p className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none mt-0.5 tabular-nums">
+                <p className="text-xl sm:text-2xl font-semibold font-mono tracking-tight leading-none mt-0.5 tabular-nums">
                   {formatTime(remainingSeconds)}
                 </p>
               </div>
@@ -444,7 +444,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   {answeredCount} of {totalQuestions} Answered
                 </span>
                 {tabBlurCount > 0 && (
-                  <p className="text-[11px] text-warning font-mono">
+                  <p className="text-xs text-warning font-mono">
                     {tabBlurCount} tab {tabBlurCount === 1 ? 'switch' : 'switches'} detected
                   </p>
                 )}
@@ -506,19 +506,19 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                           {qIdx + 1}
                         </span>
 
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-input/80">
+                        <span className="text-xs font-medium px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-input/80">
                           {question.questionType === 'single_choice'
                             ? 'Single Choice'
                             : 'Multiple Choice'}
                         </span>
 
-                        <span className="text-[11px] text-muted-foreground font-medium">
+                        <span className="text-xs text-muted-foreground font-medium">
                           {question.points} {question.points === 1 ? 'Point' : 'Points'}
                         </span>
                       </div>
 
                       {selectedOptionIds.length > 0 && (
-                        <span className="text-[11px] text-primary font-medium flex items-center gap-1">
+                        <span className="text-xs text-primary font-medium flex items-center gap-1">
                           <Check className="h-3 w-3" />
                           Answered
                         </span>
@@ -549,7 +549,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                             } ${
                               isSelected
                                 ? 'border-primary/60 bg-primary/10 text-foreground ring-1 ring-primary/30'
-                                : 'border-border bg-background/40 text-foreground/80 hover:border-input hover:bg-secondary/40'
+                                : 'border-border bg-background/40 text-foreground/80 hover:border-input hover:bg-muted/60'
                             }`}
                           >
                             <div
@@ -595,7 +595,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`p-3 rounded-xl border ${
+                    className={`p-3 rounded-lg border ${
                       completedAttempt.isPassed
                         ? 'bg-success/20 border-success/30 text-success'
                         : 'bg-secondary border-input text-foreground/80'
@@ -624,10 +624,10 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
                 <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <div className="text-2xl font-black text-foreground tabular-nums">
+                    <div className="text-2xl font-semibold text-foreground tabular-nums">
                       {completedAttempt.percentage}%
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       {completedAttempt.score} / {completedAttempt.maxScore} points
                     </div>
                   </div>
@@ -655,7 +655,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   </span>
 
                   {completedAttempt.tabBlurCount > 0 && (
-                    <span className="text-warning font-mono text-[11px]">
+                    <span className="text-warning font-mono text-xs">
                       {completedAttempt.tabBlurCount} tab switch{' '}
                       {completedAttempt.tabBlurCount === 1 ? 'event' : 'events'} logged
                     </span>
@@ -666,7 +666,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
                   asChild
                   variant="outline"
                   size="sm"
-                  className="border-input bg-card/60 hover:bg-secondary text-foreground/80 text-xs"
+                  className="border-input bg-card/60 hover:bg-accent text-foreground/80 text-xs"
                 >
                   <Link href="/assessments">Return to Assessments</Link>
                 </Button>
@@ -705,7 +705,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-purple-400" />
+                  <Lightbulb className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <span>Question Breakdown & Educational Explanations</span>
                 </h3>
                 <span className="text-xs text-success font-medium">Results Published</span>
@@ -750,7 +750,7 @@ export function FormalAssessmentRunner({ initialData }: FormalAssessmentRunnerPr
 
                     {result.explanationText && (
                       <div className="p-3.5 rounded-lg bg-primary/10 border border-primary/20 space-y-1">
-                        <span className="text-[11px] font-semibold text-primary flex items-center gap-1">
+                        <span className="text-xs font-semibold text-primary flex items-center gap-1">
                           <Lightbulb className="h-3 w-3" />
                           Explanation
                         </span>
