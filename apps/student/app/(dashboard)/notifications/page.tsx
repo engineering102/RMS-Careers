@@ -26,13 +26,10 @@ export default async function NotificationsPage() {
     );
   }
 
-  const summary = await getStudentNotifications(userId, { limit: 100 });
+  const summary = await getStudentNotifications(userId, { limit: 100, unreadOnly: true });
 
   return (
-    <NotificationsView
-      initialNotifications={summary.notifications}
-      initialUnreadCount={summary.unreadCount}
-      initialTotalCount={summary.totalCount}
-    />
+    // Unread only: a notification is gone once it has been read (see NotificationsView).
+    <NotificationsView initialNotifications={summary.notifications} />
   );
 }

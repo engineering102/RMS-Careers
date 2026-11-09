@@ -10,6 +10,8 @@ const OTHER_USER_ID = 'usr-9999-8888-7777-6666';
 const TEST_STUDENT_ID = 42;
 
 let mockNotifications: any[] = [];
+let deleteCalls: any[] = [];
+let failDelete = false;
 let mockStudents: any[] = [];
 let mockAuthContext: any = null;
 
@@ -91,6 +93,14 @@ vi.mock('@rms/db', async () => {
             return Promise.resolve([row]);
           }
         })
+      }),
+
+      delete: (table: any) => ({
+        where: (cond: any) => {
+          if (failDelete) return Promise.reject(new Error('delete failed'));
+          deleteCalls.push({ table, cond });
+          return Promise.resolve([]);
+        }
       }),
 
       update: (table: any) => ({
@@ -429,6 +439,31 @@ describe('Slice 17 — Notification Center & Domain Events', () => {
         expect(res.data.markedCount).toBe(2);
       }
       expect(mockNotifications.every((n) => n.isRead)).toBe(true);
+    });
+
+    it('purges stale read notifications after marking all read', async () => {
+      const { notifications } = await import('@rms/db');
+      deleteCalls = [];
+      failDelete = false;
+      mockNotifications = [{ id: 'n-1', userId: TEST_USER_ID, isRead: false }];
+
+      const res = await markAllNotificationsAsReadAction();
+      expect(res.success).toBe(true);
+      expect(deleteCalls).toHaveLength(1);
+      expect(deleteCalls[0].table).toBe(notifications);
+    });
+
+    it('still succeeds when the purge of read notifications fails', async () => {
+      failDelete = true;
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockNotifications = [{ id: 'n-1', userId: TEST_USER_ID, isRead: false }];
+
+      const res = await markAllNotificationsAsReadAction();
+      expect(res.success).toBe(true);
+      expect(errorSpy).toHaveBeenCalledWith('[purgeStaleReadNotifications] Error:', expect.any(Error));
+
+      errorSpy.mockRestore();
+      failDelete = false;
     });
   });
 });
