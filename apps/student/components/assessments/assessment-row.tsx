@@ -8,19 +8,19 @@ import { cn } from '@/lib/utils';
 import type { AssessmentHubItem, AssessmentKind, AssessmentTone } from '@/lib/types/assessment-hub';
 
 export const KIND_META: Record<AssessmentKind, { label: string; icon: LucideIcon; tile: string }> = {
-  formal: { label: 'Timed exam', icon: Timer, tile: 'bg-primary/10 text-primary' },
-  practice: { label: 'Practice quiz', icon: ClipboardCheck, tile: 'bg-purple-500/10 text-purple-500 dark:text-purple-400' },
-  project: { label: 'Project', icon: FolderGit2, tile: 'bg-warning/10 text-warning' },
-  external_test: { label: 'External test', icon: ExternalLink, tile: 'bg-rose-500/10 text-rose-500 dark:text-rose-400' },
-  report: { label: 'Report card', icon: Award, tile: 'bg-success/10 text-success' }
+  formal: { label: 'Timed test', icon: Timer, tile: 'bg-muted text-muted-foreground' },
+  practice: { label: 'Practice quiz', icon: ClipboardCheck, tile: 'bg-muted text-muted-foreground' },
+  project: { label: 'Project', icon: FolderGit2, tile: 'bg-muted text-muted-foreground' },
+  external_test: { label: 'External test', icon: ExternalLink, tile: 'bg-muted text-muted-foreground' },
+  report: { label: 'Report card', icon: Award, tile: 'bg-muted text-muted-foreground' }
 };
 
 const TONE_CLASSES: Record<AssessmentTone, string> = {
-  primary: 'border-primary/25 bg-primary/10 text-primary',
-  success: 'border-success/25 bg-success/10 text-success',
-  warning: 'border-warning/30 bg-warning/10 text-warning',
-  destructive: 'border-destructive/25 bg-destructive/10 text-destructive',
-  muted: 'border-border bg-muted text-muted-foreground'
+  primary: 'border-transparent bg-muted text-foreground',
+  success: 'border-transparent bg-success/10 text-success',
+  warning: 'border-transparent bg-warning/10 text-warning',
+  destructive: 'border-transparent bg-destructive/10 text-destructive',
+  muted: 'border-border bg-transparent text-muted-foreground'
 };
 
 const ACTION_CLASSES: Record<NonNullable<AssessmentHubItem['action']>['emphasis'], string> = {
@@ -88,7 +88,7 @@ export function AssessmentRow({ item }: { item: AssessmentHubItem }) {
           <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
             <span
               className={cn(
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+                'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold',
                 TONE_CLASSES[item.status.tone]
               )}
             >

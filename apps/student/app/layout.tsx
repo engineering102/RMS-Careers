@@ -1,6 +1,8 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import { fontVariables } from './fonts';
+import { COLOR_MODE_COOKIE, THEME_COOKIE, parseColorMode, parseTheme } from '@/lib/theme/preferences';
 
 export const metadata: Metadata = {
   title: 'RMS Careers Student Portal',
@@ -8,7 +10,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // The student portal is dark-only; `dark` selects the .dark token set in globals.css.
-  return <html lang="en" className={`dark ${fontVariables}`}><body>{children}</body></html>;
+// viewport-fit=cover lets the phone tab bar and sheets reach the screen edge; they pad themselves with
+// env(safe-area-inset-*) so nothing sits under the home indicator or the notch.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover'
+};
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Appearance is read on the server so the first paint is already in the student's theme (no flash, no script).
+  const store = await cookies();
+  const theme = parseTheme(store.get(THEME_COOKIE)?.value);
+  const mode = parseColorMode(store.get(COLOR_MODE_COOKIE)?.value);
+
+  return (
+    // The theme picker updates these attributes in place after a change, so React must not reset them.
+    <html lang="en" className={fontVariables} data-theme={theme} data-mode={mode} suppressHydrationWarning>
+      <body>{children}</body>
+    </html>
+  );
 }

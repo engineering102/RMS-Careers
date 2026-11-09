@@ -16,54 +16,48 @@ export function UnsupportedContentView({
   title,
   description
 }: UnsupportedContentViewProps) {
-  let titleText = 'Dedicated Workspace Required';
-  let descriptionText = 'This content item is accessed through its dedicated learning workspace.';
-  let actionLabel = 'Go to Workspace';
+  let titleText = 'Opens elsewhere';
+  let descriptionText = 'This item opens in its own part of the portal.';
+  let actionLabel = 'Open library';
   let actionHref = '/library';
   let Icon = HelpCircle;
-  let iconClass = 'text-primary bg-primary/10 border-primary/20';
 
   if (contentType === 'dsa_sheet') {
-    titleText = 'DSA Practice Sheet';
+    titleText = 'DSA practice sheet';
     descriptionText =
-      'DSA problem sets and practice tracking are managed directly within the DSA Practice Center.';
-    actionLabel = 'Open DSA Practice Center';
+      'Problems and your progress on them live in DSA practice.';
+    actionLabel = 'Open DSA practice';
     actionHref = '/dsa';
     Icon = Code2;
-    iconClass = 'text-success bg-success/10 border-success/20';
   } else if (contentType === 'quiz') {
-    titleText = 'Assessment Quiz';
+    titleText = 'Quiz';
     descriptionText =
-      'Practice knowledge checks and formal timed exams are administered through the Assessment Suite.';
-    actionLabel = 'Go to Assessments';
+      'Quizzes and timed tests are taken from Tests.';
+    actionLabel = 'Open tests';
     actionHref = '/assessments';
     Icon = HelpCircle;
-    iconClass = 'text-purple-400 bg-purple-500/10 border-purple-500/20';
   } else if (contentType === 'project') {
-    titleText = 'Project Assignment';
+    titleText = 'Project';
     descriptionText =
-      'Project briefs, GitHub submissions, and tutor reviews are managed within the Project Workspace.';
-    actionLabel = 'Go to Projects & Assessments';
+      'Project briefs, submissions and tutor reviews are under Tests.';
+    actionLabel = 'Open tests';
     actionHref = '/assessments';
     Icon = FolderGit2;
-    iconClass = 'text-warning bg-warning/10 border-warning/20';
   }
 
   return (
-    <Card className="border-border bg-card/60">
-      <CardContent className="p-8 sm:p-10 flex flex-col items-center text-center space-y-4 max-w-xl mx-auto">
-        <div className={`p-3.5 rounded-xl border ${iconClass}`}>
-          <Icon className="h-8 w-8" />
-        </div>
+    <Card className="border-border bg-card">
+      <CardContent className="mx-auto flex max-w-xl flex-col items-center space-y-4 p-8 text-center sm:p-10">
+        <Icon className="h-6 w-6 text-faint" aria-hidden="true" />
 
         <div className="space-y-1.5">
           <h3 className="text-lg font-semibold text-foreground">{titleText}</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {description || descriptionText}
           </p>
         </div>
 
-        <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 mt-2">
+        <Button asChild variant="outline" className="mt-2">
           <Link href={actionHref}>
             <span>{actionLabel}</span>
             <ArrowRight className="h-3.5 w-3.5" />

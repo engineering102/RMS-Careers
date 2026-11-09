@@ -7,7 +7,7 @@ import { LeaderboardTable } from '@/components/leaderboards/leaderboard-table';
 import type { LeaderboardScope, LeaderboardTimeframe } from '@/lib/types/leaderboards';
 
 export const metadata = {
-  title: 'Leaderboard & Peer Rankings — RMS Student Portal',
+  title: 'Leaderboard — RMS Student Portal',
   description: 'Cohort and college-wide peer leaderboards tracking weekly milestones and all-time achievements.'
 };
 

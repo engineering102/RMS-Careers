@@ -179,7 +179,7 @@ export function SheetPracticeView({
           <p className="text-xs font-medium text-muted-foreground">
             {sheet.company ?? SHEET_CATEGORY_LABELS[sheet.category]}
           </p>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{sheet.title}</h1>
+          <h1 className="mt-1.5 text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">{sheet.title}</h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">{sheet.description}</p>
           <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
             {meta.map(({ icon: Icon, value, label }) => (
@@ -327,7 +327,7 @@ export function SheetPracticeView({
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
               {groups.map((group) => (
                 <PatternAccordion
                   key={group.pattern}

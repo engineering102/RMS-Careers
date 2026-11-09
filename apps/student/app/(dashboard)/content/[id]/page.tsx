@@ -11,10 +11,9 @@ import { NextLessonBanner } from '@/components/content-player/next-lesson-banner
 import { UnsupportedContentView } from '@/components/content-player/unsupported-content-view';
 import { getProjectAssignmentForStudent } from '@/lib/db/queries/projects';
 import { ProjectSubmissionWorkspace } from '@/components/projects/project-submission-workspace';
-import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = {
-  title: 'Content Player — RMS Student Portal',
+  title: 'Lesson — RMS Student Portal',
   description: 'Learning content and lecture resource player.'
 };
 
@@ -70,7 +69,7 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+    <div className="mx-auto max-w-4xl space-y-8 pb-12">
       {/* 1. Header with breadcrumbs and metadata */}
       <ContentHeader
         title={item.title}
@@ -102,16 +101,12 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
           {/* Lecture Description & Overview */}
           {item.description && (
-            <Card className="border-border bg-card/40">
-              <CardContent className="p-5 sm:p-6 space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  About this Lecture
-                </h4>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
+            <section aria-labelledby="about-lecture" className="space-y-2 border-t border-border pt-6">
+              <h2 id="about-lecture" className="text-[15px] font-semibold text-foreground">
+                About this lecture
+              </h2>
+              <p className="max-w-[70ch] text-[15px] leading-relaxed text-muted-foreground">{item.description}</p>
+            </section>
           )}
         </div>
       )}
@@ -150,7 +145,7 @@ export default async function ContentPage({ params, searchParams }: ContentPageP
 
       {/* 3. Next Lesson Navigation / Cohort Continuity Banner */}
       {effectiveBatchId && (
-        <div className="pt-4 border-t border-border/80">
+        <div className="pt-2">
           <NextLessonBanner
             batchId={effectiveBatchId}
             batchName={item.relatedBatchContext?.batchName}

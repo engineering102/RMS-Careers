@@ -20,7 +20,7 @@ interface SheetPageProps {
 export async function generateMetadata({ params }: SheetPageProps) {
   const sheet = getDsaSheetBySlug((await params).sheetSlug);
   return {
-    title: `${sheet?.title ?? 'Problem Sheet'} — DSA Practice — RMS Student Portal`,
+    title: `${sheet?.title ?? 'Problem Sheet'} — DSA practice — RMS Student Portal`,
     description: sheet?.shortDescription ?? 'A curated DSA problem sheet.'
   };
 }
@@ -54,7 +54,7 @@ export default async function DsaSheetPage({ params, searchParams }: SheetPagePr
               className="inline-flex items-center gap-1 rounded hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-              DSA Practice
+              DSA practice
             </Link>
           </li>
           <li aria-hidden>/</li>

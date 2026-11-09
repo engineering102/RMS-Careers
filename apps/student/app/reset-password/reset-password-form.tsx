@@ -15,7 +15,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       <div className="space-y-4">
         <div
           role="status"
-          className="rounded-xl border border-success/40 bg-success/10 p-5 text-sm text-foreground"
+          className="rounded-lg border border-success/40 bg-success/10 p-5 text-sm text-foreground"
         >
           <p className="font-semibold text-foreground">Password Updated</p>
           <p className="mt-1">

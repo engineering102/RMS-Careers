@@ -12,7 +12,7 @@ import { LiveCalendarToolbar, calendarHref } from '@/components/batch-workspace/
 import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata = {
-  title: 'Live Lectures — RMS Student Portal',
+  title: 'Live lectures — RMS Student Portal',
   description: 'Calendar of your batch’s live lectures, with the details and Zoom link of each session.'
 };
 
@@ -57,7 +57,7 @@ export default async function BatchLivePage({ params, searchParams }: BatchLiveP
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           {entitlement.batchName}
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Live Lectures</h1>
+        <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">Live lectures</h1>
         <p className="text-sm text-muted-foreground">
           {entitlement.programName} · Times are in IST. Select a lecture to see its details and join.
           {isReadOnly ? ' This batch is completed, so the meeting links are no longer shown.' : ''}
@@ -77,14 +77,14 @@ export default async function BatchLivePage({ params, searchParams }: BatchLiveP
           {upNext && upNextLecture && upNextDate && (
             <section
               aria-label="Up next"
-              className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <CalendarClock className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Up next</p>
+                  <p className="text-sm text-muted-foreground">Up next</p>
                   <p className="truncate font-semibold text-foreground">{upNext.session.title}</p>
                   <p className="text-sm text-muted-foreground">{formatIstDateTime(upNext.start)}</p>
                 </div>

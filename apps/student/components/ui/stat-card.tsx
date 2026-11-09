@@ -5,37 +5,42 @@ import { cn } from '@/lib/utils';
 
 export type StatTone = 'default' | 'info' | 'success' | 'warning' | 'destructive';
 
-const toneIconClasses: Record<StatTone, string> = {
-  default: 'bg-muted text-muted-foreground',
-  info: 'bg-info/10 text-info',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/10 text-warning',
-  destructive: 'bg-destructive/10 text-destructive'
+const toneText: Record<StatTone, string> = {
+  default: 'text-foreground',
+  info: 'text-info',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive'
 };
 
-export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** What the number counts. Be specific (e.g. "Pending registrations", not "Total"). */
+export interface StatProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** What the number counts. Be specific (e.g. "Problems solved", not "Total"). */
   label: React.ReactNode;
   value: React.ReactNode;
   /** Short qualifier under the value (unit, comparison, or definition). */
   hint?: React.ReactNode;
   icon?: LucideIcon;
+  /** Colours the value only when it reports a state (e.g. overdue); most numbers stay neutral. */
   tone?: StatTone;
 }
 
-export function StatCard({ label, value, hint, icon: Icon, tone = 'default', className, ...props }: StatCardProps) {
+/** A bare label / number / hint stack, for stat strips divided by hairlines. */
+export function Stat({ label, value, hint, icon: Icon, tone = 'default', className, ...props }: StatProps) {
   return (
-    <div className={cn('rounded-lg border bg-card p-4 text-card-foreground shadow-sm', className)} {...props}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        {Icon ? (
-          <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md', toneIconClasses[tone])}>
-            <Icon className="h-4 w-4" aria-hidden="true" />
-          </span>
-        ) : null}
-      </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+    <div className={cn('min-w-0', className)} {...props}>
+      <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+        {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
+        {label}
+      </p>
+      <p className={cn('tabular mt-1 font-display text-2xl font-semibold leading-tight tracking-tight', toneText[tone])}>{value}</p>
+      {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
+}
+
+export type StatCardProps = StatProps;
+
+/** Stat on its own card, for grids where each number stands alone. */
+export function StatCard({ className, ...props }: StatCardProps) {
+  return <Stat className={cn('rounded-lg border border-border bg-card p-4', className)} {...props} />;
 }

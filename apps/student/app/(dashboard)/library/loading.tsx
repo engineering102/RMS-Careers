@@ -15,9 +15,9 @@ export default function LibraryLoading() {
       {/* Category Card Grid Skeleton */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-60 rounded-2xl border border-border/80 bg-card/40 p-6 space-y-6">
+          <div key={i} className="h-60 rounded-lg border border-border/80 bg-card p-6 space-y-6">
             <div className="flex justify-between items-start">
-              <div className="h-12 w-12 rounded-xl bg-secondary" />
+              <div className="h-12 w-12 rounded-lg bg-secondary" />
               <div className="h-8 w-10 rounded bg-secondary/60" />
             </div>
             <div className="space-y-2">

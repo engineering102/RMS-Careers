@@ -56,7 +56,7 @@ export function ProblemRow({ question, position, progress, isSaving = false, onS
 
   return (
     <div
-      className={`${PROBLEM_GRID} border-t border-border px-3 py-2.5 transition-colors first:border-t-0 hover:bg-secondary/60 ${
+      className={`${PROBLEM_GRID} border-t border-border px-3 py-2.5 transition-colors first:border-t-0 hover:bg-accent/50 ${
         isSolved ? 'bg-success/5' : ''
       }`}
     >
@@ -184,7 +184,7 @@ export function ProblemRow({ question, position, progress, isSaving = false, onS
       {/* Difficulty */}
       <div className="hidden justify-center md:flex">
         <span
-          className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${
+          className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold capitalize ${
             DIFFICULTY_PILL[question.difficulty] ?? ''
           }`}
         >

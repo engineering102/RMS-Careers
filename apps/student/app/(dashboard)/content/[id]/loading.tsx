@@ -1,29 +1,19 @@
 import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+/** Same shape as a lesson: back link, type and title, the player, then the completion control. */
 export default function ContentLoading() {
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-12 animate-pulse">
-      {/* Header Skeleton */}
+    <div className="mx-auto max-w-4xl space-y-8 pb-12" role="status" aria-busy="true" aria-label="Loading lesson">
       <div className="space-y-4">
-        <div className="h-6 w-32 bg-secondary/80 rounded" />
-        <div className="flex gap-2">
-          <div className="h-5 w-20 bg-secondary/80 rounded" />
-          <div className="h-5 w-16 bg-secondary/80 rounded" />
-          <div className="h-5 w-24 bg-secondary/80 rounded" />
+        <Skeleton className="h-4 w-28" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-8 w-3/4" />
         </div>
-        <div className="h-8 w-3/4 bg-secondary/80 rounded" />
       </div>
-
-      {/* Main Player / Content Skeleton */}
-      <div className="w-full aspect-video rounded-xl bg-secondary/60 border border-border" />
-
-      {/* Action / Meta Skeleton */}
-      <div className="flex justify-between items-center pt-2">
-        <div className="h-9 w-36 bg-secondary/80 rounded" />
-      </div>
-
-      {/* Description Skeleton */}
-      <div className="h-28 w-full bg-secondary/40 rounded-xl border border-border/60" />
+      <Skeleton className="aspect-video w-full rounded-lg" />
+      <Skeleton className="h-9 w-40" />
     </div>
   );
 }

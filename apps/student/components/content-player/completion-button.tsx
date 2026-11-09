@@ -52,7 +52,7 @@ export function CompletionButton({
     return (
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div
-          className={`inline-flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3.5 py-2 text-xs font-semibold text-success ${
+          className={`inline-flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm font-medium text-success ${
             justCompleted
               ? 'animate-in fade-in-0 zoom-in-[0.96] duration-250 ease-out-quint motion-reduce:zoom-in-100'
               : ''
@@ -63,7 +63,7 @@ export function CompletionButton({
           />
           <span>Completed</span>
           {completedAt && (
-            <span className="text-[11px] font-normal text-success/80 border-l border-success/30 pl-2 ml-0.5">
+            <span className="tabular ml-0.5 border-l border-success/30 pl-2 font-normal text-success">
               {formatDate(completedAt, {
                 month: 'short',
                 day: 'numeric'
@@ -72,8 +72,7 @@ export function CompletionButton({
           )}
         </div>
         {feedback && (
-          <span className="text-xs text-success font-medium flex items-center gap-1 animate-in fade-in-0 slide-in-from-bottom-1 duration-200 delay-75 fill-mode-both ease-out-quint motion-reduce:slide-in-from-bottom-0">
-            <Sparkles className="h-3 w-3" />
+          <span className="text-sm font-medium text-success animate-in fade-in-0 slide-in-from-bottom-1 duration-200 delay-75 fill-mode-both ease-out-quint motion-reduce:slide-in-from-bottom-0">
             {feedback}
           </span>
         )}
@@ -86,24 +85,23 @@ export function CompletionButton({
       <Button
         onClick={handleMarkCompleted}
         disabled={isPending}
-        size="sm"
-        className="bg-success hover:bg-success/90 text-success-foreground font-medium text-xs px-4 h-9 gap-1.5 shadow-sm transition-all"
+        className="gap-2"
       >
         {isPending ? (
           <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>Saving...</span>
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <span>Saving…</span>
           </>
         ) : (
           <>
-            <CheckCircle2 className="h-3.5 w-3.5" />
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             <span>{actionLabel}</span>
           </>
         )}
       </Button>
 
       {feedback && (
-        <span className="text-xs text-warning font-medium">
+        <span role="alert" className="text-sm font-medium text-destructive">
           {feedback}
         </span>
       )}

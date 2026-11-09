@@ -17,8 +17,8 @@ export default function DashboardError({
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-destructive/40 bg-card p-7 shadow-2xl text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive border border-destructive/20">
+      <div className="w-full max-w-md rounded-lg border border-destructive/40 bg-card p-7 shadow-sm text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
           <AlertTriangle className="h-6 w-6" />
         </div>
         <h2 className="mt-4 text-xl font-bold text-foreground">Unable to load dashboard</h2>

@@ -13,10 +13,11 @@ import { ALL_CONTENT_TYPES } from '@/lib/db/queries/library';
 vi.mock('server-only', () => ({}));
 
 describe('My Library categories', () => {
-  it('covers every library content type exactly once, each with its own theme', () => {
+  it('covers every library content type exactly once, each recognisable by its own icon', () => {
     expect(LIBRARY_CATEGORIES.map((c) => c.type).sort()).toEqual([...ALL_CONTENT_TYPES].sort());
-    const tiles = LIBRARY_CATEGORIES.map((c) => CATEGORY_THEMES[c.type].iconTile);
-    expect(new Set(tiles).size).toBe(tiles.length);
+    // Categories are told apart by icon and name, not colour (colour is reserved for state).
+    const icons = LIBRARY_CATEGORIES.map((c) => CATEGORY_THEMES[c.type].icon);
+    expect(new Set(icons).size).toBe(icons.length);
   });
 
   it('resolves only known category types (unknown ?type= falls back to the hub)', () => {

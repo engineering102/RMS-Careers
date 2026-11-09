@@ -1,9 +1,10 @@
+import { BrandMark } from '@/components/shell/brand-mark';
 import Link from 'next/link';
 import { validatePasswordResetToken } from '@/lib/db/password-recovery';
 import { ResetPasswordForm } from './reset-password-form';
 
 export const metadata = {
-  title: 'Set New Password — RMS Student Portal',
+  title: 'Set a new password — RMS Student Portal',
   description: 'Set a new password for your RMS Careers student account.'
 };
 
@@ -35,17 +36,20 @@ export default async function ResetPasswordPage({
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center p-5 bg-background text-foreground">
-      <section className="w-full max-w-md rounded-2xl border border-input bg-card p-7 shadow-2xl">
-        <p className="text-sm font-semibold tracking-wider text-primary uppercase">RMS Careers</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">Set new password</h1>
-        <p className="mt-2 text-foreground/80">Choose a secure password for your Student Portal account.</p>
+    <main className="bg-paper grid min-h-dvh place-items-center bg-background p-5 text-foreground">
+      <section className="w-full max-w-md rounded-lg border border-border bg-card p-7 shadow-sm sm:p-8">
+        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <BrandMark />
+          RMS Careers
+        </p>
+        <h1 className="mt-6 text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight">Set new password</h1>
+        <p className="mt-2 text-foreground">Choose a secure password for your Student Portal account.</p>
 
         <div className="mt-7">
           {validationResult.valid ? (
             <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-background/70 p-3 text-sm text-foreground/80">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Account</p>
+              <div className="rounded-lg border border-border bg-background/70 p-3 text-sm text-foreground">
+                <p className="text-xs text-muted-foreground font-semibold">Account</p>
                 <p className="font-medium text-foreground mt-0.5">{validationResult.email}</p>
               </div>
               <ResetPasswordForm token={token!} />
@@ -53,7 +57,7 @@ export default async function ResetPasswordPage({
           ) : (
             <div
               role="alert"
-              className="rounded-xl border border-destructive/50 bg-destructive/10 p-5 text-sm text-foreground space-y-3"
+              className="rounded-lg border border-destructive/50 bg-destructive/10 p-5 text-sm text-foreground space-y-3"
             >
               <p className="font-semibold text-foreground">
                 {validationResult.code === 'EXPIRED'

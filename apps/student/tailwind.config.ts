@@ -2,7 +2,11 @@ import type { Config } from 'tailwindcss';
 import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
-  darkMode: ['class'],
+  // dark: follows the colour mode on any ancestor (see app/globals.css): explicit dark, or system + OS dark.
+  darkMode: [
+    'variant',
+    ['&:is([data-mode="dark"] *)', '@media (prefers-color-scheme: dark) { &:is([data-mode="system"] *) }']
+  ],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -10,6 +14,8 @@ export default {
     './src/**/*.{ts,tsx}'
   ],
   prefix: '',
+  // hover: styles apply only on devices that really hover, so a tap on a phone never leaves a stuck hover state.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     container: {
       center: true,
@@ -20,7 +26,11 @@ export default {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          strong: 'hsl(var(--border-strong))'
+        },
+        faint: 'hsl(var(--faint))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
@@ -68,7 +78,9 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
-        mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono]
+        mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono],
+        // Page titles and large numbers: the theme's sans, or Transcript's serif.
+        display: ['var(--font-display)', ...defaultTheme.fontFamily.sans]
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -84,6 +96,7 @@ export default {
       // Named so `duration-250` works for transitions and animate-in alike (an arbitrary `duration-[250ms]`
       // is ambiguous between the two plugins and Tailwind drops it).
       transitionDuration: {
+        125: '125ms',
         250: '250ms'
       },
       // Half step used by cards (p-4.5 = 18px). Tailwind 3 has no 4.5 by default, so the class silently

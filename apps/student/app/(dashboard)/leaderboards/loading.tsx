@@ -11,18 +11,18 @@ export default function LeaderboardsLoading() {
             <div className="h-8 w-64 rounded bg-secondary" />
             <div className="h-4 w-96 max-w-full rounded bg-secondary/60" />
           </div>
-          <div className="h-16 w-56 rounded-xl bg-card border border-border" />
+          <div className="h-16 w-56 rounded-lg bg-card border border-border" />
         </div>
 
         {/* Scope Tabs & Timeframe Skeletons */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-          <div className="h-10 w-64 rounded-xl bg-card border border-border" />
+          <div className="h-10 w-64 rounded-lg bg-card border border-border" />
           <div className="h-10 w-44 rounded-lg bg-card border border-border" />
         </div>
       </div>
 
       {/* Leaderboard Table Skeleton */}
-      <div className="rounded-2xl border border-border bg-card/50 overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="h-12 bg-background/60 border-b border-border" />
         <div className="divide-y divide-border/60">
           {[1, 2, 3, 4, 5, 6, 7].map((i) => (

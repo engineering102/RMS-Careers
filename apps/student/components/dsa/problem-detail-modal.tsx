@@ -13,7 +13,7 @@ import {
   Lightbulb,
   Clock,
   Database,
-  Sparkles
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -165,7 +165,7 @@ export function ProblemDetailModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 aria-label="Close dialog"
               >
                 <X className="h-5 w-5" />
@@ -177,7 +177,7 @@ export function ProblemDetailModal({
               {/* Why this problem comes next in the sheet */}
               {question.sheetNote && (
                 <div className="space-y-1 rounded-lg border border-border bg-secondary/30 px-4 py-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <h4 className="text-xs font-semibold text-muted-foreground">
                     Why this problem
                   </h4>
                   <SheetNote note={question.sheetNote} className="text-xs sm:text-sm" />
@@ -186,7 +186,7 @@ export function ProblemDetailModal({
 
               {/* Problem Statement */}
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <h4 className="text-xs font-semibold text-muted-foreground">
                   Problem Statement
                 </h4>
                 <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed">
@@ -197,7 +197,7 @@ export function ProblemDetailModal({
               {/* Examples */}
               {question.examples && question.examples.length > 0 && (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <h4 className="text-xs font-semibold text-muted-foreground">
                     Examples
                   </h4>
                   <div className="space-y-2.5">
@@ -209,7 +209,7 @@ export function ProblemDetailModal({
                         <p className="text-foreground/80"><span className="text-muted-foreground">Input:</span> <ExampleValue value={ex.input} /></p>
                         <p className="text-success"><span className="text-muted-foreground">Output:</span> <ExampleValue value={ex.output} /></p>
                         {ex.explanation && (
-                          <p className="text-muted-foreground font-sans text-[11px] pt-1 border-t border-border/60">
+                          <p className="text-muted-foreground font-sans text-xs pt-1 border-t border-border/60">
                             {ex.explanation}
                           </p>
                         )}
@@ -223,7 +223,7 @@ export function ProblemDetailModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {question.constraints && question.constraints.length > 0 && (
                   <div className="space-y-1.5">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <h4 className="text-xs font-semibold text-muted-foreground">
                       Constraints
                     </h4>
                     <ul className="list-disc list-inside text-xs text-muted-foreground space-y-0.5">
@@ -235,7 +235,7 @@ export function ProblemDetailModal({
                 )}
 
                 <div className="space-y-1.5">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <h4 className="text-xs font-semibold text-muted-foreground">
                     Target Complexity
                   </h4>
                   <div className="flex flex-col gap-1 text-xs">
@@ -244,8 +244,8 @@ export function ProblemDetailModal({
                       Time: <code className="text-primary">{question.timeComplexity}</code>
                     </span>
                     <span className="flex items-center gap-1.5 text-foreground/80">
-                      <Database className="h-3.5 w-3.5 text-cyan-400" />
-                      Space: <code className="text-cyan-300">{question.spaceComplexity}</code>
+                      <Database className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                      Space: <code className="text-foreground">{question.spaceComplexity}</code>
                     </span>
                   </div>
                 </div>
@@ -280,7 +280,7 @@ export function ProblemDetailModal({
                       <Lightbulb className="h-3.5 w-3.5" />
                       {showHints ? 'Hide Hints & Approach' : 'Show Hints & Approach'}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">{showHints ? '▲' : '▼'}</span>
+                    <span className="text-xs text-muted-foreground">{showHints ? '▲' : '▼'}</span>
                   </button>
                   {showHints && (
                     <div className="mt-3 pt-2 border-t border-border space-y-2 text-xs text-foreground/80 animate-in fade-in-0 slide-in-from-top-1 duration-200 ease-out-quint motion-reduce:slide-in-from-top-0">
@@ -300,7 +300,7 @@ export function ProblemDetailModal({
 
               {/* Submission Form */}
               <form onSubmit={handleSubmit} className="space-y-4 pt-4 border-t border-border">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5 text-success" />
                   <span>Record Solution & Notes</span>
                 </h4>
@@ -341,7 +341,7 @@ export function ProblemDetailModal({
                         : 'border border-success/30 bg-success/10 text-success'
                     }`}
                   >
-                    {!feedback.isError && <Sparkles className="h-3.5 w-3.5 animate-pop motion-reduce:animate-none" />}
+                    {!feedback.isError && <Check className="h-3.5 w-3.5 animate-pop motion-reduce:animate-none" aria-hidden="true" />}
                     <span>{feedback.text}</span>
                   </div>
                 )}
@@ -401,11 +401,11 @@ export function ProblemDetailModal({
   return (
     <DialogPrimitive.Root open={isOpen} onOpenChange={(next) => !next && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 ease-out-quint">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-y-auto data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-150 ease-out-quint">
           <DialogPrimitive.Content
             aria-describedby={undefined}
             onInteractOutside={(event) => event.preventDefault()}
-            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden my-auto focus:outline-none ease-out-quint data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97] data-[state=closed]:duration-150 motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100"
+            className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-xl border border-border bg-card shadow-2xl overflow-hidden my-auto focus:outline-none ease-out-quint data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=open]:duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97] data-[state=closed]:duration-150 motion-reduce:data-[state=open]:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100"
           >
             {body}
           </DialogPrimitive.Content>

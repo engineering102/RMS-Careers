@@ -5,30 +5,23 @@ import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
   icon?: LucideIcon;
+  /** Names the space, e.g. "No tests yet". */
   title: string;
+  /** One sentence on what will appear here and how it gets there. */
   description: string;
   action?: React.ReactNode;
   className?: string;
 }
 
-// Same API as apps/admin/components/admin/empty-state.tsx.
+// Same API as apps/admin/components/admin/empty-state.tsx. Quiet by design: a plain icon, no illustration tile.
 export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
   return (
-    <div
-      className={cn(
-        'flex min-h-[280px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center animate-in fade-in-50',
-        className
-      )}
-    >
-      <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-        {Icon && (
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <Icon className="h-6 w-6" aria-hidden="true" />
-          </div>
-        )}
-        <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
-        <p className="mb-4 mt-1.5 text-sm text-muted-foreground">{description}</p>
-        {action && <div>{action}</div>}
+    <div className={cn('flex flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-14 text-center', className)}>
+      <div className="mx-auto flex max-w-sm flex-col items-center">
+        {Icon && <Icon className="mb-3 h-5 w-5 text-faint" aria-hidden="true" />}
+        <h3 className="text-[15px] font-semibold text-foreground">{title}</h3>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        {action && <div className="mt-5">{action}</div>}
       </div>
     </div>
   );

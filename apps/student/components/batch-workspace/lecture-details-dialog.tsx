@@ -17,7 +17,7 @@ export function LectureDetailsDialog({ event, lecture, onOpenChange }: LectureDe
   const open = Boolean(event && lecture);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-md gap-0 overflow-y-auto rounded-xl p-0">
+      <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-md gap-0 overflow-y-auto rounded-lg p-0">
         {event && lecture && <DetailsBody event={event} lecture={lecture} />}
       </DialogContent>
     </Dialog>

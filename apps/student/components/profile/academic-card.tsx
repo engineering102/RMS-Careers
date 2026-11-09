@@ -17,11 +17,11 @@ interface AcademicCardProps {
 
 export function AcademicCard({ academic }: AcademicCardProps) {
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-4 sm:p-6 shadow-xl">
+    <div className="rounded-lg border border-border bg-card p-4 sm:p-6 shadow-sm">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
             <GraduationCap className="h-5 w-5" />
           </div>
           <div>
@@ -39,7 +39,7 @@ export function AcademicCard({ academic }: AcademicCardProps) {
       {/* Field Grid */}
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* College Name */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Building2 className="h-3.5 w-3.5 text-primary" />
             <span>Institution</span>
@@ -51,9 +51,9 @@ export function AcademicCard({ academic }: AcademicCardProps) {
         </div>
 
         {/* Branch / Department */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <GraduationCap className="h-3.5 w-3.5 text-indigo-400" />
+            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             <span>Discipline / Branch</span>
           </div>
           <p className="mt-1 text-sm font-semibold text-foreground">
@@ -62,9 +62,9 @@ export function AcademicCard({ academic }: AcademicCardProps) {
         </div>
 
         {/* Academic Year */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5 text-purple-400" />
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             <span>Academic Year</span>
           </div>
           <p className="mt-1 text-sm font-semibold text-foreground">
@@ -73,7 +73,7 @@ export function AcademicCard({ academic }: AcademicCardProps) {
         </div>
 
         {/* Roll Number */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Hash className="h-3.5 w-3.5 text-warning" />
             <span>College Roll Number</span>
@@ -84,23 +84,23 @@ export function AcademicCard({ academic }: AcademicCardProps) {
         </div>
 
         {/* Official Email */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Mail className="h-3.5 w-3.5 text-muted-foreground" />
             <span>Primary Email</span>
           </div>
-          <p className="mt-1 text-sm font-medium text-foreground/80 truncate">
+          <p className="mt-1 text-sm font-medium text-foreground truncate">
             {academic.email}
           </p>
         </div>
 
         {/* Phone */}
-        <div className="rounded-xl border border-border/80 bg-background/40 p-4">
+        <div className="rounded-lg border border-border/80 bg-background/40 p-4">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <Phone className="h-3.5 w-3.5 text-muted-foreground" />
             <span>Contact Phone</span>
           </div>
-          <p className="mt-1 text-sm font-medium text-foreground/80">
+          <p className="mt-1 text-sm font-medium text-foreground">
             {academic.phone || 'Not Registered'}
           </p>
         </div>

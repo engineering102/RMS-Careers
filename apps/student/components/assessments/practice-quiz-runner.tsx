@@ -127,19 +127,19 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-xs font-mono font-medium bg-primary/10 text-primary border border-primary/20">
+          <span className="rounded bg-muted px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
             {quiz.programCode || quiz.programName}
           </span>
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
-            Practice (Untimed)
+          <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+            Practice, untimed
           </span>
         </div>
       </div>
 
       {/* Quiz Header Hero */}
-      <div className="border border-border bg-card/60 rounded-xl p-6 sm:p-8 space-y-4">
+      <div className="border border-border bg-card/60 rounded-lg p-6 sm:p-8 space-y-4">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">
             {quiz.title}
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
@@ -150,7 +150,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
 
         <div className="pt-4 border-t border-border flex flex-wrap items-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <HelpCircle className="h-4 w-4 text-purple-400" />
+            <HelpCircle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <span>
               {totalQuestions} {totalQuestions === 1 ? 'Question' : 'Questions'}
             </span>
@@ -193,7 +193,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div
-                  className={`p-3 rounded-xl border ${
+                  className={`p-3 rounded-lg border ${
                     submissionResult.isPassed
                       ? 'bg-success/20 border-success/30 text-success'
                       : 'bg-warning/20 border-warning/30 text-warning'
@@ -222,10 +222,10 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
 
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <div className="text-2xl font-black text-foreground">
+                  <div className="text-2xl font-semibold text-foreground">
                     {submissionResult.percentage}%
                   </div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     {submissionResult.score} / {submissionResult.maxScore} points
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                     <span>+{submissionResult.xpAwarded} XP Earned</span>
                   </div>
                 ) : submissionResult.isPassed ? (
-                  <div className="px-2.5 py-1 rounded bg-secondary border border-input text-muted-foreground text-[11px]">
+                  <div className="px-2.5 py-1 rounded bg-secondary border border-input text-muted-foreground text-xs">
                     XP already claimed
                   </div>
                 ) : null}
@@ -260,7 +260,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                 <Button
                   asChild
                   variant="outline"
-                  className="border-input bg-card/60 hover:bg-secondary text-foreground/80 text-xs"
+                  className="border-input bg-card/60 hover:bg-accent text-foreground/80 text-xs"
                 >
                   <Link href="/assessments">Assessments Catalog</Link>
                 </Button>
@@ -330,13 +330,13 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                       {qIdx + 1}
                     </span>
 
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-input/80">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-input/80">
                       {question.questionType === 'single_choice'
                         ? 'Single Choice'
                         : 'Multiple Choice'}
                     </span>
 
-                    <span className="text-[11px] text-muted-foreground font-medium">
+                    <span className="text-xs text-muted-foreground font-medium">
                       {question.points} {question.points === 1 ? 'Point' : 'Points'}
                     </span>
                   </div>
@@ -370,7 +370,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
 
                     // Review mode evaluations
                     let optionClasses =
-                      'border-border bg-background/40 text-foreground/80 hover:border-input hover:bg-secondary/40';
+                      'border-border bg-background/40 text-foreground/80 hover:border-input hover:bg-muted/60';
 
                     if (submissionResult && grading && submissionResult.answerKeyHidden) {
                       // Answer key withheld by the quiz policy: show only the student's own selection.
@@ -427,7 +427,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
                         {submissionResult && grading && (
                           <div className="shrink-0 text-xs">
                             {grading.correctOptionIds.includes(option.id) && (
-                              <span className="text-[11px] font-semibold text-success">
+                              <span className="text-xs font-semibold text-success">
                                 Correct Answer
                               </span>
                             )}
@@ -458,7 +458,7 @@ export function PracticeQuizRunner({ quiz, initialBatchId }: PracticeQuizRunnerP
 
       {/* Submission Footer Bar (Active mode) */}
       {!submissionResult && (
-        <div className="sticky bottom-4 z-20 p-4 rounded-xl border border-border bg-card/90 backdrop-blur-md shadow-xl flex items-center justify-between gap-4">
+        <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] z-20 flex items-center justify-between gap-4 rounded-lg border border-border bg-card/95 p-4 shadow-md backdrop-blur-md md:bottom-4">
           <div className="text-xs text-muted-foreground">
             <span className="font-semibold text-foreground">{answeredQuestionsCount}</span> of{' '}
             <span className="font-semibold text-foreground">{totalQuestions}</span> answered

@@ -14,7 +14,7 @@ interface ActivityInsightsCardProps {
 export const ACTIVITY_TYPE_SWATCH: Record<ActivityType, string> = {
   dsa_solved: 'bg-primary',
   quiz_completed: 'bg-warning',
-  lecture_completed: 'bg-purple-400',
+  lecture_completed: 'bg-muted-foreground',
   assignment_approved: 'bg-success',
   external_assessment: 'bg-info'
 };
@@ -50,7 +50,7 @@ export function ActivityInsightsCard({ insights }: ActivityInsightsCardProps) {
   const firstWeek = weekly.weeks[0];
 
   return (
-    <Card className="border-border bg-card/60" data-testid="activity-insights">
+    <Card className="border-border bg-card" data-testid="activity-insights">
       <CardHeader className="flex flex-row items-center gap-2 pb-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
           <BarChart3 className="h-4 w-4" />
@@ -99,7 +99,7 @@ export function ActivityInsightsCard({ insights }: ActivityInsightsCardProps) {
               );
             })}
           </ol>
-          <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>{firstWeek ? shortWeekLabel(firstWeek.weekStartIst) : ''}</span>
             <span>This week</span>
           </div>

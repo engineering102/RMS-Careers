@@ -8,7 +8,6 @@ import {
   Clock,
   Flame,
   Award,
-  Sparkles,
   Check,
   CheckCheck,
   ExternalLink,
@@ -82,13 +81,13 @@ export function NotificationsView({
       case 'ASSESSMENT_DUE_SOON':
         return <Clock className="h-5 w-5 text-warning" />;
       case 'STREAK_MILESTONE':
-        return <Flame className="h-5 w-5 text-orange-400" />;
+        return <Flame className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
       case 'MILESTONE_UNLOCKED':
-        return <Award className="h-5 w-5 text-purple-400" />;
+        return <Award className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
       case 'STUDENT_ACTIVATED':
-        return <Sparkles className="h-5 w-5 text-primary" />;
+        return <Bell className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
       case 'CONTENT_PUBLISHED':
-        return <BookOpen className="h-5 w-5 text-info" />;
+        return <BookOpen className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
       default:
         return <Bell className="h-5 w-5 text-muted-foreground" />;
     }
@@ -159,12 +158,12 @@ export function NotificationsView({
           className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
             filter === 'all'
               ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
           }`}
         >
           <span>All</span>
           <span
-            className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+            className={`rounded-full px-1.5 py-0.2 text-xs ${
               filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
             }`}
           >
@@ -178,13 +177,13 @@ export function NotificationsView({
           className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-medium transition active:scale-[0.97] motion-reduce:active:scale-100 ${
             filter === 'unread'
               ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
           }`}
         >
           <span>Unread</span>
           {unreadCount > 0 && (
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+              className={`rounded-full px-1.5 py-0.2 text-xs ${
                 filter === 'unread' ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'
               }`}
             >
@@ -196,8 +195,8 @@ export function NotificationsView({
 
       {/* 3. Notification List or Empty State */}
       {filteredNotifications.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card/40 p-12 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/70 border border-input/60 text-muted-foreground mb-4">
+        <div className="rounded-lg border border-border bg-card p-12 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-secondary/70 border border-input/60 text-muted-foreground mb-4">
             <Bell className="h-7 w-7 text-muted-foreground" />
           </div>
           <h3 className="text-base font-semibold text-foreground">
@@ -226,15 +225,15 @@ export function NotificationsView({
           {filteredNotifications.map((n) => (
             <div
               key={n.id}
-              className={`group relative rounded-xl border p-4 sm:p-5 transition-all ${
+              className={`group relative rounded-lg border p-4 sm:p-5 transition-all ${
                 !n.isRead
                   ? 'border-primary/30 bg-primary/5 shadow-md shadow-primary/30'
-                  : 'border-border bg-card/40 hover:bg-card/70'
+                  : 'border-border bg-card hover:bg-card/70'
               }`}
             >
               <div className="flex items-start gap-4">
                 {/* Event Type Icon */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/80 border border-input/60 shadow-sm mt-0.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/80 border border-input/60 shadow-sm mt-0.5">
                   {getEventIcon(n.type)}
                 </div>
 
@@ -253,7 +252,7 @@ export function NotificationsView({
                         <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
                       )}
                     </div>
-                    <span className="text-[11px] text-muted-foreground shrink-0">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {formatTimestamp(n.createdAt)}
                     </span>
                   </div>

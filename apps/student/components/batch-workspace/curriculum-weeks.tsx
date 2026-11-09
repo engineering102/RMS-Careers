@@ -28,6 +28,9 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
   const week = weeks[safeIndex];
   const sections = useMemo(() => groupWeekSections(week), [week]);
   const [openSections, setOpenSections] = useState<Set<WeekSectionKey>>(() => defaultOpenSections(sections));
+  // The week fades in only when the student switches weeks, never on first paint (content already on screen
+  // should not animate in, and an opacity-0 start delays Largest Contentful Paint).
+  const [hasSwitchedWeek, setHasSwitchedWeek] = useState(false);
 
   const sharedTopic = weekTopic(week);
   const allOpen = sections.length > 0 && sections.every((s) => openSections.has(s.key));
@@ -38,6 +41,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
     const next = Math.min(Math.max(0, index), weeks.length - 1);
     if (next === safeIndex) return;
     setWeekIndex(next);
+    setHasSwitchedWeek(true);
     setOpenSections(defaultOpenSections(groupWeekSections(weeks[next])));
     // Keep the week in the URL so a reload or shared link returns to it, without a server round-trip.
     const url = new URL(window.location.href);
@@ -55,7 +59,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       <WeekNavigator
         weeks={weeks}
         weekIndex={safeIndex}
@@ -67,7 +71,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
             onClick={() => setOpenSections(allOpen ? new Set() : new Set(sections.map((s) => s.key)))}
             aria-label={allOpen ? 'Collapse all sections' : 'Expand all sections'}
             title={allOpen ? 'Collapse all' : 'Expand all'}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
           </button>
@@ -75,7 +79,10 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
       />
 
       {/* key: remount on week change so the new week fades in instead of swapping rows in place */}
-      <div key={week.weekNumber} className="animate-in fade-in-0 duration-200 motion-reduce:animate-none">
+      <div
+        key={week.weekNumber}
+        className={hasSwitchedWeek ? 'animate-in fade-in-0 duration-200 motion-reduce:animate-none' : undefined}
+      >
         {sections.map((section) => (
           <SectionAccordion
             key={section.key}
@@ -106,7 +113,7 @@ function WeekLink({ week, direction, onClick }: { week: CurriculumWeek; directio
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 ${
+      className={`group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 ${
         isNext ? 'col-start-2 justify-end border-l border-border text-right' : 'text-left'
       }`}
     >
@@ -117,10 +124,10 @@ function WeekLink({ week, direction, onClick }: { week: CurriculumWeek; directio
         />
       )}
       <span className="min-w-0">
-        <span className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="block text-xs text-muted-foreground">
           {isNext ? 'Up next' : 'Previous'}
         </span>
-        <span className="block truncate text-sm font-semibold text-foreground">
+        <span className="block truncate text-sm font-medium text-foreground">
           Week {week.weekNumber}
           {topic && <span className="hidden font-normal text-muted-foreground sm:inline"> · {topic}</span>}
         </span>

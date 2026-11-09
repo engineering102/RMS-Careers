@@ -5,7 +5,7 @@ import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { NotificationsView } from '@/components/notifications/notifications-view';
 
 export const metadata = {
-  title: 'Notifications & Alerts — RMS Student Portal',
+  title: 'Notifications — RMS Student Portal',
   description: 'Stay updated on project reviews, assessments due, streaks, and batch milestones.'
 };
 

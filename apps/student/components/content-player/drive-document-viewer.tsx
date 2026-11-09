@@ -50,11 +50,11 @@ export function DriveDocumentViewer({ title, kind, embedUrl, sourceUrl }: DriveD
   return (
     <div
       ref={containerRef}
-      className="flex flex-col overflow-hidden rounded-xl border border-border bg-card/60 shadow-sm"
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-card"
     >
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="shrink-0 rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2 text-cyan-400">
+          <div className="shrink-0 rounded-md border border-border bg-muted p-2 text-muted-foreground">
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -69,7 +69,7 @@ export function DriveDocumentViewer({ title, kind, embedUrl, sourceUrl }: DriveD
             size="sm"
             variant="outline"
             onClick={toggleFullscreen}
-            className="hidden gap-1.5 border-input bg-secondary/80 text-xs text-foreground hover:bg-accent sm:inline-flex"
+            className="hidden sm:inline-flex"
           >
             {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
             <span>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</span>
@@ -113,7 +113,7 @@ export function DriveDocumentViewer({ title, kind, embedUrl, sourceUrl }: DriveD
       </div>
 
       {!isFullscreen && (
-        <p className="border-t border-border px-4 py-2.5 text-[11px] text-muted-foreground sm:px-5">
+        <p className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground sm:px-5">
           Seeing a Google sign-in or “request access” screen? The file isn’t shared publicly yet — use{' '}
           <span className="font-medium text-foreground/80">New tab</span> or let your instructor know.
         </p>

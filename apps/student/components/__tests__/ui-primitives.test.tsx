@@ -30,7 +30,7 @@ describe('UI primitives (Phase 1.2)', () => {
       </Alert>
     );
     expect(markup).toContain('role="alert"');
-    expect(markup).toContain('border-destructive/50');
+    expect(markup).toContain('border-destructive/30');
     expect(markup).toContain('Sign-in failed');
   });
 
@@ -87,7 +87,8 @@ describe('UI primitives (Phase 1.2)', () => {
     expect(markup).toContain('Pending registrations');
     expect(markup).toContain('>2<');
     expect(markup).toContain('Awaiting batch');
-    expect(markup).toContain('bg-warning/10');
+    // The tone colours the value (state), not a decorative icon tile.
+    expect(markup).toContain('text-warning');
     expect(markup).toContain('aria-hidden="true"');
   });
 

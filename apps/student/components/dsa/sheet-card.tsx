@@ -21,7 +21,7 @@ export function SheetCard({ card, href, progressUnavailable = false }: SheetCard
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col rounded-xl border border-border bg-card p-5 transition hover:border-input hover:bg-secondary/40 active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex h-full flex-col rounded-lg border border-border bg-card p-5 transition hover:border-input hover:bg-muted/60 active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <Icon className="h-3.5 w-3.5" aria-hidden />

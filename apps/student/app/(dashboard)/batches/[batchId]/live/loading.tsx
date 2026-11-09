@@ -20,7 +20,7 @@ export default function BatchLiveLoading() {
         </div>
         <div className="h-9 w-48 rounded-lg bg-secondary/60" />
       </div>
-      <div className="h-[32rem] rounded-xl border border-border bg-card/40" />
+      <div className="h-[32rem] rounded-lg border border-border bg-card" />
     </div>
   );
 }

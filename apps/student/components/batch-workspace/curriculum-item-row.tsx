@@ -1,20 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import {
-  Video,
-  FileText,
-  Code2,
-  HelpCircle,
-  FolderGit2,
-  Bookmark,
-  ExternalLink,
-  Clock,
-  Lock,
-  AlertCircle,
-  ArrowRight,
-  Check
-} from 'lucide-react';
+import { ContentTypeTag } from '@/components/ui/content-type-tag';
+import { contentTypeMeta } from '@/lib/content/content-types';
+import { ArrowRight, Clock } from 'lucide-react';
+import { StatusMark, type ItemStatus } from '@/components/ui/status-mark';
+import { dueLabel } from '@/lib/format/relative-dates';
+import { cn } from '@/lib/utils';
 import type { CurriculumItem } from '@/lib/types/batch-workspace';
 import type { ContentType } from '@/lib/types/library';
 import { formatDate } from '@/lib/format/datetime';
@@ -38,33 +29,21 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
   switch (type) {
     case 'lecture':
       return {
-        label: 'Lecture',
-        icon: Video,
-        badgeClass: 'border-primary/30 bg-primary/10 text-primary',
         actionLabel: 'Watch Lecture',
         defaultHref: contentHref
       };
     case 'notes':
       return {
-        label: 'Notes',
-        icon: FileText,
-        badgeClass: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
         actionLabel: 'Read Notes',
         defaultHref: contentHref
       };
     case 'dsa_sheet':
       return {
-        label: 'DSA Practice',
-        icon: Code2,
-        badgeClass: 'border-success/30 bg-success/10 text-success',
         actionLabel: 'Solve Problem',
         defaultHref: buildDsaHref(slug, batchId)
       };
     case 'quiz':
       return {
-        label: 'Quiz',
-        icon: HelpCircle,
-        badgeClass: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
         actionLabel: 'Take Quiz',
         // The runner accepts the content item id; the batch id attributes the attempt to this cohort.
         defaultHref: contentItemId
@@ -73,17 +52,11 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
       };
     case 'project':
       return {
-        label: 'Project',
-        icon: FolderGit2,
-        badgeClass: 'border-warning/30 bg-warning/10 text-warning',
         actionLabel: 'View Project',
         defaultHref: contentHref
       };
     case 'external_test':
       return {
-        label: 'External Test',
-        icon: ExternalLink,
-        badgeClass: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
         actionLabel: 'View Test',
         // Sat on the external platform; the link, window and imported result live on Assessments.
         defaultHref: '/assessments?type=external'
@@ -91,166 +64,97 @@ function getContentTypeMeta(type: ContentType, contentItemId?: string, batchId?:
     case 'resource':
     default:
       return {
-        label: 'Resource',
-        icon: Bookmark,
-        badgeClass: 'border-input bg-secondary text-foreground/80',
         actionLabel: 'Open Resource',
         defaultHref: contentHref
       };
   }
 }
 
-function formatRelativeDue(dueAt: Date | null, isCompleted: boolean) {
-  if (!dueAt) return null;
-  if (isCompleted) {
-    return { text: 'Completed', isOverdue: false, isUrgent: false };
-  }
-
-  const now = new Date();
-  const due = new Date(dueAt);
-  const diffMs = due.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMs < 0) {
-    return { text: 'Overdue', isOverdue: true, isUrgent: true };
-  } else if (diffDays <= 0) {
-    return { text: 'Due Today', isOverdue: false, isUrgent: true };
-  } else if (diffDays === 1) {
-    return { text: 'Due Tomorrow', isOverdue: false, isUrgent: true };
-  } else if (diffDays <= 3) {
-    return { text: `Due in ${diffDays} days`, isOverdue: false, isUrgent: true };
-  } else {
-    return {
-      text: `Due ${formatDate(due, { month: 'short', day: 'numeric' })}`,
-      isOverdue: false,
-      isUrgent: false
-    };
-  }
-}
-
 export function CurriculumItemRow({ item, showTopic = true, showType = true }: CurriculumItemRowProps) {
   const meta = getContentTypeMeta(item.contentType, item.contentItemId, item.batchId, item.slug);
-  const Icon = meta.icon;
   const duration = item.metadata.durationMinutes;
-  const dueInfo = formatRelativeDue(item.dueAt, item.isCompleted);
+  const isRevision = item.status === 'needs_revision';
+  const isReview = item.status === 'in_review';
 
-  // One status chip, only when there is something to say (a plain not-started item needs none).
-  // Completed items carry the row's check mark instead of a chip.
-  const status = item.isCompleted
-    ? null
-    : item.status === 'needs_revision'
-    ? { label: 'Needs revision', icon: AlertCircle, className: 'border-destructive/30 bg-destructive/10 text-destructive' }
-    : item.status === 'in_review'
-    ? { label: 'In review', icon: Clock, className: 'border-warning/30 bg-warning/10 text-warning' }
+  const mark: ItemStatus = item.isCompleted
+    ? 'done'
     : item.isLocked
-    ? {
-        label: item.availableFrom ? `Unlocks ${formatDate(item.availableFrom, { month: 'short', day: 'numeric' })}` : 'Locked',
-        icon: Lock,
-        className: 'border-input bg-secondary text-muted-foreground'
-      }
-    : dueInfo
-    ? {
-        label: dueInfo.text,
-        icon: dueInfo.isOverdue ? AlertCircle : Clock,
-        className: dueInfo.isOverdue
-          ? 'border-destructive/30 bg-destructive/10 text-destructive'
-          : dueInfo.isUrgent
-          ? 'border-warning/30 bg-warning/10 text-warning'
-          : 'border-input bg-secondary text-muted-foreground'
-      }
-    : null;
+      ? 'locked'
+      : isRevision
+        ? 'revise'
+        : isReview
+          ? 'current'
+          : 'todo';
 
-  const actionLabel = item.isCompleted
-    ? 'Review'
-    : item.status === 'needs_revision'
-    ? 'Revise'
-    : item.status === 'in_review'
-    ? 'View'
-    : meta.actionLabel;
+  // One short status, in words, only when there is something to say. Colour only for state that needs action.
+  let status: { text: string; className: string } | null = null;
+  if (!item.isCompleted) {
+    if (isRevision) status = { text: 'Needs revision', className: 'font-medium text-destructive' };
+    else if (isReview) status = { text: 'In review', className: 'text-muted-foreground' };
+    else if (item.isLocked)
+      status = {
+        text: item.availableFrom ? `Opens ${formatDate(item.availableFrom, { day: 'numeric', month: 'short' })}` : 'Locked',
+        className: 'text-muted-foreground'
+      };
+    else if (item.dueAt) {
+      const due = dueLabel(item.dueAt);
+      status =
+        due.tone === 'overdue'
+          ? { text: 'Overdue', className: 'font-medium text-destructive' }
+          : {
+              text: `Due ${due.text.replace(/^(Today|Tomorrow)$/, (m) => m.toLowerCase())}`,
+              className: due.tone === 'soon' ? 'font-medium text-warning' : 'text-muted-foreground'
+            };
+    }
+  }
 
-  // A list row inside a section panel, styled like a DSA problem row.
+  const actionLabel = item.isCompleted ? 'Review' : isRevision ? 'Revise' : isReview ? 'View' : meta.actionLabel;
+  const isPrimaryAction = !item.isCompleted && !isReview;
+
   return (
     <div
-      className={`flex flex-col gap-3 border-t border-border px-3 py-3 transition-colors first:border-t-0 sm:flex-row sm:items-center sm:gap-4 ${
-        item.isCompleted
-          ? 'bg-success/5'
-          : item.status === 'needs_revision' || item.isOverdue
-          ? 'bg-destructive/5'
-          : item.isLocked
-          ? ''
-          : 'hover:bg-secondary/60'
-      }`}
+      className={cn(
+        'flex flex-col gap-3 border-t border-border px-3 py-3 transition-colors first:border-t-0 sm:flex-row sm:items-center sm:gap-4 sm:px-4',
+        !item.isLocked && 'hover:bg-accent/40'
+      )}
     >
-      <div className={`flex min-w-0 flex-1 items-start gap-3 ${item.isLocked ? 'opacity-75' : ''}`}>
-        {/* Status mark: a filled check once done, a lock until it opens, the content type otherwise */}
-        {item.isCompleted ? (
-          <span
-            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-success bg-success text-success-foreground"
-            role="img"
-            aria-label="Completed"
-          >
-            <Check className="h-3.5 w-3.5" strokeWidth={3} />
-          </span>
-        ) : (
-          <span
-            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border border-input text-muted-foreground"
-            aria-hidden="true"
-          >
-            {item.isLocked ? <Lock className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
-          </span>
-        )}
+      <div className={cn('flex min-w-0 flex-1 items-start gap-3', item.isLocked && 'opacity-70')}>
+        <StatusMark status={mark} label={mark === 'todo' ? null : undefined} className="mt-0.5" />
 
-        {/* Title, facts, description */}
         <div className="min-w-0 flex-1 space-y-1">
-          <h4 className="text-sm font-medium leading-snug text-foreground line-clamp-2">{item.title}</h4>
+          <h4 className={cn('line-clamp-2 text-sm font-medium leading-snug', item.isCompleted ? 'text-muted-foreground' : 'text-foreground')}>
+            {item.title}
+          </h4>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            {showType && (
-              <Badge variant="outline" className={`text-[10px] py-0 px-1.5 ${meta.badgeClass}`}>
-                {meta.label}
-              </Badge>
-            )}
-            <span className={item.isRequired ? 'font-medium text-warning' : ''}>
-              {item.isRequired ? 'Required' : 'Optional'}
-            </span>
-            {item.isArchived && <span>· Archived</span>}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {showType && <ContentTypeTag type={item.contentType} />}
+            {!item.isRequired && <span>Optional</span>}
+            {item.isArchived && <span>Archived</span>}
             {duration ? (
               <span className="inline-flex items-center gap-1">
-                <span aria-hidden="true">·</span>
                 <Clock className="h-3 w-3" aria-hidden="true" />
                 {duration} min
               </span>
             ) : null}
-            {showTopic && item.metadata.topic && <span className="truncate">· {item.metadata.topic}</span>}
+            {showTopic && item.metadata.topic && <span className="truncate">{item.metadata.topic}</span>}
           </div>
 
-          {item.description && (
-            <p className="text-xs leading-relaxed text-muted-foreground line-clamp-1">{item.description}</p>
-          )}
+          {item.description && <p className="line-clamp-1 text-xs leading-relaxed text-muted-foreground">{item.description}</p>}
         </div>
       </div>
 
-      {/* Status + action */}
-      <div className="flex shrink-0 items-center justify-between gap-3 pl-8 sm:justify-end sm:pl-0">
-        {status ? (
-          <span
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${status.className}`}
-          >
-            <status.icon className="h-3 w-3" aria-hidden="true" />
-            {status.label}
-          </span>
-        ) : (
-          <span aria-hidden="true" />
-        )}
+      <div className="flex shrink-0 items-center justify-between gap-4 pl-[30px] sm:justify-end sm:pl-0">
+        {status ? <span className={cn('tabular whitespace-nowrap text-xs', status.className)}>{status.text}</span> : <span aria-hidden="true" />}
 
         {!item.isLocked && (
           <Link
             href={meta.defaultHref}
-            className={`inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-semibold transition active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-              item.isCompleted
-                ? 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                : 'border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20'
-            }`}
+            className={cn(
+              'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-medium transition-[color,background-color,transform] duration-150 active:scale-[0.97] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              isPrimaryAction
+                ? 'border border-border-strong bg-card text-foreground hover:bg-accent'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            )}
           >
             {actionLabel}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

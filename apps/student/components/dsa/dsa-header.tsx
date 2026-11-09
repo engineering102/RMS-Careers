@@ -24,7 +24,7 @@ interface DsaProgressCardProps {
 export function DsaProgressCard({ label, solved, total, byDifficulty, unavailable = false }: DsaProgressCardProps) {
   const percent = percentOf(solved, total);
   return (
-    <section aria-label={label} className="rounded-xl border border-border bg-card p-5">
+    <section aria-label={label} className="rounded-lg border border-border bg-card p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-medium text-muted-foreground">{label}</h2>
         {!unavailable && (
@@ -93,7 +93,7 @@ export function DsaHeader({ summary, sheetCount, progressUnavailable = false }: 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-stretch">
       <div className="flex flex-col justify-center">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">DSA Practice</h1>
+        <h1 className="text-balance font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-foreground md:text-[2rem]">DSA practice</h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
           Choose a curated problem sheet and work through it pattern by pattern. Progress and notes follow the problem,
           so a problem you solve in one sheet is solved in every sheet that lists it.

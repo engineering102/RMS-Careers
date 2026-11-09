@@ -11,7 +11,7 @@ export default function DashboardLoading() {
       {/* Overview Cards Skeleton */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-36 rounded-xl border border-border bg-card/60 p-5 space-y-3">
+          <div key={i} className="h-36 rounded-lg border border-border bg-card p-5 space-y-3">
             <div className="h-5 w-28 rounded bg-secondary" />
             <div className="h-4 w-full rounded bg-secondary/50" />
             <div className="h-4 w-2/3 rounded bg-secondary/30" />
