@@ -52,7 +52,6 @@ export function ContentCard({ item }: ContentCardProps) {
   return (
     <Link
       href={meta.defaultHref}
-      aria-label={`${meta.actionLabel}: ${item.title}`}
       className={cn(
         'group flex flex-col rounded-lg border p-5 transition-[border-color,transform] duration-150 active:scale-[0.99] motion-reduce:transform-none',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',

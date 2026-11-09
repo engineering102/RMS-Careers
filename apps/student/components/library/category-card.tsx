@@ -102,7 +102,6 @@ export function CategoryCard({ category, itemCount, topicCount }: CategoryCardPr
   return (
     <Link
       href={libraryCategoryHref(category.type)}
-      aria-label={`${category.label}: ${formatCategoryCount(category, itemCount)}`}
       className={cn(
         baseClass,
         'transition-[border-color,transform] duration-150 active:scale-[0.99] motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background',

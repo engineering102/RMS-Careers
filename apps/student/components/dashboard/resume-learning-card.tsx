@@ -118,7 +118,7 @@ export function ResumeLearningCard({ target }: ResumeLearningCardProps) {
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <ContentTypeTag type={target.contentType} />
           <span className={isRevision ? 'font-medium text-destructive' : 'text-muted-foreground'}>{context}</span>
-          {target.weekNumber !== undefined && <span className="text-faint">Week {target.weekNumber}</span>}
+          {target.weekNumber !== undefined && <span className="text-muted-foreground">Week {target.weekNumber}</span>}
         </p>
         <h2
           id="resume-learning-title"

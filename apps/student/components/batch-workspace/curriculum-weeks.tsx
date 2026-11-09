@@ -28,6 +28,9 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
   const week = weeks[safeIndex];
   const sections = useMemo(() => groupWeekSections(week), [week]);
   const [openSections, setOpenSections] = useState<Set<WeekSectionKey>>(() => defaultOpenSections(sections));
+  // The week fades in only when the student switches weeks, never on first paint (content already on screen
+  // should not animate in, and an opacity-0 start delays Largest Contentful Paint).
+  const [hasSwitchedWeek, setHasSwitchedWeek] = useState(false);
 
   const sharedTopic = weekTopic(week);
   const allOpen = sections.length > 0 && sections.every((s) => openSections.has(s.key));
@@ -38,6 +41,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
     const next = Math.min(Math.max(0, index), weeks.length - 1);
     if (next === safeIndex) return;
     setWeekIndex(next);
+    setHasSwitchedWeek(true);
     setOpenSections(defaultOpenSections(groupWeekSections(weeks[next])));
     // Keep the week in the URL so a reload or shared link returns to it, without a server round-trip.
     const url = new URL(window.location.href);
@@ -75,7 +79,10 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
       />
 
       {/* key: remount on week change so the new week fades in instead of swapping rows in place */}
-      <div key={week.weekNumber} className="animate-in fade-in-0 duration-200 motion-reduce:animate-none">
+      <div
+        key={week.weekNumber}
+        className={hasSwitchedWeek ? 'animate-in fade-in-0 duration-200 motion-reduce:animate-none' : undefined}
+      >
         {sections.map((section) => (
           <SectionAccordion
             key={section.key}

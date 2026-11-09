@@ -63,7 +63,7 @@ export function CompletionButton({
           />
           <span>Completed</span>
           {completedAt && (
-            <span className="tabular ml-0.5 border-l border-success/30 pl-2 font-normal text-success/80">
+            <span className="tabular ml-0.5 border-l border-success/30 pl-2 font-normal text-success">
               {formatDate(completedAt, {
                 month: 'short',
                 day: 'numeric'

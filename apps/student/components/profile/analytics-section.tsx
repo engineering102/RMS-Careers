@@ -97,7 +97,7 @@ export function AnalyticsSection({
             <span>Total XP</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{formatNumber(stats.totalXp)}</p>
-          <p className="mt-0.5 text-xs text-warning/80">Level {stats.currentLevel}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Level {stats.currentLevel}</p>
         </div>
 
         {/* Current Streak */}
@@ -127,7 +127,7 @@ export function AnalyticsSection({
             <span>DSA Solved</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground tabular-nums">{stats.dsaSolvedCount}</p>
-          <p className="mt-0.5 text-xs text-success/80">Verified solutions</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Verified solutions</p>
         </div>
       </div>
 

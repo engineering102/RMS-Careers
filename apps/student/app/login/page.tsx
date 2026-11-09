@@ -1,4 +1,4 @@
-import { BrandMark } from '@/components/shell/sidebar';
+import { BrandMark } from '@/components/shell/brand-mark';
 import Link from 'next/link';
 import { LoginForm } from './login-form';
 import { toSafeCallbackPath } from '@/lib/auth/callback-url';

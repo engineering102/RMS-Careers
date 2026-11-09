@@ -33,7 +33,7 @@ const newsreader = Newsreader({
 });
 const instrumentSans = Instrument_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  // Variable font: one face covers 400-600 instead of one @font-face per weight.
   variable: '--font-instrument',
   display: 'swap',
   preload: false

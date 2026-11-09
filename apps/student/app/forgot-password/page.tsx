@@ -1,4 +1,4 @@
-import { BrandMark } from '@/components/shell/sidebar';
+import { BrandMark } from '@/components/shell/brand-mark';
 import Link from 'next/link';
 import { ForgotPasswordForm } from './forgot-password-form';
 

@@ -12,20 +12,9 @@ import type { BellNotificationSummary } from '@/lib/types/notifications';
 import { SignOutButton } from './sign-out-button';
 import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { BrandMark } from './brand-mark';
 
-export function BrandMark({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[calc(var(--radius)-2px)] bg-foreground font-display text-[13px] font-bold text-background',
-        className
-      )}
-    >
-      R
-    </span>
-  );
-}
+export { BrandMark };
 
 export function NavLink({
   item,

@@ -1,4 +1,4 @@
-import { BrandMark } from '@/components/shell/sidebar';
+import { BrandMark } from '@/components/shell/brand-mark';
 import Link from 'next/link';
 import { validateActivationToken } from '@/lib/db/activation';
 import { ActivationForm } from './activation-form';

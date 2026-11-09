@@ -36,7 +36,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
 
       <div className="mt-3 border-t border-border pt-4">
         <div className="flex gap-3">
-          <div className="grid grid-rows-7 gap-1 text-[11px] leading-[18px] text-faint" aria-hidden="true">
+          <div className="grid grid-rows-7 gap-1 text-[11px] leading-[18px] text-muted-foreground" aria-hidden="true">
             {WEEKDAY_LABELS.map((label, i) => (
               <span key={i} className="h-[18px]">
                 {label}
@@ -68,7 +68,7 @@ export function ActivityHeatmap({ heatmap }: ActivityHeatmapProps) {
             <span className="tabular font-medium text-foreground">{heatmap.totalActiveDays}</span> active days ·{' '}
             <span className="tabular font-medium text-foreground">{formatNumber(heatmap.totalPeriodXp)}</span> XP
           </p>
-          <span className="flex items-center gap-1 text-[11px] text-faint" aria-hidden="true">
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground" aria-hidden="true">
             Less
             {[0, 1, 2, 3, 4].map((l) => (
               <span key={l} className={cn('h-2.5 w-2.5 rounded-[2px]', LEVEL[l])} />

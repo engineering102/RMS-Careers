@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import type { StudentEntitlementContext } from '@/lib/db/queries/entitlements';
 import { NotificationBell } from './notification-bell';
 import { sectionTitleFor } from './nav-items';
-import { BrandMark } from './sidebar';
+import { BrandMark } from './brand-mark';
 import { Avatar } from '@/components/ui/avatar';
 import type { BellNotificationSummary } from '@/lib/types/notifications';
 import { cn } from '@/lib/utils';
@@ -64,10 +64,10 @@ export function Header({ context, bellNotifications }: HeaderProps) {
 
       <Link
         href="/profile"
-        aria-label={`Profile: ${student?.fullName ?? 'Student'}`}
         className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Avatar name={student?.fullName} size="sm" />
+        <span className="sr-only">Profile</span>
       </Link>
     </header>
   );
