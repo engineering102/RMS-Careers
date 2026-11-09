@@ -41,9 +41,7 @@ export function SectionAccordion({ weekNumber, section, isOpen, hideTopic, onTog
           onClick={() => onToggle(section.key)}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
-            isOpen ? 'bg-secondary/40' : ''
-          }`}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         >
           <ChevronRight
             className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${
@@ -52,8 +50,8 @@ export function SectionAccordion({ weekNumber, section, isOpen, hideTopic, onTog
             aria-hidden
           />
           <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{section.label}</span>
-          <span className="hidden h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-secondary sm:block" aria-hidden>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{section.label}</span>
+          <span className="hidden h-1 w-24 shrink-0 overflow-hidden rounded-full bg-muted sm:block" aria-hidden>
             <span
               className={`block h-full rounded-full ${isComplete ? 'bg-success' : 'bg-primary'}`}
               style={{ width: `${percent}%` }}
@@ -72,7 +70,7 @@ export function SectionAccordion({ weekNumber, section, isOpen, hideTopic, onTog
       {/* The panel stays in the DOM (hidden) so aria-controls always resolves; rows render only while open. */}
       <div id={panelId} role="region" aria-labelledby={buttonId} hidden={!isOpen} className="px-2 pb-3 sm:px-4">
         {isOpen && (
-          <div className="overflow-hidden rounded-lg border border-border bg-background/40">
+          <div className="overflow-hidden rounded-md border border-border bg-background">
             {section.items.map((item) => (
               <CurriculumItemRow key={item.id} item={item} showTopic={!hideTopic} showType={showType} />
             ))}

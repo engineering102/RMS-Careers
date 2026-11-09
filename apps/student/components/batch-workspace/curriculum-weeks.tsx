@@ -55,7 +55,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
       <WeekNavigator
         weeks={weeks}
         weekIndex={safeIndex}
@@ -67,7 +67,7 @@ export function CurriculumWeeks({ weeks, requestedWeek }: CurriculumWeeksProps) 
             onClick={() => setOpenSections(allOpen ? new Set() : new Set(sections.map((s) => s.key)))}
             aria-label={allOpen ? 'Collapse all sections' : 'Expand all sections'}
             title={allOpen ? 'Collapse all' : 'Expand all'}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {allOpen ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
           </button>
@@ -106,7 +106,7 @@ function WeekLink({ week, direction, onClick }: { week: CurriculumWeek; directio
     <button
       type="button"
       onClick={onClick}
-      className={`group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 ${
+      className={`group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 ${
         isNext ? 'col-start-2 justify-end border-l border-border text-right' : 'text-left'
       }`}
     >
@@ -117,10 +117,10 @@ function WeekLink({ week, direction, onClick }: { week: CurriculumWeek; directio
         />
       )}
       <span className="min-w-0">
-        <span className="block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="block text-xs text-muted-foreground">
           {isNext ? 'Up next' : 'Previous'}
         </span>
-        <span className="block truncate text-sm font-semibold text-foreground">
+        <span className="block truncate text-sm font-medium text-foreground">
           Week {week.weekNumber}
           {topic && <span className="hidden font-normal text-muted-foreground sm:inline"> · {topic}</span>}
         </span>

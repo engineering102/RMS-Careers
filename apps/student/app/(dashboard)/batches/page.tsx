@@ -4,15 +4,14 @@ import Link from 'next/link';
 import { requireStudentEntitlement, resolveActiveCohort } from '@/lib/db/queries/entitlements';
 import { COHORT_COOKIE_NAME } from '@/lib/constants/cohort';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Calendar, ArrowRight, Layers } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import { formatDate } from '@/lib/format/datetime';
 
 export const metadata = {
-  title: 'Batch Workspaces — RMS Student Portal',
-  description: 'Chronological milestone curriculum and timelines for your enrolled cohorts.'
+  title: 'Curriculum — RMS Student Portal',
+  description: 'Choose a batch to open its weekly curriculum.'
 };
 
 export default async function BatchesPage() {
@@ -38,74 +37,42 @@ export default async function BatchesPage() {
     cookieBatchId: cookieStore.get(COHORT_COOKIE_NAME)?.value
   });
 
-  // If student is enrolled in multiple active batches, render the cohort workspace selector
+  // Several batches: choose one. Each row links to /batches/<id> (the e2e journey drills down through these links).
   return (
     <div className="space-y-8">
-      <div className="border-b border-border pb-6">
-        <div className="flex items-center gap-2 text-xs font-bold tracking-widest text-primary uppercase">
-          <Layers className="h-4 w-4" />
-          <span>Your Cohorts</span>
-        </div>
-        <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-          Batch Workspaces
-        </h1>
-        <p className="mt-1.5 text-xs md:text-sm text-muted-foreground max-w-2xl leading-relaxed">
-          Select an enrolled cohort workspace to view its chronological milestone curriculum, weekly
-          deadlines, and structured learning journey.
-        </p>
-      </div>
+      <PageHeader title="Curriculum" description="You're in more than one batch. Choose one to open its weeks." />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {context.activeBatches.map((batch) => (
-          <Card
-            key={batch.batchId}
-            className="flex flex-col justify-between border-border bg-card/60 hover:border-input transition"
-          >
-            <CardHeader className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="outline"
-                  className="border-primary/30 bg-primary/10 text-primary font-semibold uppercase tracking-wider text-[10px]"
-                >
-                  {batch.programCode}
-                </Badge>
-                {batch.batchId === activeCohort?.batchId ? (
-                  <span className="flex items-center gap-1.5 text-xs text-success font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                    Active Cohort
+      <ul className="border-t border-border">
+        {context.activeBatches.map((batch) => {
+          const isActive = batch.batchId === activeCohort?.batchId;
+          return (
+            <li key={batch.batchId} className="border-b border-border">
+              <Link
+                href={`/batches/${batch.batchId}`}
+                className="group -mx-2 flex items-center gap-4 rounded-md px-2 py-4 transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-[15px] font-medium text-foreground">{batch.batchName}</span>
+                    {isActive && <Badge>Active</Badge>}
                   </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground font-medium">Enrolled</span>
-                )}
-              </div>
-
-              <div>
-                <CardTitle className="text-base text-foreground">{batch.batchName}</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">{batch.programName}</p>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 pt-2 border-t border-border/80">
-              {batch.startDate && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>
-                    Started {formatDate(batch.startDate)}
-                    {batch.endDate ? ` – ${formatDate(batch.endDate)}` : ''}
+                  <span className="mt-0.5 block truncate text-sm text-muted-foreground">
+                    {batch.programName}
+                    {batch.startDate &&
+                      ` · ${formatDate(batch.startDate, { day: 'numeric', month: 'short', year: 'numeric' })}${
+                        batch.endDate ? ` – ${formatDate(batch.endDate, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''
+                      }`}
                   </span>
-                </div>
-              )}
-
-              <Button asChild className="w-full gap-2 text-xs font-semibold h-9" size="sm">
-                <Link href={`/batches/${batch.batchId}`}>
-                  <span>Open Workspace</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </span>
+                <ArrowRight
+                  className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

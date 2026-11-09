@@ -1,56 +1,36 @@
 import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
+/** Same shape as the curriculum page: header with progress, then the week card with its sections. */
 export default function BatchWorkspaceLoading() {
   return (
-    <div className="space-y-8 animate-pulse">
-      {/* Header Skeleton */}
-      <div className="rounded-2xl border border-border bg-card/40 p-6 md:p-8 space-y-4">
-        <div className="h-4 w-28 rounded bg-secondary" />
-        <div className="h-8 w-64 rounded bg-secondary" />
-        <div className="h-4 w-80 max-w-full rounded bg-secondary/60" />
-        <div className="h-14 w-full rounded-xl bg-secondary/40 mt-4" />
-      </div>
-
-      {/* Subnav Skeleton */}
-      <div className="flex gap-4 border-b border-border pb-2">
-        <div className="h-8 w-36 rounded bg-secondary" />
-        <div className="h-8 w-32 rounded bg-secondary/60" />
-        <div className="h-8 w-32 rounded bg-secondary/60" />
-      </div>
-
-      {/* Selected week skeleton: navigator (ring, title, arrows, journey rail), then sections with the first open */}
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="space-y-4 px-4 py-4 sm:px-5">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full border-[3.5px] border-secondary" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-24 rounded bg-secondary/60" />
-              <div className="h-5 w-48 max-w-full rounded bg-secondary" />
-            </div>
-            <div className="h-9 w-[4.5rem] rounded-lg border border-border" />
-          </div>
-          <div className="flex gap-1">
-            {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="h-1.5 flex-1 rounded-full bg-secondary" />
-            ))}
-          </div>
+    <div className="space-y-8" role="status" aria-busy="true" aria-label="Loading curriculum">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-8 w-56" />
         </div>
-        {Array.from({ length: 3 }).map((_, sectionIdx) => (
-          <div key={sectionIdx} className="border-t border-border first:border-t-0">
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="h-4 w-4 rounded bg-secondary" />
-              <div className="h-4 w-28 rounded bg-secondary" />
-              <div className="ml-auto h-3 w-16 rounded bg-secondary/60" />
+        <div className="w-full space-y-2 lg:w-72">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-1.5 w-full" />
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="space-y-4 border-b border-border p-4 sm:p-5">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-6 w-60" />
             </div>
-            {sectionIdx === 0 && (
-              <div className="px-2 pb-3 sm:px-4">
-                <div className="overflow-hidden rounded-lg border border-border">
-                  {Array.from({ length: 3 }).map((_, itemIdx) => (
-                    <div key={itemIdx} className="h-16 border-t border-border bg-background/40 first:border-t-0" />
-                  ))}
-                </div>
-              </div>
-            )}
+          </div>
+          <Skeleton className="h-1.5 w-full" />
+        </div>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-3 border-t border-border px-4 py-4 first:border-t-0">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-40" />
           </div>
         ))}
       </div>

@@ -37,7 +37,7 @@ export function EmbeddedVideoPlayer({
 
   if (!videoMetadata || !videoMetadata.videoId) {
     return (
-      <div className="w-full aspect-video rounded-xl border border-border bg-card/60 flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
+      <div className="flex aspect-video w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center text-muted-foreground">
         <AlertCircle className="h-10 w-10 text-warning/80 mb-3" />
         <h3 className="text-base font-semibold text-foreground">Video Source Unavailable</h3>
         <p className="text-xs text-muted-foreground mt-1 max-w-md">
@@ -84,16 +84,16 @@ export function EmbeddedVideoPlayer({
     <div className="space-y-3">
       {/* Resume playback banner if last position was saved */}
       {showResumeBanner && savedPosition && (
-        <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-xs text-foreground">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-4 py-2.5 text-sm text-foreground">
           <div className="flex items-center gap-2">
-            <PlayCircle className="h-4 w-4 text-primary shrink-0" />
+            <PlayCircle className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span>
               You previously paused at <strong>{formatTime(savedPosition)}</strong>.
             </span>
           </div>
           <button
             onClick={clearSavedPosition}
-            className="flex items-center gap-1 text-[11px] text-primary hover:text-foreground transition-colors"
+            className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <RotateCcw className="h-3 w-3" />
             Dismiss
@@ -103,7 +103,7 @@ export function EmbeddedVideoPlayer({
 
       {/* Responsive Aspect Ratio Player Container */}
       <div
-        className={`relative w-full overflow-hidden rounded-xl border border-border bg-black shadow-2xl ${
+        className={`relative w-full overflow-hidden rounded-lg border border-border bg-black ${
           isFourThree ? 'aspect-[4/3]' : 'aspect-video'
         }`}
       >

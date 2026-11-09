@@ -7,8 +7,8 @@ import { CurriculumWeeks } from '@/components/batch-workspace/curriculum-weeks';
 import { BatchWorkspaceEmptyState } from '@/components/batch-workspace/batch-workspace-empty-state';
 
 export const metadata = {
-  title: 'Cohort Workspace — RMS Student Portal',
-  description: 'Chronological weekly milestone curriculum and cohort learning journey.'
+  title: 'Curriculum — RMS Student Portal',
+  description: 'Your batch, week by week: lectures, notes, practice, tests and projects.'
 };
 
 interface BatchWorkspacePageProps {
@@ -35,7 +35,7 @@ export default async function BatchWorkspacePage({ params, searchParams }: Batch
 
   return (
     <div className="space-y-8">
-      {/* 1. Cohort Header */}
+      {/* 1. Batch header */}
       <BatchHeader
         batch={data.batch}
         totalMilestones={data.totalMilestones}

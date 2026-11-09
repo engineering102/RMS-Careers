@@ -1,103 +1,36 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Sparkles, Trophy, Zap } from 'lucide-react';
 import type { StudentStatsOverview } from '@/lib/db/queries/overview';
 import { formatNumber } from '@/lib/format/datetime';
 import { levelForXp, XP_PER_LEVEL } from '@/lib/types/activity';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface XpCardProps {
   stats: StudentStatsOverview;
+  className?: string;
 }
 
-export function XpCard({ stats }: XpCardProps) {
+/** XP cell of the Home stat strip: total, level, and how far into the level the student is. */
+export function XpCard({ stats, className }: XpCardProps) {
   const totalXp = stats.totalXp ?? 0;
-  // Same rule as the server ledger (100 XP per level), derived from XP so the card can never disagree with it.
-  const currentLevel = levelForXp(totalXp);
-  const currentLevelBaseXp = (currentLevel - 1) * XP_PER_LEVEL;
-  const nextLevelTargetXp = currentLevel * XP_PER_LEVEL;
-  const xpIntoCurrentLevel = Math.max(0, totalXp - currentLevelBaseXp);
-  const levelProgressPercent = Math.min(
-    100,
-    Math.round((xpIntoCurrentLevel / XP_PER_LEVEL) * 100)
-  );
-  const xpRemainingToNextLevel = Math.max(0, nextLevelTargetXp - totalXp);
+  // Same rule as the server ledger (100 XP per level), derived from XP so it can never disagree with it.
+  const level = levelForXp(totalXp);
+  const intoLevel = Math.max(0, totalXp - (level - 1) * XP_PER_LEVEL);
+  const pct = Math.min(100, Math.round((intoLevel / XP_PER_LEVEL) * 100));
+  const remaining = Math.max(0, level * XP_PER_LEVEL - totalXp);
 
   return (
-    <Card className="relative overflow-hidden border-border bg-gradient-to-br from-card/90 to-primary/5">
-      <div className="absolute top-0 right-0 -mr-8 -mt-8 h-28 w-28 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
-
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 border border-primary/20 text-primary">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <CardTitle className="text-sm font-medium text-foreground/80">Global XP</CardTitle>
-        </div>
-        <Badge
-          variant="outline"
-          className="border-primary/30 bg-primary/10 text-primary font-semibold"
-        >
-          Level {currentLevel}
-        </Badge>
-      </CardHeader>
-
-      <CardContent className="space-y-4 pt-1">
-        <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
-              {formatNumber(totalXp)}
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-              XP Earned
-            </span>
-          </div>
-
-          {totalXp === 0 ? (
-            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-              Earn XP by completing coding challenges, lectures, quizzes, and projects.
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {xpRemainingToNextLevel > 0
-                ? `${formatNumber(xpRemainingToNextLevel)} XP to Level ${currentLevel + 1}`
-                : `Max progress reached for Level ${currentLevel}`}
-            </p>
-          )}
-        </div>
-
-        {/* Level Progress Bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] text-muted-foreground font-medium">
-            <span>Progress to Lvl {currentLevel + 1}</span>
-            <span>{levelProgressPercent}%</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500"
-              style={{ width: `${levelProgressPercent}%` }}
-              role="progressbar"
-              aria-label={`Progress to Level ${currentLevel + 1}`}
-              aria-valuenow={levelProgressPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            />
-          </div>
-        </div>
-
-        {/* Quick Stats Footer */}
-        <div className="pt-2 flex items-center justify-between border-t border-border/80 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Trophy className="h-3.5 w-3.5 text-warning" />
-            <span>DSA Solved:</span>
-            <span className="font-semibold text-foreground">{stats.dsaSolvedCount ?? 0}</span>
-          </div>
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Zap className="h-3 w-3 text-primary" />
-            <span>Server Authoritative</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn('min-w-0', className)}>
+      <p className="text-sm text-muted-foreground">XP</p>
+      <p className="tabular mt-1 font-display text-2xl font-semibold leading-tight tracking-tight text-foreground">
+        {formatNumber(totalXp)}
+      </p>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        {`Level ${level}`}
+        <span className="hidden sm:inline">{` · ${remaining} XP to Level ${level + 1}`}</span>
+      </p>
+      <Progress value={pct} label={`Level ${level} progress`} className="mt-2 hidden max-w-[10rem] sm:block" />
+      <span className="sr-only">{`${pct}% of the way to Level ${level + 1}`}</span>
+    </div>
   );
 }

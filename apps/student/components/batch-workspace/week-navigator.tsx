@@ -34,7 +34,7 @@ const RAIL_FILL: Record<WeekState, string> = {
 };
 
 const iconButton =
-  'inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
+  'inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 /**
  * Header of the selected week: progress ring, a week picker (dropdown listing every week with its progress),
@@ -49,7 +49,7 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
   const hasMany = weeks.length > 1;
 
   return (
-    <div className="border-b border-border bg-gradient-to-b from-secondary/40 to-transparent px-4 pb-4 pt-4 sm:px-5">
+    <div className="border-b border-border px-4 pb-4 pt-4 sm:px-5">
       <div className="flex items-center gap-3 sm:gap-4">
         <ProgressRing percent={percent} size={48} strokeWidth={3.5} complete={state === 'completed'}>
           {state === 'completed' ? (
@@ -61,17 +61,17 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
 
         {/* Week picker */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="tabular-nums">
               Week {weekIndex + 1} of {weeks.length}
             </span>
             {isCurrent && state !== 'completed' && (
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 text-[10px] normal-case tracking-normal text-primary">
+              <span className="rounded bg-muted px-1.5 text-[11px] font-medium leading-5 text-foreground">
                 Current
               </span>
             )}
             {state === 'completed' && (
-              <span className="rounded-full border border-success/30 bg-success/10 px-1.5 text-[10px] normal-case tracking-normal text-success">
+              <span className="rounded bg-success/10 px-1.5 text-[11px] font-medium leading-5 text-success">
                 Completed
               </span>
             )}
@@ -80,10 +80,10 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
           <DropdownMenu.Root modal={false}>
             <DropdownMenu.Trigger
               disabled={!hasMany}
-              className="group -ml-1.5 mt-0.5 flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+              className="group -ml-1.5 mt-0.5 flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
               aria-label={`Week ${week.weekNumber}${topic ? `: ${topic}` : ''}. Choose a week`}
             >
-              <h2 className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
+              <h2 className="truncate font-display text-lg font-semibold tracking-tight text-foreground sm:text-xl">
                 Week {week.weekNumber}
                 {topic && <span className="font-medium text-muted-foreground"> · {topic}</span>}
               </h2>
@@ -99,9 +99,9 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
               <DropdownMenu.Content
                 align="start"
                 sideOffset={8}
-                className="z-50 max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height))] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl shadow-black/20 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                className="z-50 max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height))] w-[min(22rem,calc(100vw-2rem))] origin-[--radix-dropdown-menu-content-transform-origin] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl duration-150 ease-out-quint data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-[0.97] data-[state=closed]:animate-out data-[state=closed]:duration-100 data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-[0.97]"
               >
-                <DropdownMenu.Label className="px-2 pb-1.5 pt-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <DropdownMenu.Label className="px-2 pb-1.5 pt-1.5 text-xs font-medium text-muted-foreground">
                   Curriculum weeks
                 </DropdownMenu.Label>
                 <DropdownMenu.RadioGroup
@@ -115,7 +115,7 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
                       <DropdownMenu.RadioItem
                         key={w.weekNumber}
                         value={String(idx)}
-                        className="flex cursor-pointer select-none items-center gap-3 rounded-lg px-2 py-2 outline-none transition-colors data-[highlighted]:bg-secondary data-[state=checked]:bg-primary/10"
+                        className="flex cursor-pointer select-none items-center gap-3 rounded-md px-2 py-2 outline-none transition-colors data-[highlighted]:bg-accent/60 data-[state=checked]:bg-accent"
                       >
                         <ProgressRing percent={percentOf(w)} size={30} strokeWidth={2.5} complete={wState === 'completed'}>
                           {wState === 'completed' ? (
@@ -130,7 +130,7 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
                           <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                             Week {w.weekNumber}
                             {w.weekNumber === currentWeek && wState !== 'completed' && (
-                              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-label="Current week" />
+                              <span className="rounded bg-muted px-1 text-[10px] font-medium leading-4 text-foreground">Current</span>
                             )}
                           </span>
                           <span className="block truncate text-xs text-muted-foreground">
@@ -151,7 +151,7 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
 
         <div className="flex shrink-0 items-center gap-2">
           {hasMany && (
-            <div className="flex overflow-hidden rounded-lg border border-border bg-card">
+            <div className="flex overflow-hidden rounded-md border border-border bg-card">
               <button
                 type="button"
                 className={iconButton}
@@ -196,10 +196,10 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
                       className="group flex h-5 min-w-[6px] flex-1 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span
-                        className={`relative block w-full overflow-hidden rounded-full transition-all motion-reduce:transition-none ${
+                        className={`relative block w-full overflow-hidden rounded-full transition-[height] duration-150 motion-reduce:transition-none ${
                           selected
-                            ? 'h-2 bg-secondary ring-2 ring-primary/40 ring-offset-1 ring-offset-card'
-                            : 'h-1.5 bg-secondary group-hover:h-2'
+                            ? 'h-2 bg-muted ring-2 ring-foreground/25 ring-offset-1 ring-offset-card'
+                            : 'h-1.5 bg-muted group-hover:h-2'
                         }`}
                       >
                         <span
@@ -211,8 +211,8 @@ export function WeekNavigator({ weeks, weekIndex, currentWeek, onSelect, actions
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     <span className="font-semibold">Week {w.weekNumber}</span>
-                    {wTopic && <span className="text-muted-foreground"> · {wTopic}</span>}
-                    <span className="ml-2 tabular-nums text-muted-foreground">
+                    {wTopic && <span className="text-background/70"> · {wTopic}</span>}
+                    <span className="ml-2 tabular-nums text-background/70">
                       {w.completedCount}/{w.totalCount}
                     </span>
                   </TooltipContent>
