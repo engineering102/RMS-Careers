@@ -62,6 +62,7 @@ describe('My Library item cards', () => {
     programCode: 'FSE',
     description: 'Two pointers walkthrough',
     topic: 'Arrays',
+    subject: 'dsa',
     isPublished: true,
     createdAt: new Date(),
     updatedAt: new Date()

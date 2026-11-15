@@ -10,6 +10,8 @@ interface SearchFilterBarProps {
   currentQuery?: string;
   currentType?: string;
   currentTopic?: string;
+  /** Subject slug the listing is narrowed to, if any. */
+  currentSubject?: string;
   /** Hide the topic dropdown (e.g. on the category hub, where only search applies). */
   showTopicFilter?: boolean;
   placeholder?: string;
@@ -20,6 +22,7 @@ export function SearchFilterBar({
   currentQuery = '',
   currentType = 'all',
   currentTopic = 'all',
+  currentSubject,
   showTopicFilter = true,
   placeholder = 'Search lectures, practice sheets, quizzes, topics...'
 }: SearchFilterBarProps) {
@@ -67,9 +70,10 @@ export function SearchFilterBar({
 
   const handleClearAll = () => {
     setSearchVal('');
-    // Clearing search/topic keeps the student inside the category they opened.
+    // Clearing search/topic keeps the student inside the category and subject they opened.
     const params = new URLSearchParams();
     if (currentType && currentType !== 'all') params.set('type', currentType);
+    if (currentSubject) params.set('subject', currentSubject);
     startTransition(() => {
       const queryString = params.toString();
       router.push(queryString ? `${pathname}?${queryString}` : pathname);

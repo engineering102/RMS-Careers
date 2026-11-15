@@ -3,12 +3,16 @@
 // The student content player reads:
 //   lecture:          provider, videoId, durationMinutes, aspectRatio
 //   notes / resource: documentUrl, notes, topic, category, fileType
+//   library (every type): subject, a slug from @rms/db/content-subjects
 // Older admin forms saved videoUrl / resourceLink / notesMarkdown instead, which students never saw.
 // Those legacy keys are still written so existing admin screens keep showing the values.
+import { isContentSubject } from '@rms/db/content-subjects';
 import { parseVideoUrl } from './video-url';
 
 export interface AuthoringFields {
   topic?: string | null;
+  /** Subject slug; blank means "Auto" (the student library classifies from topic and title). */
+  subject?: string | null;
   videoUrl?: string | null;
   resourceLink?: string | null;
   notes?: string | null;
@@ -33,6 +37,9 @@ export function buildStudentMetadataPatch(fields: AuthoringFields): MetadataPatc
 
   const topic = blankToNull(fields.topic);
   if (topic !== undefined) patch.topic = topic;
+
+  const subject = blankToNull(fields.subject);
+  if (subject !== undefined) patch.subject = subject !== null && isContentSubject(subject) ? subject : null;
 
   const videoUrl = blankToNull(fields.videoUrl);
   if (videoUrl !== undefined) {
@@ -91,6 +98,7 @@ export function readAuthoringFields(metadata: Record<string, unknown> | null | u
   const str = (key: string) => (typeof m[key] === 'string' ? (m[key] as string) : '');
   return {
     topic: str('topic'),
+    subject: isContentSubject(m.subject) ? str('subject') : '',
     videoUrl: str('videoUrl') || videoLinkFromId(str('provider'), str('videoId')),
     provider: str('provider'),
     videoId: str('videoId'),

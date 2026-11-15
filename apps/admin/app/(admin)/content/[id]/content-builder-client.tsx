@@ -22,6 +22,7 @@ import type {
 import type { Program } from '@rms/db';
 import { describeAudience } from '@/lib/content/audience';
 import { CONTENT_TYPE_DEFS } from '@/lib/content/types/registry';
+import { CONTENT_SUBJECTS, contentSubjectLabel, resolveContentSubject } from '@rms/db/content-subjects';
 import { publishWarnings } from '@/lib/content/types/readiness';
 import { updateContentLifecycleAction } from '../actions';
 import { saveContentBuilderAction } from './actions';
@@ -260,7 +261,31 @@ export function ContentBuilderClient({
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field id="topic" label="Topic" hint="Groups the item in the student library." error={errorFor('topic')}>
+                {type !== 'external_test' && (
+                  <Field
+                    id="subject"
+                    label="Subject"
+                    hint="The shelf this sits on in the student library. Auto picks one from the topic and title."
+                    error={errorFor('subject')}
+                  >
+                    <Select value={form.subject || 'auto'} onValueChange={(v) => set('subject', v === 'auto' ? '' : v)}>
+                      <SelectTrigger id="subject">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">
+                          Auto ({contentSubjectLabel(resolveContentSubject({ topic: form.topic, title: form.title }))})
+                        </SelectItem>
+                        {CONTENT_SUBJECTS.map((s) => (
+                          <SelectItem key={s.slug} value={s.slug}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+                <Field id="topic" label="Topic" hint="A finer label within the subject, e.g. a pattern or chapter." error={errorFor('topic')}>
                   <Input
                     id="topic"
                     value={form.topic}

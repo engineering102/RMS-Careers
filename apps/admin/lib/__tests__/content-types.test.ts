@@ -20,6 +20,7 @@ const form = (patch: Partial<BuilderForm> = {}): BuilderForm => ({
   description: '',
   programId: 'global',
   topic: 'Arrays',
+  subject: '',
   videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
   resourceLink: 'https://docs.example.com/x',
   notes: 'Some notes',
@@ -59,6 +60,7 @@ describe('toBuilderInput (form -> typed save payload)', () => {
       description: '',
       programId: null,
       topic: 'Arrays',
+      subject: '',
       videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
       durationMinutes: 20
     });
@@ -89,6 +91,7 @@ describe('builderMetadataPatch', () => {
   it('writes the keys the student portal reads for each type', () => {
     expect(parse('lecture')).toEqual({
       topic: 'Arrays',
+      subject: null,
       videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
       provider: 'youtube',
       videoId: 'dQw4w9WgXcQ',
@@ -98,12 +101,22 @@ describe('builderMetadataPatch', () => {
   });
 
   it('is a patch: types without media fields leave video, notes and duration alone', () => {
-    expect(parse('project')).toEqual({ topic: 'Arrays' });
-    expect(parse('quiz')).toEqual({ topic: 'Arrays' });
+    expect(parse('project')).toEqual({ topic: 'Arrays', subject: null });
+    expect(parse('quiz')).toEqual({ topic: 'Arrays', subject: null });
+  });
+
+  it('stores the picked library subject, clears it on Auto, and rejects slugs outside the list', () => {
+    expect(parse('notes', { subject: 'system-design' })).toMatchObject({ subject: 'system-design' });
+    expect(parse('notes', { subject: '' })).toMatchObject({ subject: null });
+    expect(contentBuilderSchema.safeParse(toBuilderInput(ID, 'notes', form({ subject: 'astrology' }))).success).toBe(
+      false
+    );
+    // External tests live on Assessments, not in the library.
+    expect(parse('external_test', { subject: 'dsa' })).not.toHaveProperty('subject');
   });
 
   it('keeps metadata.slug in step with the slug for DSA sheets', () => {
-    expect(parse('dsa_sheet')).toEqual({ topic: 'Arrays', slug: 'sliding-window' });
+    expect(parse('dsa_sheet')).toEqual({ topic: 'Arrays', subject: null, slug: 'sliding-window' });
   });
 
   it('writes external test keys without touching lecture or reading keys', () => {
