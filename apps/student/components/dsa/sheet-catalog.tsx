@@ -106,17 +106,39 @@ export function SheetCatalog({ cards, batchId, progressUnavailable = false }: Sh
           }
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-          {visible.map((card) => (
-            <li key={card.slug}>
-              <SheetCard
-                card={card}
-                href={buildSheetHref(card.slug, { batchId })}
-                progressUnavailable={progressUnavailable}
-              />
-            </li>
-          ))}
-        </ul>
+        // One group per sheet category (General DSA, Interview Preparation, Company Specific); the headings
+        // only appear once the visible sheets span more than one.
+        <div className="space-y-8">
+          {CATEGORY_ORDER.map((c) => ({ category: c, cards: visible.filter((card) => card.category === c) }))
+            .filter((group) => group.cards.length > 0)
+            .map((group, _index, groups) => (
+              <section
+                key={group.category}
+                aria-label={SHEET_CATEGORY_LABELS[group.category]}
+                className="space-y-3"
+              >
+                {groups.length > 1 && (
+                  <h2 className="flex items-baseline gap-2 border-b border-border pb-2 text-sm font-semibold text-foreground">
+                    {SHEET_CATEGORY_LABELS[group.category]}
+                    <span className="text-xs font-normal tabular-nums text-muted-foreground">
+                      {group.cards.length} {group.cards.length === 1 ? 'sheet' : 'sheets'}
+                    </span>
+                  </h2>
+                )}
+                <ul className="grid gap-4 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+                  {group.cards.map((card) => (
+                    <li key={card.slug}>
+                      <SheetCard
+                        card={card}
+                        href={buildSheetHref(card.slug, { batchId })}
+                        progressUnavailable={progressUnavailable}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+        </div>
       )}
     </section>
   );

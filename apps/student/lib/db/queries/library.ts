@@ -10,6 +10,13 @@ import type {
   LibraryQueryResult
 } from '@/lib/types/library';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
+import {
+  CONTENT_SUBJECT_RULES,
+  CONTENT_SUBJECT_SLUGS,
+  FALLBACK_SUBJECT_SLUG,
+  resolveContentSubject
+} from '@rms/db/content-subjects';
+import { isLibrarySubject, LIBRARY_SUBJECTS } from '@/lib/data/library-subjects';
 
 export type {
   ContentType,
@@ -53,6 +60,30 @@ function buildEntitlementConditions(programIds: number[], batchIds: string[]) {
     );
   }
   return conditions;
+}
+
+const sqlLiteral = (value: string) => sql.raw(`'${value.replace(/'/g, "''")}'`);
+
+/**
+ * SQL mirror of resolveContentSubject: the stored metadata.subject when it is a known slug, else the first
+ * keyword rule matching topic + category + title, else 'general'. The slugs and patterns are code constants and
+ * are inlined rather than bound, so the expression is textually identical in SELECT, GROUP BY and ORDER BY.
+ */
+function subjectSql() {
+  const stored = sql`${contentItems.metadata}->>'subject'`;
+  const text = sql`lower(concat_ws(' ', nullif(${contentItems.metadata}->>'topic', ''), nullif(${contentItems.metadata}->>'category', ''), ${contentItems.title}))`;
+  const known = sql.join(CONTENT_SUBJECT_SLUGS.map(sqlLiteral), sql`, `);
+  const rules = sql.join(
+    CONTENT_SUBJECT_RULES.map((rule) => sql`WHEN ${text} ~ ${sqlLiteral(rule.pattern)} THEN ${sqlLiteral(rule.slug)}`),
+    sql` `
+  );
+  return sql<string>`CASE WHEN ${stored} IN (${known}) THEN ${stored} ${rules} ELSE ${sqlLiteral(FALLBACK_SUBJECT_SLUG)} END`;
+}
+
+/** Position of a row's subject in the display order (General last). */
+function subjectRankSql() {
+  const order = sql.join(LIBRARY_SUBJECTS.map((s) => sqlLiteral(s.slug)), sql`, `);
+  return sql`array_position(ARRAY[${order}]::text[], ${subjectSql()})`;
 }
 
 /**
@@ -161,6 +192,13 @@ export async function getLibraryItems(
       );
     }
 
+    // 5b. Apply subject filter (unknown slugs are ignored rather than returning an always-empty list)
+    const subjectFilter = options?.filters?.subject?.trim();
+    const activeSubject = subjectFilter && isLibrarySubject(subjectFilter) ? subjectFilter : null;
+    if (activeSubject) {
+      baseWhereClauses.push(sql`${subjectSql()} = ${activeSubject}`);
+    }
+
     const finalWhereClause = and(...baseWhereClauses);
 
     // Available topics span the student's authorized scope (within the open category, if any)
@@ -171,6 +209,9 @@ export async function getLibraryItems(
     ];
     if (contentTypeFilter && contentTypeFilter !== 'all') {
       topicAuthClauses.push(eq(contentItems.contentType, contentTypeFilter));
+    }
+    if (activeSubject) {
+      topicAuthClauses.push(sql`${subjectSql()} = ${activeSubject}`);
     }
 
     // 6–8. Count, page of items and available topics are independent: one round-trip instead of three.
@@ -198,7 +239,11 @@ export async function getLibraryItems(
         // leftJoin: content_items.program_id is nullable (central content is placed via batch_curriculum)
         .leftJoin(programs, eq(programs.id, contentItems.programId))
         .where(finalWhereClause)
-        .orderBy(desc(contentItems.createdAt), asc(contentItems.title))
+        .orderBy(
+          ...(options?.filters?.groupBySubject ? [subjectRankSql()] : []),
+          desc(contentItems.createdAt),
+          asc(contentItems.title)
+        )
         .limit(pageSize)
         .offset(offset),
       db
@@ -238,6 +283,12 @@ export async function getLibraryItems(
         description: r.description,
         metadata: meta,
         topic,
+        subject: resolveContentSubject({
+          subject: meta.subject,
+          topic: meta.topic,
+          category: meta.category,
+          title: r.title
+        }),
         isPublished: r.isPublished,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt
@@ -302,6 +353,53 @@ export async function getLibraryCategorySummaries(options: {
     }));
   } catch (error) {
     console.error('[Library] Error retrieving library category summaries:', error);
+    return [];
+  }
+}
+
+export interface LibrarySubjectCount {
+  subject: string;
+  itemCount: number;
+}
+
+/**
+ * Item totals per subject, in display order, scoped to the same entitlement rules as getLibraryItems and
+ * optionally to one content type. Subjects with no accessible items are omitted.
+ */
+export async function getLibrarySubjectCounts(options: {
+  enrolledProgramIds: number[];
+  enrolledBatchIds: string[];
+  contentType?: ContentType | 'all';
+}): Promise<LibrarySubjectCount[]> {
+  const { enrolledProgramIds, enrolledBatchIds, contentType } = options;
+
+  if (!process.env.POSTGRES_URL) return [];
+  if (enrolledProgramIds.length === 0 && enrolledBatchIds.length === 0) return [];
+
+  try {
+    const clauses = [
+      eq(contentItems.isPublished, true),
+      ne(contentItems.contentType, 'external_test'),
+      or(...buildEntitlementConditions(enrolledProgramIds, enrolledBatchIds))!
+    ];
+    if (contentType && contentType !== 'all') {
+      clauses.push(eq(contentItems.contentType, contentType));
+    }
+
+    const subject = subjectSql();
+    const rows = await db
+      .select({ subject, itemCount: sql<number>`count(*)::int` })
+      .from(contentItems)
+      .where(and(...clauses))
+      .groupBy(subject);
+
+    const counts = new Map(rows.map((r) => [r.subject, Number(r.itemCount) || 0]));
+    return LIBRARY_SUBJECTS.filter((s) => (counts.get(s.slug) ?? 0) > 0).map((s) => ({
+      subject: s.slug,
+      itemCount: counts.get(s.slug)!
+    }));
+  } catch (error) {
+    console.error('[Library] Error retrieving library subject counts:', error);
     return [];
   }
 }

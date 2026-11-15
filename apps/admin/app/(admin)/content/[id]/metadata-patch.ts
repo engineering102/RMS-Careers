@@ -12,6 +12,7 @@ export function builderMetadataPatch(data: ContentBuilderData): Record<string, u
     case 'lecture':
       return buildStudentMetadataPatch({
         topic: data.topic,
+        subject: data.subject,
         videoUrl: data.videoUrl,
         durationMinutes: data.durationMinutes
       });
@@ -19,16 +20,17 @@ export function builderMetadataPatch(data: ContentBuilderData): Record<string, u
     case 'resource':
       return buildStudentMetadataPatch({
         topic: data.topic,
+        subject: data.subject,
         resourceLink: data.resourceLink,
         notes: data.notes,
         durationMinutes: data.durationMinutes
       });
     case 'dsa_sheet':
       // The student portal reads metadata.slug before the row slug, so keep them in step.
-      return { ...buildStudentMetadataPatch({ topic: data.topic }), slug: data.slug };
+      return { ...buildStudentMetadataPatch({ topic: data.topic, subject: data.subject }), slug: data.slug };
     case 'project':
     case 'quiz':
-      return buildStudentMetadataPatch({ topic: data.topic });
+      return buildStudentMetadataPatch({ topic: data.topic, subject: data.subject });
     case 'external_test':
       return buildExternalTestMetadataPatch({
         topic: data.topic,

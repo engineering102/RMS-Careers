@@ -1,15 +1,22 @@
 import { requireStudentEntitlement } from '@/lib/db/queries/entitlements';
-import { getLibraryCategorySummaries, getLibraryItems } from '@/lib/db/queries/library';
+import {
+  getLibraryCategorySummaries,
+  getLibraryItems,
+  getLibrarySubjectCounts
+} from '@/lib/db/queries/library';
 import { EmptyEnrollmentView } from '@/components/shell/empty-enrollment';
 import { ContentCard } from '@/components/library/content-card';
 import { SearchFilterBar } from '@/components/library/search-filter-bar';
 import { LibraryEmptyState } from '@/components/library/library-empty-state';
 import { CategoryCard } from '@/components/library/category-card';
 import { CategoryHeader } from '@/components/library/category-header';
+import { SubjectNav } from '@/components/library/subject-nav';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { getLibraryCategory, LIBRARY_CATEGORIES } from '@/lib/data/library-categories';
+import { getLibrarySubject, librarySubjectHref } from '@/lib/data/library-subjects';
+import type { LibraryItem } from '@/lib/types/library';
 
 export const metadata = {
   title: 'Library — RMS Student Portal',
@@ -22,6 +29,7 @@ interface LibraryPageProps {
     q?: string;
     type?: string;
     topic?: string;
+    subject?: string;
     page?: string;
   }>;
 }
@@ -46,10 +54,20 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   const currentTopic = params.topic?.trim() || 'all';
   const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
+  // Unknown ?subject= values are ignored, like unknown types.
+  const activeSubject = getLibrarySubject(params.subject?.trim());
+
   const isSearching = Boolean(currentQuery || currentTopic !== 'all');
-  const showHub = !activeCategory && !isSearching;
+  const showHub = !activeCategory && !activeSubject && !isSearching;
+  // Inside a category with no subject picked, list items subject by subject under headings.
+  const groupBySubject = Boolean(activeCategory && !activeSubject && !currentQuery);
 
   const summariesPromise = getLibraryCategorySummaries({ enrolledProgramIds, enrolledBatchIds });
+  const subjectCountsPromise = getLibrarySubjectCounts({
+    enrolledProgramIds,
+    enrolledBatchIds,
+    contentType: currentType
+  });
 
   const enrolledProgramsBadge = (
     <div className="flex items-center gap-2 self-start md:self-auto rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-muted-foreground">
@@ -76,7 +94,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
 
   // Category hub: one themed card per content type.
   if (showHub) {
-    const summaries = await summariesPromise;
+    const [summaries, subjectCounts] = await Promise.all([summariesPromise, subjectCountsPromise]);
     const byType = new Map(summaries.map((s) => [s.contentType, s]));
 
     return (
@@ -103,12 +121,26 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             );
           })}
         </div>
+
+        {subjectCounts.length > 0 && (
+          <section aria-labelledby="library-subjects-heading" className="space-y-3">
+            <div>
+              <h2 id="library-subjects-heading" className="text-sm font-semibold text-foreground">
+                Browse by subject
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Everything on one subject, across lectures, notes and practice.
+              </p>
+            </div>
+            <SubjectNav counts={subjectCounts} showAll={false} />
+          </section>
+        )}
       </div>
     );
   }
 
   // Fetch authorized library catalog for the open category (or cross-category search)
-  const [result, summaries] = await Promise.all([
+  const [result, summaries, subjectCounts] = await Promise.all([
     getLibraryItems(student.id, {
       enrolledProgramIds,
       enrolledBatchIds,
@@ -116,20 +148,35 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         query: currentQuery,
         contentType: currentType,
         topic: currentTopic,
+        subject: activeSubject?.slug,
+        groupBySubject,
         page: currentPage,
         limit: 24
       }
     }),
-    summariesPromise
+    summariesPromise,
+    subjectCountsPromise
   ]);
 
-  const isFiltered = isSearching;
+  const isFiltered = isSearching || Boolean(activeSubject);
+
+  // Consecutive runs of one subject (the query orders by subject when grouping).
+  const sections: { subject: string; items: LibraryItem[] }[] = [];
+  if (groupBySubject) {
+    for (const item of result.items) {
+      const last = sections[sections.length - 1];
+      if (last && last.subject === item.subject) last.items.push(item);
+      else sections.push({ subject: item.subject, items: [item] });
+    }
+  }
+  const showSubjectHeadings = sections.length > 1;
 
   const buildPageUrl = (targetPage: number) => {
     const urlParams = new URLSearchParams();
     if (currentQuery) urlParams.set('q', currentQuery);
     if (currentType && currentType !== 'all') urlParams.set('type', currentType);
     if (currentTopic && currentTopic !== 'all') urlParams.set('topic', currentTopic);
+    if (activeSubject) urlParams.set('subject', activeSubject.slug);
     if (targetPage > 1) urlParams.set('page', targetPage.toString());
 
     const qs = urlParams.toString();
@@ -160,12 +207,21 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         </div>
       )}
 
-      {/* 2. Interactive Search & Topic Filter Bar */}
+      {/* 2. Subject classification within the open category (or across all of them) */}
+      <SubjectNav
+        counts={subjectCounts}
+        type={activeCategory?.type}
+        activeSubject={activeSubject?.slug}
+        label={activeCategory ? `${activeCategory.label} by subject` : 'Browse by subject'}
+      />
+
+      {/* 3. Interactive Search & Topic Filter Bar */}
       <SearchFilterBar
         availableTopics={result.availableTopics}
         currentQuery={currentQuery}
         currentType={currentType}
         currentTopic={currentTopic}
+        currentSubject={activeSubject?.slug}
         placeholder={
           activeCategory
             ? `Search ${activeCategory.label.toLowerCase()}...`
@@ -173,7 +229,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         }
       />
 
-      {/* 3. Results Header & Count */}
+      {/* 4. Results Header & Count */}
       <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
         <div>
           {result.totalCount > 0 ? (
@@ -195,9 +251,33 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         )}
       </div>
 
-      {/* 4. Content Cards Grid or Empty State */}
+      {/* 5. Content Cards Grid (under subject headings when grouped) or Empty State */}
       {result.totalCount === 0 ? (
         <LibraryEmptyState isFiltered={isFiltered} />
+      ) : showSubjectHeadings ? (
+        <div className="space-y-8">
+          {sections.map((section) => (
+            <section key={section.subject} aria-labelledby={`subject-${section.subject}`} className="space-y-4">
+              <div className="flex items-baseline justify-between gap-3 border-b border-border pb-2">
+                <h2 id={`subject-${section.subject}`} className="text-sm font-semibold text-foreground">
+                  {getLibrarySubject(section.subject)?.label ?? section.subject}
+                </h2>
+                <Link
+                  href={librarySubjectHref({ type: activeCategory?.type, subject: section.subject })}
+                  className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  View all{' '}
+                  {subjectCounts.find((c) => c.subject === section.subject)?.itemCount ?? section.items.length}
+                </Link>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {section.items.map((item) => (
+                  <ContentCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {result.items.map((item) => (
@@ -206,7 +286,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         </div>
       )}
 
-      {/* 5. Pagination Controls (if multiple pages) */}
+      {/* 6. Pagination Controls (if multiple pages) */}
       {result.totalPages > 1 && (
         <div className="flex items-center justify-center gap-3 pt-6 border-t border-border">
           <Button

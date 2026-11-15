@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isContentSubject } from '@rms/db/content-subjects';
 import { projectRubricSchema } from '@/lib/content/project-rubric';
 import { ASSESSMENT_CODE_MAX, ASSESSMENT_CODE_PATTERN, isExternalTestUrl } from '@/lib/content/external-test';
 
@@ -20,7 +21,13 @@ const baseFields = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers and hyphens.'),
   description: optionalText(2000, 'Description'),
   programId: z.number().int().positive().nullable(),
-  topic: optionalText(100, 'Topic')
+  topic: optionalText(100, 'Topic'),
+  /** Subject slug, or '' for Auto. */
+  subject: z
+    .string()
+    .refine((v) => v === '' || isContentSubject(v), 'Pick a subject from the list.')
+    .optional()
+    .default('')
 });
 
 const durationMinutes = z
