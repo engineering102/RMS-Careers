@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import {
   getContentItemById,
   getContentPlacements,
+  getBatchesWithDetails,
   getProgramById,
   getPrograms,
   getProjectAssignmentConfig,
@@ -27,12 +28,14 @@ export default async function ContentBuilderPage(props: { params: Promise<{ id: 
   const item = await getContentItemById(id);
   if (!item) notFound();
 
-  const [programs, projectConfig, quiz, placements] = await Promise.all([
+  const [programs, projectConfig, quiz, placements, batches] = await Promise.all([
     getPrograms(),
     item.contentType === 'project' ? getProjectAssignmentConfig(id) : Promise.resolve(null),
     // Read-only here: the quiz row is created by the workbench (or on create), never by viewing the builder.
     item.contentType === 'quiz' ? getQuizByContentItemId(id) : Promise.resolve(null),
-    getContentPlacements(id)
+    getContentPlacements(id),
+    // Program-owned content can only go into that program's batches; global content into any.
+    getBatchesWithDetails(item.programId !== null ? { programId: item.programId } : undefined)
   ]);
 
   // Keep an archived/inactive program selectable if this item still belongs to it.
@@ -48,6 +51,9 @@ export default async function ContentBuilderPage(props: { params: Promise<{ id: 
       projectConfig={projectConfig}
       quiz={quiz}
       placements={placements}
+      placeableBatches={batches
+        .filter((b) => b.status === 'draft' || b.status === 'active')
+        .map((b) => ({ id: b.id, name: b.name, programCode: b.programCode }))}
     />
   );
 }

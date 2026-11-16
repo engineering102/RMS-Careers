@@ -52,6 +52,7 @@ import {
 import { EmptyState } from '@/components/admin/empty-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
+import { ImportQuestionsDialog } from './import-questions-dialog';
 import {
   saveQuizConfigAction,
   createQuestionAction,
@@ -616,13 +617,18 @@ export function QuizAuthoringClient({
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Badge variant="outline" className="font-mono text-xs px-2.5 py-1">
                 {questions.length} Question{questions.length === 1 ? '' : 's'}
               </Badge>
               <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 text-primary">
                 {totalPoints} Total Point{totalPoints === 1 ? '' : 's'}
               </Badge>
+              <ImportQuestionsDialog
+                contentItemId={contentItem.id}
+                quizId={initialQuiz.id}
+                onImported={(added) => setQuestions((prev) => [...prev, ...added])}
+              />
               <Button onClick={openCreateQuestionModal} className="gap-1.5 shrink-0" size="sm">
                 <PlusCircle className="h-4 w-4" />
                 Add Question
@@ -635,7 +641,7 @@ export function QuizAuthoringClient({
             <EmptyState
               icon={FileQuestion}
               title="No Questions in Assessment"
-              description="This quiz currently has zero questions. Add your first question to activate this evaluation."
+              description="This quiz has no questions yet. Add them one by one, or use Import questions above to paste a whole set at once."
               action={
                 <Button onClick={openCreateQuestionModal} className="gap-2">
                   <PlusCircle className="h-4 w-4" />

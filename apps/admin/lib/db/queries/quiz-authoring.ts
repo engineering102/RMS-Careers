@@ -385,3 +385,52 @@ export async function reorderQuizQuestions(
       .where(and(eq(quizQuestions.id, qId), eq(quizQuestions.quizId, quizId)));
   }
 }
+
+/**
+ * Appends many questions to a quiz in one insert, in the order given, after the questions it already
+ * has. Used by the workbench's paste import and by duplicating a quiz.
+ */
+export async function createQuizQuestionsBulk(
+  quizId: string,
+  inputs: CreateQuizQuestionInput[],
+  client: DbClient = db
+): Promise<QuizQuestionWithDetails[]> {
+  if (inputs.length === 0) return [];
+
+  const [maxSeqRow] = await client
+    .select({ maxSeq: sql<number | null>`max(${quizQuestions.sequenceOrder})` })
+    .from(quizQuestions)
+    .where(eq(quizQuestions.quizId, quizId));
+  const firstSeq = (maxSeqRow?.maxSeq ?? -1) + 1;
+
+  const created = await client
+    .insert(quizQuestions)
+    .values(
+      inputs.map((input, index) => ({
+        quizId,
+        questionText: input.questionText.trim(),
+        questionType: input.questionType,
+        options: input.options,
+        correctOptionIds: input.correctOptionIds,
+        explanationText: input.explanationText?.trim() || null,
+        points: input.points ?? 1,
+        sequenceOrder: firstSeq + index
+      }))
+    )
+    .returning();
+
+  return created
+    .map((q) => ({
+      id: q.id,
+      quizId: q.quizId,
+      questionText: q.questionText,
+      questionType: q.questionType,
+      options: (Array.isArray(q.options) ? q.options : []) as QuizOption[],
+      correctOptionIds: (Array.isArray(q.correctOptionIds) ? q.correctOptionIds : []) as string[],
+      explanationText: q.explanationText,
+      points: q.points,
+      sequenceOrder: q.sequenceOrder,
+      createdAt: q.createdAt
+    }))
+    .sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+}

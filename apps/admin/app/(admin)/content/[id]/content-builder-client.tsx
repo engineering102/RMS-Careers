@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, Loader2, Save } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Copy, ExternalLink, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,12 +25,14 @@ import { describeAudience } from '@/lib/content/audience';
 import { CONTENT_TYPE_DEFS } from '@/lib/content/types/registry';
 import { CONTENT_SUBJECTS, contentSubjectLabel, resolveContentSubject } from '@rms/db/content-subjects';
 import { publishWarnings } from '@/lib/content/types/readiness';
-import { updateContentLifecycleAction } from '../actions';
+import { duplicateContentAction, updateContentLifecycleAction } from '../actions';
 import { saveContentBuilderAction } from './actions';
 import { initialForm, snapshot, toBuilderInput, type BuilderForm } from './builder-form';
 import { TYPE_EDITORS } from './editors';
 import { Field } from './editors/field';
 import { StudentPreview } from './student-preview';
+import { PathToStudents, buildPathSteps } from './path-to-students';
+import { PlaceInBatch, type PlaceableBatch } from './place-in-batch';
 
 export type { BuilderForm, RubricRow } from './builder-form';
 
@@ -40,16 +42,22 @@ interface ContentBuilderClientProps {
   projectConfig: ProjectAssignmentConfig | null;
   quiz: QuizWithDetails | null;
   placements: ContentPlacement[];
+  /** Draft and active batches this item's audience allows; already-placed ones are filtered out here. */
+  placeableBatches?: PlaceableBatch[];
 }
 
 const LEAVE_MESSAGE = 'You have unsaved changes. Leave without saving?';
+const DEFAULT_RUBRIC_WARNING = 'The project still uses the default rubric.';
+
+const readSavedInLibrary = (item: ContentItemWithDetails) => item.metadata?.inLibrary === true;
 
 export function ContentBuilderClient({
   item: initialItem,
   programs,
   projectConfig,
   quiz,
-  placements
+  placements,
+  placeableBatches = []
 }: ContentBuilderClientProps) {
   const router = useRouter();
   const [item, setItem] = React.useState(initialItem);
@@ -59,6 +67,11 @@ export function ContentBuilderClient({
   const [isSaving, setIsSaving] = React.useState(false);
   const [isChangingStatus, setIsChangingStatus] = React.useState(false);
   const [pendingWarnings, setPendingWarnings] = React.useState<string[] | null>(null);
+  const [isDuplicating, setIsDuplicating] = React.useState(false);
+  // A project keeps the default rubric until the builder saves one; saving here writes it.
+  const [hasSavedRubric, setHasSavedRubric] = React.useState(
+    Boolean(projectConfig && projectConfig.rubricCriteria.length > 0)
+  );
 
   const type = item.contentType;
   const def = CONTENT_TYPE_DEFS[type];
@@ -110,8 +123,8 @@ export function ContentBuilderClient({
     return () => document.removeEventListener('click', onClick, true);
   }, [isDirty]);
 
-  const handleSave = async () => {
-    if (isSaving) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (isSaving) return false;
     setIsSaving(true);
     setFieldErrors({});
     try {
@@ -121,16 +134,19 @@ export function ContentBuilderClient({
         // The details were saved even though a later step failed; keep the form dirty so a retry saves the rest.
         if (res.savedItem) setItem(res.savedItem);
         toast.error(res.error);
-        return;
+        return false;
       }
       setItem(res.item);
       setSavedSnapshot(snapshot(form));
+      if (type === 'project') setHasSavedRubric(true);
       toast.success(
         res.item.lifecycleStatus === 'published' ? 'Saved. Students see these changes now.' : 'Saved as draft.'
       );
       router.refresh();
+      return true;
     } catch {
       toast.error('Could not save. Please try again.');
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -167,29 +183,60 @@ export function ContentBuilderClient({
     }
   };
 
-  const handlePublish = () => {
-    if (isDirty) {
-      toast.error('Save your changes before publishing.');
-      return;
-    }
-    // The form equals the saved item here, so these checks describe what students will get.
-    const warnings = publishWarnings({
+  // Live readiness of what is in the form; after a save it describes what students will get.
+  const readinessWarnings = publishWarnings({
       type,
       description: form.description,
       videoUrl: form.videoUrl,
       resourceLink: form.resourceLink,
       notes: form.notes,
       quizQuestionCount: quiz?.questionCount ?? 0,
-      usesDefaultRubric: type === 'project' && (!projectConfig || projectConfig.rubricCriteria.length === 0),
+      usesDefaultRubric: type === 'project' && !hasSavedRubric,
       externalUrl: form.externalUrl,
       assessmentCode: form.assessmentCode
     });
+
+  // Publish saves unsaved edits first, so one click takes a finished draft live.
+  const handlePublish = async () => {
+    const savedNow = isDirty;
+    if (savedNow && !(await handleSave())) return;
+    // Saving a project writes its rubric, so the default-rubric warning from before the save no longer holds.
+    const warnings = readinessWarnings.filter((w) => !(savedNow && type === 'project' && w === DEFAULT_RUBRIC_WARNING));
     if (warnings.length > 0) {
       setPendingWarnings(warnings);
       return;
     }
     void changeStatus('publish');
   };
+
+  const handleDuplicate = async () => {
+    if (isDirty && !window.confirm('Unsaved changes are not included in the copy. Duplicate the saved version?')) return;
+    setIsDuplicating(true);
+    try {
+      const res = await duplicateContentAction(item.id);
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.warning) toast.warning(res.warning);
+      else toast.success('Draft copy created. You are now editing the copy.');
+      // A full navigation: this builder instance holds the original item's state.
+      window.location.assign(`/content/${res.item.id}`);
+    } catch {
+      toast.error('Could not duplicate. Please try again.');
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  const placedBatchIds = new Set(placements.map((p) => p.batchId));
+  const pathSteps = buildPathSteps({
+    warnings: readinessWarnings,
+    isDirty,
+    status,
+    placementCount: placements.length,
+    inLibrary: type !== 'external_test' && readSavedInLibrary(item)
+  });
 
   const errorFor = (key: string) => fieldErrors[key]?.[0];
 
@@ -209,10 +256,16 @@ export function ContentBuilderClient({
         title={form.title || 'Untitled'}
         actions={
           <>
+            {type !== 'dsa_sheet' && (
+              <Button variant="ghost" onClick={handleDuplicate} disabled={isDuplicating} title="Create a draft copy of this item">
+                {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                Duplicate
+              </Button>
+            )}
             {status === 'draft' && (
-              <Button variant="outline" onClick={handlePublish} disabled={isChangingStatus}>
+              <Button variant="outline" onClick={handlePublish} disabled={isChangingStatus || isSaving}>
                 {isChangingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Publish
+                {isDirty ? 'Save & publish' : 'Publish'}
               </Button>
             )}
             {status === 'published' && (
@@ -384,11 +437,24 @@ export function ContentBuilderClient({
             quiz={quiz}
           />
 
-          <PlacementCard placements={placements} />
+          <PlacementCard placements={placements}>
+            <PlaceInBatch
+              contentItemId={item.id}
+              batches={placeableBatches.filter((b) => !placedBatchIds.has(b.id))}
+              blockedReason={
+                status !== 'published'
+                  ? 'Publish this item first: only published items can be placed in a batch.'
+                  : isDirty
+                    ? 'Save your changes first.'
+                    : null
+              }
+            />
+          </PlacementCard>
         </div>
 
         {/* Preview */}
-        <aside className="space-y-2 lg:sticky lg:top-6" aria-label="Student preview">
+        <aside className="space-y-2 lg:sticky lg:top-6" aria-label="Publishing checklist and student preview">
+          <PathToStudents steps={pathSteps} />
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">Student preview</h2>
             <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground">
@@ -430,7 +496,7 @@ export function ContentBuilderClient({
   );
 }
 
-function PlacementCard({ placements }: { placements: ContentPlacement[] }) {
+function PlacementCard({ placements, children }: { placements: ContentPlacement[]; children?: React.ReactNode }) {
   return (
     <Card>
       <CardHeader>
@@ -439,7 +505,7 @@ function PlacementCard({ placements }: { placements: ContentPlacement[] }) {
           Week, order and dates are set per batch in its curriculum. Only published items can be placed.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {placements.length === 0 ? (
           <p className="text-sm text-muted-foreground">Not placed in any batch curriculum yet.</p>
         ) : (
@@ -456,6 +522,7 @@ function PlacementCard({ placements }: { placements: ContentPlacement[] }) {
             ))}
           </ul>
         )}
+        {children}
       </CardContent>
     </Card>
   );

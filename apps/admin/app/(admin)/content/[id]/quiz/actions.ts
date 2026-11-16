@@ -9,8 +9,12 @@ import {
   updateQuizQuestion,
   deleteQuizQuestion,
   reorderQuizQuestions,
+  createQuizQuestionsBulk,
+  getQuizByContentItemId,
   type QuizQuestionWithDetails
 } from '@/lib/db/queries';
+import { requireAdmin } from '@/lib/authz';
+import { MAX_IMPORT_QUESTIONS } from '@/lib/content/quiz-import';
 import {
   quizConfigSchema,
   quizQuestionSchema,
@@ -217,5 +221,56 @@ export async function reorderQuestionsAction(
       success: false,
       error: error?.message || 'Failed to reorder questions.'
     };
+  }
+}
+
+/**
+ * Adds many questions at once (the workbench's paste import). Every question passes the same schema
+ * as the single-question form, and nothing is saved unless all of them are valid.
+ */
+export async function importQuestionsAction(
+  contentItemId: string,
+  quizId: string,
+  rawQuestions: unknown
+): Promise<{ success: true; questions: QuizQuestionWithDetails[] } | { success: false; error: string }> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+
+    if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
+      return { success: false, error: 'There are no questions to import.' };
+    }
+    if (rawQuestions.length > MAX_IMPORT_QUESTIONS) {
+      return { success: false, error: `Import at most ${MAX_IMPORT_QUESTIONS} questions at a time.` };
+    }
+
+    const valid: QuizQuestionInput[] = [];
+    for (let i = 0; i < rawQuestions.length; i++) {
+      const parsed = quizQuestionSchema.safeParse(rawQuestions[i]);
+      if (!parsed.success) {
+        return {
+          success: false,
+          error: `Question ${i + 1}: ${parsed.error.errors[0]?.message || 'is not valid.'} Nothing was imported.`
+        };
+      }
+      valid.push(parsed.data);
+    }
+
+    // The quiz id comes from the client: only accept the quiz that belongs to this content item.
+    const quiz = await getQuizByContentItemId(contentItemId);
+    if (!quiz || quiz.id !== quizId) return { success: false, error: 'Quiz not found. Reload the page and try again.' };
+
+    const questions = await createQuizQuestionsBulk(
+      quiz.id,
+      valid.map(({ sequenceOrder: _ignored, ...q }) => q)
+    );
+
+    revalidatePath(`/content/${contentItemId}/quiz`);
+    revalidatePath(`/content/${contentItemId}`);
+    revalidatePath('/content');
+    return { success: true, questions };
+  } catch (error) {
+    console.error('Error in importQuestionsAction:', error instanceof Error ? error.message : 'unknown');
+    return { success: false, error: 'Failed to import the questions. Please try again.' };
   }
 }
