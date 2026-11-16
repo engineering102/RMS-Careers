@@ -37,8 +37,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger
+  DialogTitle
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -60,15 +59,14 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { formatDate } from '@/lib/utils/format-date';
 import { toast } from 'sonner';
 import {
-  createContentAction,
   updateContentAction,
   updateContentLifecycleAction,
   duplicateContentAction
 } from './actions';
 import type { ContentItemWithDetails } from '@/lib/db/queries';
 import type { Program, ContentTypeEnum } from '@rms/db';
-import { CONTENT_TYPE_DEFS, CREATE_CHOICES, type CreateChoiceId } from '@/lib/content/types/registry';
-import { ContentTypePicker } from './content-type-picker';
+import { CONTENT_TYPE_DEFS } from '@/lib/content/types/registry';
+import { CreateContentDialog } from './create-content-dialog';
 import { PaginationBar } from '@/components/admin/pagination-bar';
 
 interface ContentClientProps {
@@ -115,20 +113,6 @@ export function ContentClient({
   const [filterType, setFilterType] = React.useState(selectedType);
   const [filterStatus, setFilterStatus] = React.useState(selectedStatus);
   const [search, setSearch] = React.useState(searchQuery);
-
-  // Create Form State
-  const [createTitle, setCreateTitle] = React.useState('');
-  const [createSlug, setCreateSlug] = React.useState('');
-  const [createChoiceId, setCreateChoiceId] = React.useState<CreateChoiceId>('lecture');
-  const createChoice = CREATE_CHOICES.find((c) => c.id === createChoiceId) ?? CREATE_CHOICES[0];
-  const createType = createChoice.contentType;
-  const [createProgramId, setCreateProgramId] = React.useState<string>('global');
-  const [createDescription, setCreateDescription] = React.useState('');
-  const [createTopic, setCreateTopic] = React.useState('');
-  const [createResourceLink, setCreateResourceLink] = React.useState('');
-  const [createVideoUrl, setCreateVideoUrl] = React.useState('');
-  const [createDuration, setCreateDuration] = React.useState('');
-  const [createIsPublished, setCreateIsPublished] = React.useState(false);
 
   // Edit Form State
   const [editTitle, setEditTitle] = React.useState('');
@@ -190,56 +174,6 @@ export function ContentClient({
     filterType !== 'all' ||
     filterStatus !== 'all' ||
     search.trim() !== '';
-
-  const handleCreateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createTitle.trim()) {
-      toast.error('Title is required.');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const res = await createContentAction({
-        title: createTitle.trim(),
-        slug: createSlug.trim() || undefined,
-        contentType: createType,
-        quizType: createChoice.quizType,
-        description: createDescription.trim() || undefined,
-        programId: createProgramId === 'global' ? null : parseInt(createProgramId, 10),
-        isPublished: createIsPublished,
-        topic: createTopic.trim() || undefined,
-        // Only the fields the chosen type uses are sent.
-        resourceLink: (createType === 'notes' || createType === 'resource') && createResourceLink.trim() ? createResourceLink.trim() : undefined,
-        videoUrl: createType === 'lecture' && createVideoUrl.trim() ? createVideoUrl.trim() : undefined,
-        durationMinutes: CONTENT_TYPE_DEFS[createType].hasDuration && createDuration ? parseInt(createDuration, 10) : undefined
-      });
-
-      if (!res.success) {
-        toast.error(res.error || 'Failed to create content item.');
-        return;
-      }
-
-      toast.success('Content item created. Finish it in the builder.');
-      setIsCreateOpen(false);
-      // Reset form
-      setCreateTitle('');
-      setCreateSlug('');
-      setCreateChoiceId('lecture');
-      setCreateProgramId('global');
-      setCreateDescription('');
-      setCreateTopic('');
-      setCreateResourceLink('');
-      setCreateVideoUrl('');
-      setCreateDuration('');
-      setCreateIsPublished(false);
-      router.push(`/content/${res.item.id}`);
-    } catch {
-      toast.error('An unexpected error occurred.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const openEditModal = (item: ContentItemWithDetails) => {
     setEditingItem(item);
@@ -371,162 +305,11 @@ export function ContentClient({
           </p>
         </div>
 
-        {/* Create Dialog */}
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 shrink-0">
-              <PlusCircle className="h-4 w-4" />
-              New Content Item
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create Canonical Content Item</DialogTitle>
-              <DialogDescription>
-                Define once in the central library. Batches can reuse this content without duplication.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleCreateSubmit} className="space-y-4 py-2">
-              <div className="space-y-2">
-                <span className="text-sm font-medium">What are you creating? *</span>
-                <ContentTypePicker value={createChoiceId} onChange={setCreateChoiceId} />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title *</label>
-                <Input
-                  required
-                  placeholder="e.g. Dynamic Programming: Kadane's Algorithm"
-                  value={createTitle}
-                  onChange={(e) => setCreateTitle(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Scope / Program *</label>
-                  <Select
-                    value={createProgramId}
-                    onValueChange={(val) => setCreateProgramId(val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="global">Global / Reusable Across All Programs</SelectItem>
-                      {programs.map((p) => (
-                        <SelectItem key={p.id} value={String(p.id)}>
-                          Program: {p.name} ({p.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Custom Slug (optional)</label>
-                <Input
-                  placeholder="auto-generated from title if blank"
-                  value={createSlug}
-                  onChange={(e) => setCreateSlug(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea
-                  className="w-full min-h-[80px] p-2 text-sm rounded-md border border-input bg-background"
-                  placeholder="Summary of learning outcomes and prerequisites..."
-                  value={createDescription}
-                  onChange={(e) => setCreateDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Topic / Domain</label>
-                  <Input
-                    placeholder="e.g. Data Structures & Algorithms"
-                    value={createTopic}
-                    onChange={(e) => setCreateTopic(e.target.value)}
-                  />
-                </div>
-
-                {CONTENT_TYPE_DEFS[createType].hasDuration && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Estimated Duration (mins)</label>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="e.g. 45"
-                      value={createDuration}
-                      onChange={(e) => setCreateDuration(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {createType === 'lecture' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Video link</label>
-                  <Input
-                    placeholder="https://www.youtube.com/watch?v=…"
-                    value={createVideoUrl}
-                    onChange={(e) => setCreateVideoUrl(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {(createType === 'notes' || createType === 'resource') && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Document link</label>
-                  <Input
-                    placeholder="https://docs.google.com/… or a PDF / slides link"
-                    value={createResourceLink}
-                    onChange={(e) => setCreateResourceLink(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {createType === 'quiz' && (
-                <p className="text-xs text-muted-foreground">
-                  {createChoice.quizType === 'formal'
-                    ? 'Starts with a 30-minute limit and explanations shown after the deadline. Add questions in the quiz workbench after creating.'
-                    : 'Add questions in the quiz workbench after creating.'}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="createIsPublished"
-                  checked={createIsPublished}
-                  onChange={(e) => setCreateIsPublished(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <label htmlFor="createIsPublished" className="text-sm text-foreground">
-                  Publish immediately (Default is Draft)
-                </label>
-              </div>
-
-              <DialogFooter className="pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Creating...' : 'Create Content Item'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button className="gap-2 shrink-0" onClick={() => setIsCreateOpen(true)}>
+          <PlusCircle className="h-4 w-4" />
+          New Content Item
+        </Button>
+        <CreateContentDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} programs={programs} />
       </div>
 
       {/* Filter and Search Bar */}
