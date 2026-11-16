@@ -22,6 +22,7 @@ export interface BuilderForm {
   topic: string;
   /** Subject slug, or '' for Auto. */
   subject: string;
+  inLibrary: boolean;
   videoUrl: string;
   resourceLink: string;
   notes: string;
@@ -47,6 +48,7 @@ export function initialForm(item: ContentItemWithDetails, projectConfig: Project
     programId: item.programId === null ? 'global' : String(item.programId),
     topic: fields.topic,
     subject: fields.subject,
+    inLibrary: fields.inLibrary,
     videoUrl: fields.videoUrl,
     resourceLink: fields.resourceLink,
     notes: fields.notes,
@@ -79,7 +81,8 @@ export function toBuilderInput(id: string, type: ContentTypeEnum, form: BuilderF
     description: form.description,
     programId: form.programId === 'global' ? null : Number(form.programId),
     topic: form.topic,
-    subject: form.subject
+    subject: form.subject,
+    inLibrary: form.inLibrary
   };
   const duration = form.durationMinutes.trim() === '' ? null : Number(form.durationMinutes.trim());
 

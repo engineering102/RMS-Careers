@@ -21,6 +21,7 @@ const form = (patch: Partial<BuilderForm> = {}): BuilderForm => ({
   programId: 'global',
   topic: 'Arrays',
   subject: '',
+  inLibrary: false,
   videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
   resourceLink: 'https://docs.example.com/x',
   notes: 'Some notes',
@@ -61,6 +62,7 @@ describe('toBuilderInput (form -> typed save payload)', () => {
       programId: null,
       topic: 'Arrays',
       subject: '',
+      inLibrary: false,
       videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
       durationMinutes: 20
     });
@@ -92,6 +94,7 @@ describe('builderMetadataPatch', () => {
     expect(parse('lecture')).toEqual({
       topic: 'Arrays',
       subject: null,
+      inLibrary: false,
       videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
       provider: 'youtube',
       videoId: 'dQw4w9WgXcQ',
@@ -101,8 +104,19 @@ describe('builderMetadataPatch', () => {
   });
 
   it('is a patch: types without media fields leave video, notes and duration alone', () => {
-    expect(parse('project')).toEqual({ topic: 'Arrays', subject: null });
-    expect(parse('quiz')).toEqual({ topic: 'Arrays', subject: null });
+    expect(parse('project')).toEqual({ topic: 'Arrays', subject: null, inLibrary: false });
+    expect(parse('quiz')).toEqual({ topic: 'Arrays', subject: null, inLibrary: false });
+  });
+
+  it('keeps content out of the student Library unless an admin opts it in', () => {
+    expect(parse('lecture')).toMatchObject({ inLibrary: false });
+    expect(parse('lecture', { inLibrary: true })).toMatchObject({ inLibrary: true });
+    expect(parse('notes', { inLibrary: true })).toMatchObject({ inLibrary: true });
+    // A payload without the field (an older client) must not opt content in.
+    const { inLibrary: _omitted, ...withoutFlag } = toBuilderInput(ID, 'quiz', form({ inLibrary: true }));
+    expect(builderMetadataPatch(contentBuilderSchema.parse(withoutFlag))).toMatchObject({ inLibrary: false });
+    // External tests live on Assessments and never carry the flag.
+    expect(parse('external_test', { inLibrary: true })).not.toHaveProperty('inLibrary');
   });
 
   it('stores the picked library subject, clears it on Auto, and rejects slugs outside the list', () => {
@@ -116,7 +130,7 @@ describe('builderMetadataPatch', () => {
   });
 
   it('keeps metadata.slug in step with the slug for DSA sheets', () => {
-    expect(parse('dsa_sheet')).toEqual({ topic: 'Arrays', subject: null, slug: 'sliding-window' });
+    expect(parse('dsa_sheet')).toEqual({ topic: 'Arrays', subject: null, inLibrary: false, slug: 'sliding-window' });
   });
 
   it('writes external test keys without touching lecture or reading keys', () => {

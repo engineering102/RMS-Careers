@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader } from '@/components/ui/page-header';
@@ -309,11 +310,34 @@ export function ContentBuilderClient({
                   </Field>
                 )}
               </div>
+              {type !== 'external_test' && (
+                <div className="flex items-start gap-3 rounded-md border border-border p-3">
+                  <Checkbox
+                    id="inLibrary"
+                    className="mt-0.5"
+                    checked={form.inLibrary}
+                    onChange={(e) => set('inLibrary', e.target.checked)}
+                    aria-describedby="inLibrary-hint"
+                  />
+                  <div className="space-y-1">
+                    <label htmlFor="inLibrary" className="cursor-pointer text-sm font-medium leading-none">
+                      Show in the student Library
+                    </label>
+                    <p id="inLibrary-hint" className="text-xs text-muted-foreground">
+                      {form.inLibrary
+                        ? form.programId === 'global'
+                          ? 'Every enrolled student finds this in the Library, in any batch.'
+                          : 'Every student enrolled in this program finds it in the Library, in any batch.'
+                        : 'Off: students reach this only through a batch curriculum that schedules it.'}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field
                   id="scope"
                   label="Available to"
-                  hint="Program items reach everyone in that program. Global items reach students only through batch curriculums."
+                  hint="Who may open it. Students find it in a batch curriculum, or in the Library when that is switched on below."
                 >
                   <Select value={form.programId} onValueChange={(v) => set('programId', v)}>
                     <SelectTrigger id="scope">

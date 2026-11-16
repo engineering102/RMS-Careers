@@ -62,11 +62,3 @@ export function getLibraryCategory(type: string | undefined | null): LibraryCate
   if (!type) return null;
   return LIBRARY_CATEGORIES.find((c) => c.type === type) ?? null;
 }
-
-export function formatCategoryCount(category: LibraryCategory, count: number): string {
-  return `${count} ${count === 1 ? category.noun[0] : category.noun[1]}`;
-}
-
-export function libraryCategoryHref(type: LibraryCategoryType): string {
-  return `/library?type=${encodeURIComponent(type)}`;
-}

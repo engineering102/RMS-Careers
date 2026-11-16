@@ -27,7 +27,9 @@ const baseFields = z.object({
     .string()
     .refine((v) => v === '' || isContentSubject(v), 'Pick a subject from the list.')
     .optional()
-    .default('')
+    .default(''),
+  /** Show in the student Library. Opt-in: a missing value means no. */
+  inLibrary: z.boolean().optional().default(false)
 });
 
 const durationMinutes = z
