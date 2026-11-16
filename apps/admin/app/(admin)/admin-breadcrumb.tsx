@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 const SECTIONS: { prefix: string; label: string }[] = [
+  { prefix: '/overview', label: 'Overview' },
   { prefix: '/programs', label: 'Programs' },
   { prefix: '/colleges', label: 'Colleges' },
   { prefix: '/batches', label: 'Batches' },
@@ -30,7 +31,7 @@ export function AdminBreadcrumb() {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/programs">Academy</Link>
+            <Link href="/overview">Academy</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {section && (

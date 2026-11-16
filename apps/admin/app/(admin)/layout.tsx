@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {
   GraduationCap,
+  LayoutDashboard,
   BookOpen,
   Layers,
   ClipboardList,
@@ -22,7 +23,7 @@ import { User } from './user';
 import Providers from './providers';
 import { NavItem } from './nav-item';
 import { AdminBreadcrumb } from './admin-breadcrumb';
-import { SearchInput } from './search';
+import { CommandPalette } from './command-palette';
 import { requireAdminSession } from '@/lib/authz';
 
 export default async function AdminLayout({
@@ -41,7 +42,7 @@ export default async function AdminLayout({
           <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <MobileNav isSuperAdmin={isSuperAdmin} />
             <AdminBreadcrumb />
-            <SearchInput />
+            <CommandPalette isSuperAdmin={isSuperAdmin} />
             <User />
           </header>
           {/* grid-cols-1 (minmax(0, 1fr)) keeps wide tables and tab strips scrolling inside their own
@@ -60,12 +61,16 @@ function DesktopNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
     <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         <Link
-          href="/programs"
+          href="/overview"
           className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
         >
           <GraduationCap className="h-4 w-4 transition-all group-hover:scale-110" />
           <span className="sr-only">Academy Enrollment</span>
         </Link>
+
+        <NavItem href="/overview" label="Overview">
+          <LayoutDashboard className="h-5 w-5" />
+        </NavItem>
 
         <NavItem href="/programs" label="Programs">
           <BookOpen className="h-5 w-5" />
@@ -123,7 +128,7 @@ function MobileNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
       <SheetContent side="left" className="sm:max-w-xs">
         <nav className="grid gap-6 text-lg font-medium">
           <Link
-            href="/programs"
+            href="/overview"
             className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
           >
             <GraduationCap className="h-5 w-5 transition-all group-hover:scale-110" />
@@ -133,8 +138,15 @@ function MobileNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
             Academy Enrollment
           </div>
           <Link
+            href="/overview"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            Overview
+          </Link>
+          <Link
             href="/programs"
-            className="flex items-center gap-4 px-2.5 text-foreground hover:text-foreground"
+            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
           >
             <BookOpen className="h-5 w-5" />
             Programs

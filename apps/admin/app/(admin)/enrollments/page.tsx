@@ -1,6 +1,11 @@
 import * as React from 'react';
 import Link from 'next/link';
-import { getEnrollmentsWithDetails, getEnrollmentSummaryStats, getPrograms } from '@/lib/db/queries';
+import {
+  getEnrollmentsWithDetails,
+  getEnrollmentSummaryStats,
+  getPrograms,
+  getBatchesWithDetails
+} from '@/lib/db/queries';
 import { EnrollmentsTable } from './enrollments-table';
 import { EnrollmentsFilter } from './enrollments-filter';
 import { SummaryCards } from './summary-cards';
@@ -19,6 +24,7 @@ export default async function EnrollmentsPage(props: {
     q?: string;
     status?: string;
     program?: string;
+    batch?: string;
     year?: string;
     emailStatus?: string;
     sort?: string;
@@ -30,17 +36,19 @@ export default async function EnrollmentsPage(props: {
 
   const yearNum = searchParams.year ? parseInt(searchParams.year, 10) : undefined;
 
-  const [enrollmentsList, stats, allPrograms] = await Promise.all([
+  const [enrollmentsList, stats, allPrograms, allBatches] = await Promise.all([
     getEnrollmentsWithDetails({
       search: searchParams.q || undefined,
       programCodeFilter: searchParams.program || undefined,
+      batchIdFilter: searchParams.batch || undefined,
       statusFilter: searchParams.status || undefined,
       yearFilter: yearNum && !isNaN(yearNum) ? yearNum : undefined,
       emailStatusFilter: searchParams.emailStatus || undefined,
       sort: searchParams.sort || undefined
     }),
     getEnrollmentSummaryStats(),
-    getPrograms()
+    getPrograms(),
+    getBatchesWithDetails()
   ]);
 
   return (
@@ -65,7 +73,11 @@ export default async function EnrollmentsPage(props: {
       <SummaryCards stats={stats} />
 
       {/* Filter Controls (search + dropdowns) */}
-      <EnrollmentsFilter programs={allPrograms} resultCount={enrollmentsList.length} />
+      <EnrollmentsFilter
+        programs={allPrograms}
+        batches={allBatches.map((b) => ({ id: b.id, name: b.name, programCode: b.programCode }))}
+        resultCount={enrollmentsList.length}
+      />
 
       {/* Result count label */}
       {enrollmentsList.length > 0 && (

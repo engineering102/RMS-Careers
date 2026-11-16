@@ -14,13 +14,13 @@ import { BatchTutorsCard } from './tutors/batch-tutors-card';
 import { enrollmentLinkAvailability } from '@/lib/enrollment/link-availability';
 import { AddStudentsMenu } from './add-students-menu';
 import { ExportRosterButton } from './export-roster-button';
+import { EditBatchDialog } from './edit-batch-dialog';
+import { RosterTable } from './roster-table';
 import { requireAdminSession } from '@/lib/authz';
-import { summarizeRoster, type BatchRosterEntry } from '@/lib/batches/roster';
+import { summarizeRoster } from '@/lib/batches/roster';
 import { formatDate } from '@/lib/utils/format-date';
 import { PageHeader } from '@/components/ui/page-header';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/admin/empty-state';
 import { BatchNav } from '@/components/admin/batch-nav';
 
@@ -29,15 +29,6 @@ export const metadata = {
 };
 
 export const dynamic = 'force-dynamic';
-
-function StatusBadge({ status }: { status: BatchRosterEntry['status'] }) {
-  const label = status.charAt(0).toUpperCase() + status.slice(1);
-  if (status === 'active' || status === 'confirmed') {
-    return <Badge className="border-0 bg-emerald-600 text-white hover:bg-emerald-600/90">{label}</Badge>;
-  }
-  if (status === 'pending') return <Badge variant="secondary">{label}</Badge>;
-  return <Badge variant="outline">{label}</Badge>;
-}
 
 export default async function BatchOverviewPage(props: { params: Promise<{ batchId: string }> }) {
   await requireAdminSession();
@@ -85,15 +76,26 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
         eyebrow={program ? `${program.name} (${program.code})` : 'Batch'}
         title={batch.name}
         actions={
-          program ? (
-            <AddStudentsMenu
-              batchId={batch.id}
-              batchName={batch.name}
-              program={{ name: program.name, code: program.code }}
-              collegeLabel={college ? `${college.name} (${college.code})` : 'Unknown college'}
-              linkAvailability={enrollmentLinkAvailability(program, programEnrolledCount)}
+          <>
+            <EditBatchDialog
+              batch={{
+                id: batch.id,
+                name: batch.name,
+                status: batch.status,
+                startDate: batch.startDate,
+                endDate: batch.endDate
+              }}
             />
-          ) : null
+            {program ? (
+              <AddStudentsMenu
+                batchId={batch.id}
+                batchName={batch.name}
+                program={{ name: program.name, code: program.code }}
+                collegeLabel={college ? `${college.name} (${college.code})` : 'Unknown college'}
+                linkAvailability={enrollmentLinkAvailability(program, programEnrolledCount)}
+              />
+            ) : null}
+          </>
         }
         description={
           <>
@@ -120,16 +122,17 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
             </Card>
           ))}
         </dl>
-        {summary.pending > 0 && program ? (
+        {summary.pending > 0 ? (
           <p className="text-sm text-muted-foreground">
-            {summary.pending} {summary.pending === 1 ? 'student is' : 'students are'} waiting for confirmation.{' '}
+            {summary.pending} {summary.pending === 1 ? 'student is' : 'students are'} waiting for confirmation. Confirm
+            them in the Students list below, or{' '}
             <Link
-              href={`/enrollments?program=${encodeURIComponent(program.code)}&status=pending`}
+              href={`/enrollments?batch=${batch.id}&status=pending`}
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              Review pending enrollments in {program.code}
-            </Link>{' '}
-            (the Enrollments page filters by program, so it also lists other batches of this program).
+              review this batch&apos;s pending enrollments
+            </Link>
+            .
           </p>
         ) : null}
       </section>
@@ -150,41 +153,7 @@ export default async function BatchOverviewPage(props: { params: Promise<{ batch
             description="Use Add students to import a CSV or Excel file into this batch, or to share the program's enrollment link."
           />
         ) : (
-          <Card className="overflow-x-auto shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead>Student</TableHead>
-                  <TableHead>Roll number</TableHead>
-                  <TableHead>Branch / year</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Enrolled</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {roster.map((entry) => (
-                  <TableRow key={entry.enrollmentId}>
-                    <TableCell>
-                      <div className="font-medium">{entry.student.fullName}</div>
-                      <div className="break-all text-xs text-muted-foreground">{entry.student.email}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">{entry.student.collegeRollNumber ?? '—'}</TableCell>
-                    <TableCell className="text-sm">
-                      {[entry.student.branch, entry.student.year ? `Year ${entry.student.year}` : null]
-                        .filter(Boolean)
-                        .join(' · ') || '—'}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={entry.status} />
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground">
-                      {formatDate(entry.enrolledAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
+          <RosterTable batchId={batch.id} roster={roster} />
         )}
       </section>
     </div>

@@ -2,8 +2,10 @@
 
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { getCollegeById, getProgramById, createBatch } from '@/lib/db/queries';
-import { createBatchSchema, type CreateBatchInput } from './schema';
+import { z } from 'zod';
+import { getCollegeById, getProgramById, createBatch, getBatchById, updateBatch } from '@/lib/db/queries';
+import { requireAdmin } from '@/lib/authz';
+import { createBatchSchema, updateBatchSchema, type CreateBatchInput } from './schema';
 
 export async function createBatchAction(
   formDataOrInput: FormData | Record<string, unknown>
@@ -103,5 +105,48 @@ export async function createBatchAction(
       success: false,
       error: error?.message || 'Failed to create batch.'
     };
+  }
+}
+
+export type UpdateBatchResult =
+  | { success: true; message: string }
+  | { success: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
+
+/**
+ * Edits a batch's name, timeline and status. Status decides student access: students can open a
+ * batch only while it is active or completed, and a completed or archived batch has a read-only
+ * curriculum.
+ */
+export async function updateBatchAction(batchId: unknown, rawInput: unknown): Promise<UpdateBatchResult> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+
+    const id = z.string().uuid().safeParse(batchId);
+    if (!id.success) return { success: false, error: 'Invalid request.' };
+
+    const parsed = updateBatchSchema.safeParse(rawInput);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.errors[0]?.message || 'Validation failed.',
+        fieldErrors: parsed.error.flatten().fieldErrors
+      };
+    }
+
+    const existing = await getBatchById(id.data);
+    if (!existing) return { success: false, error: 'Batch not found.' };
+
+    const updated = await updateBatch(id.data, parsed.data);
+    if (!updated) return { success: false, error: 'Batch not found.' };
+
+    revalidatePath('/batches');
+    revalidatePath(`/batches/${id.data}`, 'layout');
+    revalidatePath('/overview');
+
+    return { success: true, message: `Batch "${updated.name}" updated.` };
+  } catch (error) {
+    console.error('Error in updateBatchAction:', error instanceof Error ? error.message : 'unknown');
+    return { success: false, error: 'Failed to update the batch. Please try again.' };
   }
 }

@@ -18,10 +18,12 @@ import { toast } from 'sonner';
 
 interface EnrollmentsFilterProps {
   programs: Program[];
+  /** Batches offered in the Batch filter; narrowed to the selected program when one is chosen. */
+  batches?: { id: string; name: string; programCode: string }[];
   resultCount: number;
 }
 
-export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterProps) {
+export function EnrollmentsFilter({ programs, batches = [], resultCount }: EnrollmentsFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -33,12 +35,23 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
     setSearchValue(searchParams.get('q') || '');
   }, [searchParams]);
 
+  const selectedProgram = searchParams.get('program');
+  const selectedBatch = searchParams.get('batch');
+  const batchOptions = selectedProgram
+    ? batches.filter((b) => b.programCode.toLowerCase() === selectedProgram.toLowerCase() || b.id === selectedBatch)
+    : batches;
+
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value && value !== 'all') {
       params.set(key, value);
     } else {
       params.delete(key);
+    }
+    // A batch belongs to one program: changing the program clears a batch that no longer fits.
+    if (key === 'program') {
+      const batch = batches.find((b) => b.id === params.get('batch'));
+      if (batch && value !== 'all' && batch.programCode.toLowerCase() !== value.toLowerCase()) params.delete('batch');
     }
     params.set('page', '1');
     router.push(`/enrollments?${params.toString()}`);
@@ -57,6 +70,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
   const hasActiveFilters =
     Boolean(searchParams.get('q')) ||
     Boolean(searchParams.get('program')) ||
+    Boolean(searchParams.get('batch')) ||
     Boolean(searchParams.get('status')) ||
     Boolean(searchParams.get('year')) ||
     Boolean(searchParams.get('emailStatus')) ||
@@ -67,6 +81,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
     const options = {
       search: searchParams.get('q') || undefined,
       programCodeFilter: searchParams.get('program') || undefined,
+      batchIdFilter: searchParams.get('batch') || undefined,
       statusFilter: searchParams.get('status') || undefined,
       yearFilter: searchParams.get('year') ? parseInt(searchParams.get('year')!, 10) : undefined,
       emailStatusFilter: searchParams.get('emailStatus') || undefined,
@@ -138,7 +153,7 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
       </div>
 
       {/* Filter Select Controls */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 pt-1 border-t">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1 border-t">
         {/* Program Filter */}
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
@@ -156,6 +171,24 @@ export function EnrollmentsFilter({ programs, resultCount }: EnrollmentsFilterPr
               {programs.map((p) => (
                 <SelectItem key={p.id} value={p.code}>
                   {p.name} ({p.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Batch Filter */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground">Batch</label>
+          <Select value={selectedBatch || 'all'} onValueChange={(val) => updateParam('batch', val)}>
+            <SelectTrigger className="h-8 text-xs" aria-label="Batch">
+              <SelectValue placeholder="All Batches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Batches</SelectItem>
+              {batchOptions.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} ({b.programCode})
                 </SelectItem>
               ))}
             </SelectContent>

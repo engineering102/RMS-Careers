@@ -257,6 +257,22 @@ export async function createBatch(data: {
 }
 
 /**
+ * Updates a batch's name, timeline and status. Returns null when the batch does not exist.
+ * College and program are never changed here: enrollments and curriculum are tied to them.
+ */
+export async function updateBatch(
+  id: string,
+  data: { name: string; startDate: Date; endDate: Date; status: string }
+): Promise<Batch | null> {
+  const [updated] = await db
+    .update(batches)
+    .set({ name: data.name.trim(), startDate: data.startDate, endDate: data.endDate, status: data.status })
+    .where(eq(batches.id, id))
+    .returning();
+  return updated ?? null;
+}
+
+/**
  * Assigns a tutor to a batch.
  * Enforces uniqueness on (tutorId, batchId) via database constraint.
  * Tutors can be assigned across multiple batches and multiple colleges.

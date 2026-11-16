@@ -10,12 +10,17 @@ import {
   updateCurriculumPlacement,
   removeCurriculumPlacement,
   reorderCurriculumPlacements,
+  copyCurriculumFromBatch,
+  type CopyCurriculumResult,
   type CurriculumPlacementItem
 } from '@/lib/db/queries';
+import { requireAdmin } from '@/lib/authz';
+import { dayShiftBetween } from '@/lib/curriculum/copy-plan';
 import {
   addContentToBatchSchema,
   updatePlacementSchema,
-  reorderPlacementsSchema
+  reorderPlacementsSchema,
+  copyCurriculumSchema
 } from './schema';
 
 const IMMUTABLE_BATCH_STATUSES = ['completed', 'archived'];
@@ -364,5 +369,62 @@ export async function reorderCurriculumAction(
       success: false,
       error: error?.message || 'Failed to reorder curriculum placements.'
     };
+  }
+}
+
+/**
+ * Copies another batch's curriculum into this batch. The source must be a different batch of the same
+ * program; a completed or archived target stays read-only, as for every other curriculum change.
+ */
+export async function copyCurriculumFromBatchAction(
+  batchId: string,
+  rawInput: unknown
+): Promise<{ success: true; data: CopyCurriculumResult } | { success: false; error: string }> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+
+    const parsed = copyCurriculumSchema.safeParse(rawInput);
+    if (typeof batchId !== 'string' || !batchId || !parsed.success) {
+      return { success: false, error: parsed.success ? 'Invalid request.' : parsed.error.errors[0]?.message || 'Invalid request.' };
+    }
+    const { sourceBatchId, shiftDates } = parsed.data;
+    if (sourceBatchId === batchId) return { success: false, error: 'Choose a different batch to copy from.' };
+
+    const [batch, source] = await Promise.all([getBatchById(batchId), getBatchById(sourceBatchId)]);
+    if (!batch) return { success: false, error: 'Batch not found.' };
+    if (!source) return { success: false, error: 'The batch to copy from was not found.' };
+
+    if (IMMUTABLE_BATCH_STATUSES.includes(batch.status)) {
+      return { success: false, error: `Cannot modify curriculum for a ${batch.status} batch.` };
+    }
+    if (source.programId !== batch.programId) {
+      return { success: false, error: 'Curriculum can only be copied between batches of the same program.' };
+    }
+
+    const result = await copyCurriculumFromBatch({
+      sourceBatchId: source.id,
+      targetBatchId: batch.id,
+      targetProgramId: batch.programId,
+      shiftDays: shiftDates ? dayShiftBetween(source.startDate, batch.startDate) : null
+    });
+
+    if (result.sourceCount === 0) {
+      return { success: false, error: `${source.name} has no curriculum to copy.` };
+    }
+    if (result.copied === 0) {
+      return {
+        success: false,
+        error: `Nothing to copy: ${result.skipped.alreadyPlaced} already in this batch, ${result.skipped.notPublished} not published, ${result.skipped.otherProgram} from another program.`
+      };
+    }
+
+    revalidatePath(`/batches/${batch.id}/curriculum`);
+    revalidatePath(`/batches/${batch.id}`);
+    revalidatePath('/overview');
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('Error in copyCurriculumFromBatchAction:', error instanceof Error ? error.message : 'unknown');
+    return { success: false, error: 'Failed to copy the curriculum. Please try again.' };
   }
 }

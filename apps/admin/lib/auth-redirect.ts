@@ -2,13 +2,13 @@
  * Post-login redirect target for the admin sign-in Server Actions: a same-origin path that RENDERS.
  *
  * Next.js copies the response headers of its internal fetch of the redirect target onto the Server
- * Action response. If the target is itself a redirect (`/` does `redirect('/programs')`), a `Location`
+ * Action response. If the target is itself a redirect (`/` does `redirect('/overview')`), a `Location`
  * header leaks onto the action's 303, the browser follows it, receives HTML, and the Flight client throws
  * "An unexpected response was received from the server". The middleware captures the page the admin first
  * requested (usually `/`) as callbackUrl, so this happened on a normal sign-in.
  * Guarded by lib/__tests__/post-login-target.test.ts, which fails if a new redirect-only page is added.
  */
-export const POST_LOGIN_HOME = '/programs';
+export const POST_LOGIN_HOME = '/overview';
 
 /** Routes whose whole page is `redirect(...)` (app/(admin)/page.tsx). */
 export const REDIRECT_ONLY_ROUTES: ReadonlySet<string> = new Set(['/']);

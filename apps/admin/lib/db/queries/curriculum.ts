@@ -12,6 +12,7 @@ import {
 } from '@rms/db';
 import { eq, and, or, asc, desc, count, ilike, isNull, inArray, sql } from 'drizzle-orm';
 import { computeLifecycleStatus } from './content';
+import { planCurriculumCopy, type CurriculumCopyPlan } from '@/lib/curriculum/copy-plan';
 
 export interface CurriculumPlacementItem {
   id: number;
@@ -459,4 +460,51 @@ export async function reorderCurriculumPlacements(
   }
 
   return getBatchCurriculum(batchId, client);
+}
+
+export interface CopyCurriculumResult {
+  /** Placements in the source batch. */
+  sourceCount: number;
+  copied: number;
+  skipped: CurriculumCopyPlan['skipped'];
+}
+
+/**
+ * Copies the source batch's placements into the target batch (see planCurriculumCopy for the rules).
+ * One multi-row insert; the (batch, content) unique index makes a concurrent duplicate a no-op
+ * instead of an error. Existing placements of the target are never changed or removed.
+ */
+export async function copyCurriculumFromBatch(input: {
+  sourceBatchId: string;
+  targetBatchId: string;
+  targetProgramId: number;
+  shiftDays: number | null;
+}): Promise<CopyCurriculumResult> {
+  const [source, target] = await Promise.all([
+    getBatchCurriculum(input.sourceBatchId),
+    getBatchCurriculum(input.targetBatchId)
+  ]);
+
+  const plan = planCurriculumCopy({
+    source,
+    target,
+    targetProgramId: input.targetProgramId,
+    shiftDays: input.shiftDays
+  });
+
+  if (plan.rows.length === 0) {
+    return { sourceCount: source.length, copied: 0, skipped: plan.skipped };
+  }
+
+  const inserted = await db
+    .insert(batchCurriculum)
+    .values(plan.rows.map((row) => ({ batchId: input.targetBatchId, ...row })))
+    .onConflictDoNothing({ target: [batchCurriculum.batchId, batchCurriculum.contentItemId] })
+    .returning({ id: batchCurriculum.id });
+
+  return {
+    sourceCount: source.length,
+    copied: inserted.length,
+    skipped: { ...plan.skipped, alreadyPlaced: plan.skipped.alreadyPlaced + (plan.rows.length - inserted.length) }
+  };
 }
