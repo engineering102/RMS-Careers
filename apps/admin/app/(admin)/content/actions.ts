@@ -27,6 +27,7 @@ import {
 } from './schema';
 import { buildStudentMetadataPatch, InvalidVideoUrlError } from '@/lib/content/student-metadata';
 import { quizDefaultsFor } from '@/lib/content/types/registry';
+import { createMetadataFor } from '@/lib/content/create-metadata';
 
 export async function createContentAction(
   formDataOrInput: FormData | Record<string, unknown>
@@ -89,15 +90,28 @@ export async function createContentAction(
       }
     }
 
-    // 4. Construct metadata object, using the keys the student portal reads
+    // A DSA sheet item only points at a catalogue sheet by slug; one made up from the title points nowhere.
+    if (data.contentType === 'dsa_sheet' && !data.slug) {
+      const message = 'Enter the slug of the DSA catalogue sheet this item links to.';
+      return { success: false, error: message, fieldErrors: { slug: [message] } };
+    }
+
+    // 4. Construct metadata for the item's own type, using the keys the student portal (and the builder) read
     let metadata: Record<string, unknown>;
     try {
-      metadata = buildStudentMetadataPatch({
-        topic: data.topic || undefined,
-        videoUrl: data.videoUrl || undefined,
-        resourceLink: data.resourceLink || undefined,
-        notes: data.notesMarkdown || undefined,
-        durationMinutes: data.durationMinutes ?? undefined
+      metadata = createMetadataFor({
+        contentType: data.contentType,
+        slug: data.slug || undefined,
+        topic: data.topic,
+        subject: data.subject,
+        inLibrary: data.inLibrary,
+        videoUrl: data.videoUrl,
+        resourceLink: data.resourceLink,
+        notes: data.notesMarkdown,
+        durationMinutes: data.durationMinutes,
+        externalProvider: data.externalProvider,
+        externalUrl: data.externalUrl,
+        assessmentCode: data.assessmentCode
       });
     } catch (err) {
       if (err instanceof InvalidVideoUrlError) {

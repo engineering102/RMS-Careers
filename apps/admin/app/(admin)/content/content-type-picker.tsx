@@ -16,12 +16,12 @@ const CHOICE_STYLE: Record<CreateChoiceId, { icon: React.ElementType; accent: st
   external_test: { icon: ExternalLink, accent: 'text-rose-500 bg-rose-500/10 border-rose-500/20' }
 };
 
-/** The content-type step of the create dialog: one card per thing an admin can actually make. */
+/** The content-type step of the create dialog: one card per thing an admin can actually make. Choosing one moves on. */
 export function ContentTypePicker({
   value,
   onChange
 }: {
-  value: CreateChoiceId;
+  value: CreateChoiceId | null;
   onChange: (value: CreateChoiceId) => void;
 }) {
   return (
