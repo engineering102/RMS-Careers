@@ -10,7 +10,7 @@ import {
   activities,
   batches
 } from '@rms/db';
-import { eq, and, or, sql } from 'drizzle-orm';
+import { eq, and, or, isNull, sql } from 'drizzle-orm';
 import type { ContentItemMetadata } from '@/lib/types/library';
 import type {
   ContentPlayerItem,
@@ -19,7 +19,7 @@ import type {
   RelatedBatchContext
 } from '@/lib/types/content';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
-import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME } from '@/lib/db/queries/library';
+import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME, isInLibrary } from '@/lib/db/queries/library';
 import { extractResourceMetadata, extractVideoMetadata } from '@/lib/content/metadata';
 
 export type {
@@ -90,7 +90,8 @@ export async function getContentItem(
           )
         ),
       // 3. The content item joined with its program (leftJoin so global content works). Accessible if it belongs
-      // to an enrolled program OR is scheduled in an enrolled batch.
+      // to an enrolled program, OR is scheduled in an enrolled batch, OR is global content an admin put in the
+      // Library (shared by everyone enrolled; the enrollment itself is checked below).
       db
         .select({
           id: contentItems.id,
@@ -112,7 +113,8 @@ export async function getContentItem(
             eq(contentItems.isPublished, true),
             or(
               sql`${contentItems.programId} IN (${enrolledProgramIds})`,
-              sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN (${enrolledBatchIds}))`
+              sql`${contentItems.id} IN (SELECT ${batchCurriculum.contentItemId} FROM ${batchCurriculum} WHERE ${batchCurriculum.batchId} IN (${enrolledBatchIds}))`,
+              and(isNull(contentItems.programId), isInLibrary())
             )!
           )
         )

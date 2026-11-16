@@ -20,42 +20,26 @@ export interface ContentItemMetadata {
   [key: string]: unknown;
 }
 
-export interface LibraryItem {
+/** Content types students browse in the Library (external tests live on Assessments). */
+export type LibraryContentType = Exclude<ContentType, 'external_test'>;
+
+export type LibraryDifficulty = 'beginner' | 'intermediate' | 'advanced';
+
+/**
+ * One Library entry as sent to the browser. Deliberately slim: the whole accessible catalog is loaded once and
+ * browsed client-side, so it carries only what a card shows (never the notes body or other metadata).
+ */
+export interface LibraryCatalogItem {
   id: string;
-  programId: number | null;
-  programName: string;
-  programCode: string;
   title: string;
   slug: string;
-  contentType: ContentType;
+  contentType: LibraryContentType;
+  /** Shortened to a card-sized excerpt by the query. */
   description: string | null;
-  metadata: ContentItemMetadata;
-  topic: string;
+  topic: string | null;
   /** Resolved subject slug: the admin's pick, else inferred from topic and title, else 'general'. */
   subject: string;
-  isPublished: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface LibraryFilterParams {
-  query?: string;
-  contentType?: ContentType | 'all';
-  topic?: string;
-  /** Subject slug, or 'all'. */
-  subject?: string;
-  /** Order results by subject (in display order) before recency, so a page can show subject headings. */
-  groupBySubject?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-export interface LibraryQueryResult {
-  items: LibraryItem[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  availableTopics: string[];
-  availableContentTypes: ContentType[];
+  durationMinutes: number | null;
+  difficulty: LibraryDifficulty | null;
+  programCode: string;
 }

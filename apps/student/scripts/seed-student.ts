@@ -547,6 +547,7 @@ async function runStudentSeeder() {
     contentType: 'lecture',
     description: 'Master asymptotic notations (Big-O, Omega, Theta), recurrence relations, and algorithmic trade-offs.',
     metadata: {
+      inLibrary: true,
       topic: 'Algorithms & Complexity',
       durationMinutes: 45,
       videoProvider: 'youtube',
@@ -563,6 +564,7 @@ async function runStudentSeeder() {
     contentType: 'lecture',
     description: 'Transform O(N²) quadratic nested loops into optimal O(N) linear time scans using pointer invariants.',
     metadata: {
+      inLibrary: true,
       topic: 'Arrays & Two Pointers',
       durationMinutes: 60,
       videoProvider: 'youtube',
@@ -578,6 +580,7 @@ async function runStudentSeeder() {
     contentType: 'notes',
     description: 'Comprehensive engineering guide detailing pointer collision, fast/slow runners, and sliding windows.',
     metadata: {
+      inLibrary: true,
       topic: 'Arrays & Two Pointers',
       durationMinutes: 20,
       notesMarkdown: '# Two-Pointer Technique\n\n## 1. Opposite Direction\nStart at both ends and advance inwards until pointers meet.'
@@ -592,6 +595,7 @@ async function runStudentSeeder() {
     contentType: 'dsa_sheet',
     description: '150 core interview problems across 18 patterns, in day-by-day roadmap order.',
     metadata: {
+      inLibrary: true,
       topic: 'DSA Roadmap',
       questionCount: 150
     }
@@ -605,6 +609,7 @@ async function runStudentSeeder() {
     contentType: 'quiz',
     description: 'Formative knowledge check on time complexities, hash table collision resolution, and array memory layouts.',
     metadata: {
+      inLibrary: true,
       topic: 'Data Structures',
       durationMinutes: 15
     }
@@ -618,6 +623,7 @@ async function runStudentSeeder() {
     contentType: 'quiz',
     description: 'Authoritative timed examination testing algorithmic pattern recognition and complexity analysis under time pressure.',
     metadata: {
+      inLibrary: true,
       topic: 'Algorithms & Complexity',
       durationMinutes: 30
     }
@@ -631,6 +637,7 @@ async function runStudentSeeder() {
     contentType: 'project',
     description: 'Production-grade backend engineering project with distributed caching, rate-limiting, and analytics.',
     metadata: {
+      inLibrary: true,
       topic: 'System Design & Backend',
       durationMinutes: 120
     }
@@ -644,6 +651,7 @@ async function runStudentSeeder() {
     contentType: 'resource',
     description: 'Architectural overview of message queues, event sourcing, and transactional outbox patterns.',
     metadata: {
+      inLibrary: true,
       topic: 'System Design'
     }
   });

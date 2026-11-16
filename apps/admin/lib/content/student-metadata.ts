@@ -4,6 +4,8 @@
 //   lecture:          provider, videoId, durationMinutes, aspectRatio
 //   notes / resource: documentUrl, notes, topic, category, fileType
 //   library (every type): subject, a slug from @rms/db/content-subjects
+//                         inLibrary, true when the item is shown in the student Library (absent/false: it is
+//                         reached only through a batch curriculum)
 // Older admin forms saved videoUrl / resourceLink / notesMarkdown instead, which students never saw.
 // Those legacy keys are still written so existing admin screens keep showing the values.
 import { isContentSubject } from '@rms/db/content-subjects';
@@ -13,6 +15,8 @@ export interface AuthoringFields {
   topic?: string | null;
   /** Subject slug; blank means "Auto" (the student library classifies from topic and title). */
   subject?: string | null;
+  /** Show the item in the student Library. Off unless an admin turns it on. */
+  inLibrary?: boolean;
   videoUrl?: string | null;
   resourceLink?: string | null;
   notes?: string | null;
@@ -40,6 +44,8 @@ export function buildStudentMetadataPatch(fields: AuthoringFields): MetadataPatc
 
   const subject = blankToNull(fields.subject);
   if (subject !== undefined) patch.subject = subject !== null && isContentSubject(subject) ? subject : null;
+
+  if (fields.inLibrary !== undefined) patch.inLibrary = fields.inLibrary === true;
 
   const videoUrl = blankToNull(fields.videoUrl);
   if (videoUrl !== undefined) {
@@ -99,6 +105,7 @@ export function readAuthoringFields(metadata: Record<string, unknown> | null | u
   return {
     topic: str('topic'),
     subject: isContentSubject(m.subject) ? str('subject') : '',
+    inLibrary: m.inLibrary === true,
     videoUrl: str('videoUrl') || videoLinkFromId(str('provider'), str('videoId')),
     provider: str('provider'),
     videoId: str('videoId'),
