@@ -2,6 +2,8 @@
 
 import { auth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { requireAdmin } from '@/lib/authz';
 import {
   getContentItemById,
   createContentItem,
@@ -9,6 +11,11 @@ import {
   updateContentLifecycle,
   getProgramById,
   getOrCreateQuizForContentItem,
+  duplicateContentItem,
+  getQuizByContentItemId,
+  createQuizQuestionsBulk,
+  getProjectAssignmentConfig,
+  saveProjectRubric,
   type ContentItemWithDetails
 } from '@/lib/db/queries';
 import {
@@ -314,5 +321,80 @@ export async function updateContentLifecycleAction(
       success: false,
       error: error?.message || 'Failed to update content lifecycle.'
     };
+  }
+}
+
+/**
+ * Duplicates a content item as a new draft, with what was authored for it: a quiz keeps its settings
+ * and questions, a project keeps its rubric. A DSA sheet is only a pointer to a catalogue sheet by
+ * slug, so a copy would point nowhere and is refused.
+ */
+export async function duplicateContentAction(
+  id: unknown
+): Promise<
+  | { success: true; item: ContentItemWithDetails; warning?: string }
+  | { success: false; error: string }
+> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+
+    const parsedId = z.string().uuid().safeParse(id);
+    if (!parsedId.success) return { success: false, error: 'Invalid content ID.' };
+
+    const source = await getContentItemById(parsedId.data);
+    if (!source) return { success: false, error: 'Content item not found.' };
+    if (source.contentType === 'dsa_sheet') {
+      return { success: false, error: 'A DSA sheet item links to a catalogue sheet by its slug, so it cannot be duplicated.' };
+    }
+
+    const copy = await duplicateContentItem(source);
+
+    // The copy exists from here on: a failure below is reported, not thrown, so the admin can finish it by hand.
+    let warning: string | undefined;
+    try {
+      if (source.contentType === 'quiz') {
+        const quiz = await getQuizByContentItemId(source.id);
+        const copiedQuiz = await getOrCreateQuizForContentItem(
+          copy.id,
+          quiz
+            ? {
+                quizType: quiz.quizType,
+                timeLimitMinutes: quiz.timeLimitMinutes,
+                passingScorePercent: quiz.passingScorePercent,
+                showExplanations: quiz.showExplanations
+              }
+            : quizDefaultsFor('practice')
+        );
+        if (quiz && quiz.questions.length > 0) {
+          await createQuizQuestionsBulk(
+            copiedQuiz.id,
+            quiz.questions.map((q) => ({
+              questionText: q.questionText,
+              questionType: q.questionType,
+              options: q.options,
+              correctOptionIds: q.correctOptionIds,
+              explanationText: q.explanationText,
+              points: q.points
+            }))
+          );
+        }
+      } else if (source.contentType === 'project') {
+        const config = await getProjectAssignmentConfig(source.id);
+        if (config && config.rubricCriteria.length > 0) await saveProjectRubric(copy.id, config.rubricCriteria);
+      }
+    } catch (error) {
+      console.error('Duplicate: copying authored parts failed:', error instanceof Error ? error.message : 'unknown');
+      warning =
+        source.contentType === 'quiz'
+          ? 'The copy was created, but its questions could not be copied. Add them in the quiz workbench.'
+          : 'The copy was created, but its rubric could not be copied. Set it in the builder.';
+    }
+
+    revalidatePath('/content');
+    return { success: true, item: copy, warning };
+  } catch (error) {
+    console.error('Error in duplicateContentAction:', error instanceof Error ? error.message : 'unknown');
+    return { success: false, error: 'Failed to duplicate the content item. Please try again.' };
   }
 }

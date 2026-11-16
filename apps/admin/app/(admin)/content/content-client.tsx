@@ -18,7 +18,8 @@ import {
   Layers,
   Sparkles,
   FileQuestion,
-  PencilRuler
+  PencilRuler,
+  Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,7 +62,8 @@ import { toast } from 'sonner';
 import {
   createContentAction,
   updateContentAction,
-  updateContentLifecycleAction
+  updateContentLifecycleAction,
+  duplicateContentAction
 } from './actions';
 import type { ContentItemWithDetails } from '@/lib/db/queries';
 import type { Program, ContentTypeEnum } from '@rms/db';
@@ -286,6 +288,27 @@ export function ContentClient({
       toast.error('An unexpected error occurred.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const [duplicatingId, setDuplicatingId] = React.useState<string | null>(null);
+
+  // The copy opens in the builder, where it is finished and published.
+  const handleDuplicate = async (item: ContentItemWithDetails) => {
+    setDuplicatingId(item.id);
+    try {
+      const res = await duplicateContentAction(item.id);
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.warning) toast.warning(res.warning);
+      else toast.success('Draft copy created. Finish it in the builder.');
+      router.push(`/content/${res.item.id}`);
+    } catch {
+      toast.error('An unexpected error occurred.');
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -801,6 +824,21 @@ export function ContentClient({
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+
+                            {/* Duplicate */}
+                            {item.contentType !== 'dsa_sheet' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDuplicate(item)}
+                                disabled={duplicatingId !== null}
+                                className="h-8 w-8 p-0"
+                                title="Duplicate as a new draft"
+                                aria-label={`Duplicate ${item.title}`}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            )}
 
                             {/* Publish / Unpublish Toggle */}
                             {status === 'published' ? (

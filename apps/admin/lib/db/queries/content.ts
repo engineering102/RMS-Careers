@@ -493,3 +493,31 @@ export async function getContentPlacements(
     .where(eq(batchCurriculum.contentItemId, contentItemId))
     .orderBy(asc(batches.name));
 }
+
+/** Metadata keys that describe one item's own state and must not follow a copy. */
+const NON_COPIED_METADATA_KEYS = ['isArchived', 'archivedAt', 'status', 'assessmentCode'];
+
+/**
+ * Creates a draft copy of a content item: same type, audience, description and type-specific fields,
+ * titled "Copy of …" with a fresh slug. Never published, never placed in a batch. An external test's
+ * assessment code is left out, because that code ties imported results to one test card.
+ */
+export async function duplicateContentItem(
+  source: ContentItemWithDetails,
+  client: DbClient = db
+): Promise<ContentItemWithDetails> {
+  const metadata: Record<string, unknown> = { ...(source.metadata || {}) };
+  for (const key of NON_COPIED_METADATA_KEYS) delete metadata[key];
+
+  return createContentItem(
+    {
+      title: `Copy of ${source.title}`.slice(0, 255),
+      contentType: source.contentType,
+      description: source.description,
+      programId: source.programId,
+      isPublished: false,
+      metadata
+    },
+    client
+  );
+}
