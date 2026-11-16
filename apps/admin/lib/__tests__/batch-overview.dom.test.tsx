@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 
 const queries = vi.hoisted(() => ({
   getBatchById: vi.fn(),
@@ -12,6 +12,7 @@ const queries = vi.hoisted(() => ({
   getBatchTutors: vi.fn(),
   getAssignableTutors: vi.fn()
 }));
+const searchParams = vi.hoisted(() => ({ current: new URLSearchParams() }));
 const notFound = vi.hoisted(() =>
   vi.fn(() => {
     throw new Error('NEXT_NOT_FOUND');
@@ -20,16 +21,20 @@ const notFound = vi.hoisted(() =>
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/db/queries', () => queries);
-vi.mock('../../app/(admin)/batches/[batchId]/students/actions', () => ({ addStudentToBatchAction: vi.fn() }));
+vi.mock('../../app/(admin)/batches/[batchId]/students/actions', () => ({
+  addStudentToBatchAction: vi.fn(),
+  confirmBatchEnrollmentsAction: vi.fn()
+}));
 vi.mock('../../app/(admin)/batches/[batchId]/tutors/actions', () => ({ assignTutorAction: vi.fn(), unassignTutorAction: vi.fn() }));
 vi.mock('@/lib/authz', () => ({ requireAdminSession: vi.fn().mockResolvedValue({ user: { id: 'a1' } }) }));
 vi.mock('next/navigation', () => ({
   notFound,
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-  useSearchParams: () => new URLSearchParams()
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }),
+  usePathname: () => '/batches/b-1',
+  useSearchParams: () => searchParams.current
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('../../app/(admin)/batches/actions', () => ({ createBatchAction: vi.fn() }));
+vi.mock('../../app/(admin)/batches/actions', () => ({ createBatchAction: vi.fn(), updateBatchAction: vi.fn() }));
 
 import BatchOverviewPage from '../../app/(admin)/batches/[batchId]/page';
 import { BatchNav, batchSectionHref } from '@/components/admin/batch-nav';
@@ -41,6 +46,7 @@ beforeEach(() => {
   queries.getBatchTutors.mockResolvedValue([]);
   queries.getAssignableTutors.mockResolvedValue([]);
   notFound.mockClear();
+  searchParams.current = new URLSearchParams();
 });
 
 afterEach(() => cleanup());
@@ -163,10 +169,47 @@ describe('Batch overview page', () => {
     expect(within(stat('Other statuses')).getByText('1')).toBeTruthy();
   });
 
-  it('points pending students to the program-filtered Enrollments page (URL-encoded)', async () => {
+  it('points pending students to the Enrollments page filtered to this batch', async () => {
     await renderPage();
-    const link = screen.getByRole('link', { name: 'Review pending enrollments in FS 1' });
-    expect(link.getAttribute('href')).toBe('/enrollments?program=FS%201&status=pending');
+    const link = screen.getByRole('link', { name: /Review this batch's pending enrollments/i });
+    expect(link.getAttribute('href')).toBe('/enrollments?batch=b-1&status=pending');
+  });
+
+  it('offers to confirm pending students from the roster, one by one or all at once', async () => {
+    await renderPage();
+    expect(screen.getByRole('button', { name: 'Confirm all pending (1)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Confirm Ravi Test' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Confirm Asha Test' })).toBeNull();
+  });
+
+  it('filters the roster by search text and by status', async () => {
+    await renderPage();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search students in this batch' }), {
+      target: { value: 'ravi' }
+    });
+    let rows = screen.getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText('Ravi Test')).toBeTruthy();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search students in this batch' }), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /^With access/ }));
+    rows = screen.getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText('Asha Test')).toBeTruthy();
+  });
+
+  it('narrows the roster to the student a global search result points at', async () => {
+    searchParams.current = new URLSearchParams('student=103');
+    await renderPage();
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByText('Old Test')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show all students' })).toBeTruthy();
+  });
+
+  it('offers Edit batch in the header', async () => {
+    await renderPage();
+    expect(screen.getByRole('button', { name: 'Edit batch' })).toBeTruthy();
   });
 
   it('shows an empty state and no pending link for an empty batch', async () => {

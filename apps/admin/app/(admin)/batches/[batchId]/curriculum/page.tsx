@@ -5,7 +5,8 @@ import {
   getCollegeById,
   getProgramById,
   getBatchCurriculum,
-  getEligibleContentForBatch
+  getEligibleContentForBatch,
+  getBatchesWithDetails
 } from '@/lib/db/queries';
 import { BatchCurriculumClient } from './curriculum-client';
 import { requireAdminSession } from '@/lib/authz';
@@ -34,11 +35,12 @@ export default async function BatchCurriculumPage(props: {
     notFound();
   }
 
-  const [college, program, curriculum, eligibleContent] = await Promise.all([
+  const [college, program, curriculum, eligibleContent, programBatches] = await Promise.all([
     getCollegeById(batch.collegeId),
     getProgramById(batch.programId),
     getBatchCurriculum(batchId),
-    getEligibleContentForBatch(batchId, { limit: ELIGIBLE_CONTENT_LIMIT })
+    getEligibleContentForBatch(batchId, { limit: ELIGIBLE_CONTENT_LIMIT }),
+    getBatchesWithDetails({ programId: batch.programId })
   ]);
 
   return (
@@ -49,6 +51,9 @@ export default async function BatchCurriculumPage(props: {
       initialCurriculum={curriculum}
       eligibleContent={eligibleContent}
       eligibleContentLimit={ELIGIBLE_CONTENT_LIMIT}
+      copySourceBatches={programBatches
+        .filter((b) => b.id !== batch.id)
+        .map((b) => ({ id: b.id, name: b.name, status: b.status, startDate: b.startDate }))}
     />
   );
 }

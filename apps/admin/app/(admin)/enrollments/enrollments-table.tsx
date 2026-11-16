@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import {
   Table,
   TableBody,
@@ -463,6 +464,16 @@ export function EnrollmentsTable({ enrollments, totalCount }: EnrollmentsTablePr
                         <div className="flex flex-col">
                           <span className="font-medium text-xs text-foreground">{item.program.name}</span>
                           <span className="text-[11px] font-mono text-muted-foreground">{item.program.code}</span>
+                          {item.batch ? (
+                            <Link
+                              href={`/batches/${item.batch.id}`}
+                              className="text-[11px] text-primary underline-offset-4 hover:underline"
+                            >
+                              {item.batch.name}
+                            </Link>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">No batch</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">

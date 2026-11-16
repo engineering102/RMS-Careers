@@ -1,8 +1,10 @@
 import 'server-only';
 
-import { db, enrollments, students, programs, type Enrollment } from '@rms/db';
+import { db, enrollments, students, programs, batches, type Enrollment } from '@rms/db';
 import { dbTx, type AnyDbClient } from '@rms/db/tx';
 import { eq, desc, count, and, ne, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface DetailedEnrollment {
   id: number;
@@ -24,12 +26,16 @@ export interface DetailedEnrollment {
     code: string;
     capacity: number;
   };
+  /** The batch the enrollment is placed in; null for a program-level enrollment. */
+  batch?: { id: string; name: string } | null;
 }
 
 export interface FetchEnrollmentsOptions {
   search?: string;
   programIdFilter?: number;
   programCodeFilter?: string;
+  /** Batch UUID: only enrollments placed in that batch. */
+  batchIdFilter?: string;
   statusFilter?: string;
   yearFilter?: number;
   emailStatusFilter?: string;
@@ -207,6 +213,22 @@ export async function updateBulkEnrollmentStatus(
   }
 }
 
+/**
+ * Confirms pending enrollments of one batch. Rows of another batch, or in any status other than
+ * pending, are left untouched, so the ids can never move a cancelled or dropped student back in.
+ */
+export async function confirmPendingBatchEnrollments(batchId: string, enrollmentIds: number[]): Promise<number> {
+  if (!process.env.POSTGRES_URL || enrollmentIds.length === 0) return 0;
+  const rows = await db
+    .update(enrollments)
+    .set({ status: 'confirmed' })
+    .where(
+      and(eq(enrollments.batchId, batchId), eq(enrollments.status, 'pending'), inArray(enrollments.id, enrollmentIds))
+    )
+    .returning({ id: enrollments.id });
+  return rows.length;
+}
+
 export async function getEnrollmentsCount(): Promise<number> {
   try {
     if (!process.env.POSTGRES_URL) return 0;
@@ -289,6 +311,7 @@ export async function getEnrollmentsWithDetails(
 
     let search: string | undefined;
     let programCodeFilter: string | undefined;
+    let batchIdFilter: string | undefined;
     let yearFilter: number | undefined;
     let emailStatusFilter: string | undefined;
     let sort: string | undefined;
@@ -297,6 +320,7 @@ export async function getEnrollmentsWithDetails(
       search = searchOrOptions.search;
       programIdFilter = searchOrOptions.programIdFilter ?? programIdFilter;
       programCodeFilter = searchOrOptions.programCodeFilter;
+      batchIdFilter = searchOrOptions.batchIdFilter;
       statusFilter = searchOrOptions.statusFilter ?? statusFilter;
       yearFilter = searchOrOptions.yearFilter;
       emailStatusFilter = searchOrOptions.emailStatusFilter;
@@ -313,6 +337,10 @@ export async function getEnrollmentsWithDetails(
 
     if (programCodeFilter && programCodeFilter !== 'all') {
       conditions.push(sql`LOWER(${programs.code}) = ${programCodeFilter.trim().toLowerCase()}`);
+    }
+
+    if (batchIdFilter && UUID_PATTERN.test(batchIdFilter)) {
+      conditions.push(eq(enrollments.batchId, batchIdFilter));
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -365,11 +393,14 @@ export async function getEnrollmentsWithDetails(
         programId: programs.id,
         programName: programs.name,
         programCode: programs.code,
-        programCapacity: programs.capacity
+        programCapacity: programs.capacity,
+        batchId: batches.id,
+        batchName: batches.name
       })
       .from(enrollments)
       .innerJoin(students, eq(enrollments.studentId, students.id))
       .innerJoin(programs, eq(enrollments.programId, programs.id))
+      .leftJoin(batches, eq(enrollments.batchId, batches.id))
       .where(whereClause)
       .orderBy(orderByClause);
 
@@ -392,7 +423,8 @@ export async function getEnrollmentsWithDetails(
         name: r.programName,
         code: r.programCode,
         capacity: r.programCapacity
-      }
+      },
+      batch: r.batchId && r.batchName ? { id: r.batchId, name: r.batchName } : null
     }));
   } catch (error) {
     console.error('Error fetching detailed enrollments:', error);

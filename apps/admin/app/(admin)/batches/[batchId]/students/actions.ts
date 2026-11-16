@@ -3,7 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/authz';
-import { getBatchById, getBatchRoster, getProgramById, getProgramEnrollmentCount } from '@/lib/db/queries';
+import {
+  confirmPendingBatchEnrollments,
+  getBatchById,
+  getBatchRoster,
+  getProgramById,
+  getProgramEnrollmentCount
+} from '@/lib/db/queries';
 import { buildRosterExportCsv, rosterExportFilename } from '@/lib/batches/roster';
 import { validateImportRows } from '@/lib/csv/validator';
 import { createEnrollmentWithStudentProvisioning } from '@/lib/services/enrollment-orchestration';
@@ -182,5 +188,52 @@ export async function exportBatchRosterCsvAction(batchId: string): Promise<Expor
   } catch (error) {
     console.error('Error in exportBatchRosterCsvAction:', error instanceof Error ? error.message : 'unknown');
     return { success: false, error: 'Could not export the roster. Please try again.' };
+  }
+}
+
+export type ConfirmBatchEnrollmentsResult =
+  | { success: true; data: { confirmed: number } }
+  | { success: false; error: string };
+
+const confirmIdsSchema = z.array(z.number().int().positive()).min(1).max(2000);
+
+/**
+ * Confirms pending students of this batch (one or many) from the batch page. Only rows that belong to
+ * the batch and are still pending change; the result is the same `confirmed` status the Enrollments
+ * page sets, so no email is sent here.
+ */
+export async function confirmBatchEnrollmentsAction(
+  batchId: unknown,
+  enrollmentIds: unknown
+): Promise<ConfirmBatchEnrollmentsResult> {
+  try {
+    const authz = await requireAdmin();
+    if (!authz.ok) return { success: false, error: authz.error };
+
+    const ids = confirmIdsSchema.safeParse(enrollmentIds);
+    if (typeof batchId !== 'string' || !batchId || !ids.success) return { success: false, error: 'Invalid request.' };
+
+    const batch = await getBatchById(batchId);
+    if (!batch) return { success: false, error: 'Batch not found.' };
+
+    const confirmed = await confirmPendingBatchEnrollments(batch.id, ids.data);
+    if (confirmed === 0) {
+      return { success: false, error: 'No pending students to confirm. The list may be out of date; refresh the page.' };
+    }
+
+    revalidatePath(`/batches/${batch.id}`);
+    revalidatePath('/batches');
+    revalidatePath('/enrollments');
+    revalidatePath('/overview');
+    return { success: true, data: { confirmed } };
+  } catch (error) {
+    const duplicate = typeof error === 'object' && error !== null && (error as { code?: string }).code === '23505';
+    console.error('Error in confirmBatchEnrollmentsAction:', error instanceof Error ? error.message : 'unknown');
+    return {
+      success: false,
+      error: duplicate
+        ? 'A student already has a confirmed enrollment in this batch. Cancel the duplicate pending row on the Enrollments page.'
+        : 'Could not confirm the students. Please try again.'
+    };
   }
 }

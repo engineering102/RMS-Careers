@@ -64,6 +64,7 @@ import type {
 } from '@/lib/db/queries';
 import type { Batch, College, Program, ContentTypeEnum } from '@rms/db';
 import { PaginationBar } from '@/components/admin/pagination-bar';
+import { CopyCurriculumDialog, type CopySourceBatch } from './copy-curriculum-dialog';
 
 interface BatchCurriculumClientProps {
   batch: Batch;
@@ -73,6 +74,8 @@ interface BatchCurriculumClientProps {
   eligibleContent: EligibleContentItem[];
   /** The picker's query cap; reaching it means some eligible items were not loaded. */
   eligibleContentLimit?: number;
+  /** Other batches of the same program, offered as sources for Copy from batch. */
+  copySourceBatches?: CopySourceBatch[];
 }
 
 /** The schedule is paged by whole weeks so a week is never split across pages. */
@@ -94,7 +97,8 @@ export function BatchCurriculumClient({
   program,
   initialCurriculum,
   eligibleContent,
-  eligibleContentLimit
+  eligibleContentLimit,
+  copySourceBatches = []
 }: BatchCurriculumClientProps) {
   const router = useRouter();
   const isReadOnly = ['completed', 'archived'].includes(batch.status);
@@ -415,6 +419,13 @@ export function BatchCurriculumClient({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          {!isReadOnly && (
+            <CopyCurriculumDialog
+              batchId={batch.id}
+              batchStartDate={batch.startDate}
+              sourceBatches={copySourceBatches}
+            />
+          )}
           {!isReadOnly && (
             <Button onClick={() => handleOpenAdd()} className="gap-2 h-9 text-xs">
               <PlusCircle className="h-4 w-4" />

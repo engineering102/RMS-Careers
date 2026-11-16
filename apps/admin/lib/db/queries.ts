@@ -29,3 +29,5 @@ export * from './queries/batch-external-assessments';
 export * from './queries/batch-analytics';
 export * from './queries/live-sessions';
 export * from './queries/tutors';
+export * from './queries/overview';
+export * from './queries/global-search';

@@ -82,3 +82,8 @@ export const reorderPlacementsSchema = z.object({
 export type AddContentToBatchInput = z.infer<typeof addContentToBatchSchema>;
 export type UpdatePlacementInput = z.infer<typeof updatePlacementSchema>;
 export type ReorderPlacementsInput = z.infer<typeof reorderPlacementsSchema>;
+
+export const copyCurriculumSchema = z.object({
+  sourceBatchId: z.string().uuid('Choose a batch to copy from.'),
+  shiftDates: z.boolean().default(true)
+});
