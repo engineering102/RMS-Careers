@@ -42,4 +42,6 @@ export interface LibraryCatalogItem {
   durationMinutes: number | null;
   difficulty: LibraryDifficulty | null;
   programCode: string;
+  /** Lecture still (YouTube only, see videoThumbnailUrl); null for other formats and other video hosts. */
+  thumbnailUrl: string | null;
 }

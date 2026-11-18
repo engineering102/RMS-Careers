@@ -31,6 +31,9 @@ interface Row {
   subject?: string | null;
   durationMinutes?: string | null;
   difficulty?: string | null;
+  provider?: string | null;
+  videoId?: string | null;
+  videoUrl?: string | null;
 }
 
 const PROGRAM_ID = 16;
@@ -94,6 +97,9 @@ vi.mock('@rms/db', async (importOriginal) => {
                           subject: r.subject ?? null,
                           durationMinutes: r.durationMinutes ?? null,
                           difficulty: r.difficulty ?? null,
+                          provider: r.provider ?? null,
+                          videoId: r.videoId ?? null,
+                          videoUrl: r.videoUrl ?? null,
                           programCode: r.programId === PROGRAM_ID ? 'CRP' : null
                         }))
                       );
@@ -196,6 +202,7 @@ describe('getLibraryCatalog', () => {
         'programCode',
         'slug',
         'subject',
+        'thumbnailUrl',
         'title',
         'topic'
       ].sort()
@@ -245,5 +252,28 @@ describe('getLibraryCatalog', () => {
       description: null
     });
     expect(byId.c).toMatchObject({ subject: 'general', topic: null, durationMinutes: null });
+  });
+
+  it('gives YouTube lectures a thumbnail, from the saved id or an older pasted link, and nothing else one', async () => {
+    rows = [
+      { id: 'yt', programId: PROGRAM_ID, title: 'A', isPublished: true, provider: 'youtube', videoId: 'dQw4w9WgXcQ' },
+      { id: 'link', programId: PROGRAM_ID, title: 'B', isPublished: true, videoUrl: 'https://youtu.be/dQw4w9WgXcQ' },
+      { id: 'vimeo', programId: PROGRAM_ID, title: 'C', isPublished: true, provider: 'vimeo', videoId: '76979871' },
+      {
+        id: 'notes',
+        programId: PROGRAM_ID,
+        title: 'D',
+        isPublished: true,
+        contentType: 'notes',
+        provider: 'youtube',
+        videoId: 'dQw4w9WgXcQ'
+      }
+    ];
+    const byId = Object.fromEntries((await run([PROGRAM_ID], [])).map((i) => [i.id, i]));
+    const still = 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg';
+    expect(byId.yt.thumbnailUrl).toBe(still);
+    expect(byId.link.thumbnailUrl).toBe(still);
+    expect(byId.vimeo.thumbnailUrl).toBeNull();
+    expect(byId.notes.thumbnailUrl).toBeNull();
   });
 });

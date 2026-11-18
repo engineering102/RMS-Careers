@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  CONTENT_USAGE_FILTERS,
   countContentItems,
   getContentItemsWithDetails,
   getPrograms
@@ -22,6 +23,7 @@ export default async function ContentPage(props: {
     program?: string;
     type?: string;
     status?: string;
+    usage?: string;
     q?: string;
     page?: string;
   }>;
@@ -32,6 +34,8 @@ export default async function ContentPage(props: {
   const searchQuery = searchParams.q || undefined;
   const typeFilter = (searchParams.type as ContentTypeEnum) || undefined;
   const statusFilter = (searchParams.status as 'all' | 'draft' | 'published' | 'archived') || undefined;
+
+  const usageFilter = CONTENT_USAGE_FILTERS.find((u) => u === searchParams.usage);
 
   let programIdFilter: number | 'global' | 'all' | undefined = undefined;
   if (searchParams.program) {
@@ -49,7 +53,8 @@ export default async function ContentPage(props: {
     search: searchQuery,
     programId: programIdFilter,
     contentType: typeFilter && typeFilter !== ('all' as any) ? typeFilter : undefined,
-    status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined
+    status: statusFilter && statusFilter !== 'all' ? statusFilter : undefined,
+    usage: usageFilter
   };
 
   // Count first so an out-of-range ?page= (e.g. after deleting the last item on it) shows the last page.
@@ -70,6 +75,7 @@ export default async function ContentPage(props: {
       selectedProgramId={searchParams.program || 'all'}
       selectedType={searchParams.type || 'all'}
       selectedStatus={searchParams.status || 'all'}
+      selectedUsage={usageFilter || 'all'}
       searchQuery={searchQuery || ''}
       totalCount={totalCount}
       page={page}

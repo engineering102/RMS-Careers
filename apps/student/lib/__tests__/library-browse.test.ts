@@ -24,6 +24,7 @@ const item = (patch: Partial<LibraryCatalogItem> & Pick<LibraryCatalogItem, 'id'
   durationMinutes: null,
   difficulty: null,
   programCode: 'CRP',
+  thumbnailUrl: null,
   ...patch
 });
 
