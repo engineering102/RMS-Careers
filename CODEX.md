@@ -19,17 +19,21 @@ The repository is structured as a **pnpm monorepo** with strict surface separati
 ```text
 RMS-Careers/
 ├── apps/
-│   ├── web/        # Public Corporate Website (www.rms-careers.com, port 3001)
+│   ├── web/        # Public Corporate Website (www.rms-careers.com, port 3001; deployed to Cloudflare via OpenNext)
+│   ├── student/    # Authenticated Student Learning Portal (student.rms-careers.com, port 3002)
+│   ├── tutor/      # Authenticated Tutor Portal (tutor.rms-careers.com, port 3003; built, not yet launched)
 │   └── admin/      # Institutional Control Plane & Admin Portal (admin.rms-careers.com, port 3000)
 ├── packages/
 │   ├── db/         # @rms/db — Drizzle ORM schema, Neon PostgreSQL client, migrations
-│   └── auth/       # @rms/auth — Password hashing (bcrypt), token hashing (SHA-256), RBAC guards
+│   ├── auth/       # @rms/auth — Password hashing (bcrypt), token hashing (SHA-256), RBAC guards
+│   └── academic/   # @rms/academic — batch scope, project review transaction, live-session rules, tutor queries
 └── docs/           # Complete architectural documentation, roadmaps, guardrails & reuse map
 ```
 
-### Future Planned Surfaces:
-- `apps/student`: Authenticated Student Learning Portal (`student.rms-careers.com`)
-- `apps/tutor`: Authenticated Tutor Evaluation Workbench (`tutor.rms-careers.com`)
+### Tutor Portal status
+`apps/tutor` is built but not yet launched: the deploy pipeline holds it back (`PRE_LAUNCH_APPS`), and the launch steps are
+in `docs/development/tutor-launch.md`. Architecture: `docs/architecture/tutor-portal.md`. Tutor code passes the request's
+`tutorScope` to every `@rms/academic` query and never uses `adminScope()`.
 
 ### Canonical Domain Architecture:
 - **Corporate Website**: `https://www.rms-careers.com` (canonical public identity; apex `rms-careers.com` redirects to `www`)
@@ -53,9 +57,11 @@ pnpm install
 # Start development servers
 pnpm dev:admin            # Runs @rms/admin on http://localhost:3000 (Turbopack)
 pnpm dev:web              # Runs @rms/web on http://localhost:3001
+pnpm dev:student          # Runs @rms/student on http://localhost:3002
+pnpm dev:tutor            # Runs @rms/tutor on http://localhost:3003
 
 # Execute tests across all packages
-pnpm test                 # Runs Vitest across apps/web, apps/admin, packages/auth
+pnpm test                 # Unit tier: Vitest in every workspace (apps and packages); cannot open a DB connection
 
 # Run TypeScript type checking
 pnpm typecheck            # Runs tsc --noEmit across all workspaces

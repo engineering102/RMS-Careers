@@ -9,8 +9,9 @@ This document outlines the authentication strategy, session handling, token mech
 RMS Careers operates four distinct application surfaces. Each authenticated portal enforces an independent session boundary:
 
 - **Admin Portal (`admin.rms-careers.com`)**: NextAuth / Auth.js v5 beta. Credentials provider (database verification) and optional GitHub OAuth.
-- **Student Portal (`student.rms-careers.com`)**: Planned token-based activation and email credentials login with `student` role.
-- **Tutor Portal (`tutor.rms-careers.com`)**: Planned email credentials login with `tutor` role.
+- **Student Portal (`student.rms-careers.com`)**: Auth.js, credentials only, token-based activation, `student` role, cookie `__Host-student-sess`.
+- **Tutor Portal (`tutor.rms-careers.com`)**: Auth.js, credentials only, token-based activation, `tutor` role, cookie `__Host-tutor-sess`. Accounts that also hold `admin` or `super_admin` are refused, so admin credentials are never verifiable on the tutor domain. Details: [tutor-portal.md](./tutor-portal.md) §2.
+- Each portal has its own `AUTH_SECRET`; the session cookie name is also the JWT key-derivation salt, so a token from one portal cannot be decrypted by another.
 - **Public Website (`www.rms-careers.com`)**: Completely unauthenticated. Guest DSA practice uses client-side `localStorage`.
 
 ---

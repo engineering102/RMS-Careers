@@ -48,9 +48,10 @@ This document details the distinct roles, entry points, dependencies, and bounda
 
 ---
 
-## 3. Student Portal (`apps/student`) — Planned Phase 3
+## 3. Student Portal (`apps/student`)
 
-- **Target Domain**: `https://student.rms-careers.com`
+- **Domain**: `https://student.rms-careers.com`
+- **Port**: `3002` (local development)
 - **Primary Audience**: Enrolled college batch students.
 - **Scope & Capabilities**:
   - Activated via invitation token (`/activate?token=...`).
@@ -61,13 +62,20 @@ This document details the distinct roles, entry points, dependencies, and bounda
 
 ---
 
-## 4. Tutor Portal (`apps/tutor`) — Planned Phase 4
+## 4. Tutor Portal (`apps/tutor`) — built, not yet launched
 
-- **Target Domain**: `https://tutor.rms-careers.com`
-- **Primary Audience**: Technical instructors, mentor evaluators, and placement mock interviewers.
+- **Domain**: `https://tutor.rms-careers.com` (live after the launch in `docs/development/tutor-launch.md`)
+- **Port**: `3003` (local development)
+- **Primary Audience**: Tutors assigned to batches by an admin.
+- **Key Routes**: `/overview`, `/reviews` (cross-batch review queue) and `/reviews/[submissionId]`, `/batches` and
+  `/batches/[batchId]/{students,projects,assessments,curriculum,live}`, `/profile`; public `/login`, `/activate`,
+  `/forgot-password`, `/reset-password`, `/resend-activation`.
 - **Scope & Capabilities**:
-  - Authenticated session with `tutor` role.
-  - Batch assignment overview across assigned partner colleges.
-  - Student code review queue with rubric grading and qualitative feedback.
-  - Batch progress diagnostics and student milestone evaluations.
-  - Mock technical interview scheduling and evaluation scorecards.
+  - Invitation-based activation; credentials sign-in with the `tutor` role. Admin accounts are refused.
+  - Project review (claim, approve with score, request changes, resume) through the same transaction as admin.
+  - Roster with completion, last activity and tutoring signals; per-student progress in a batch; assessment
+    participation (no questions, answers or responses); curriculum; live classes with Join links.
+  - Sees only assigned, live batches; every query is filtered by the tutor's batch scope.
+  - Strictly isolated session (`__Host-tutor-sess`, own `AUTH_SECRET`).
+- **Not in this release**: rubric per-criterion scoring, bulk review, mock-interview scorecards, notes, charts.
+- **Details**: [tutor-portal.md](./tutor-portal.md).

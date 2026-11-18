@@ -51,11 +51,23 @@ pnpm dev:admin
 
 # Run Corporate Website (port 3001)
 pnpm dev:web
+
+# Run Student Portal (port 3002) and Tutor Portal (port 3003)
+pnpm dev:student
+pnpm dev:tutor
 ```
+
+The tutor portal needs `apps/tutor/.env.local` (template `.env.example`) with a **development** `POSTGRES_URL` and its own
+`AUTH_SECRET`. Create a tutor in the admin portal (`/tutors`, an email that is not an admin or student account), assign a
+batch, and open the invitation link; locally it points to `http://localhost:3003/activate`. Without `RESEND_API_KEY`
+the email is not sent: create the account, then issue a fresh link with "Resend invitation" once email is configured.
+Architecture: [tutor-portal.md](../architecture/tutor-portal.md).
 
 Access points:
 - **Admin Portal**: `http://localhost:3000`
 - **Corporate Website**: `http://localhost:3001`
+- **Student Portal**: `http://localhost:3002`
+- **Tutor Portal**: `http://localhost:3003`
 - **Guest Learning**: `http://localhost:3001/learn`
 - **DSA Sheets**: `http://localhost:3001/learn/dsa`
 

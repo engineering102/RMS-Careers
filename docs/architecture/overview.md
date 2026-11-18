@@ -20,10 +20,13 @@ The repository is configured as a `pnpm` monorepo containing multiple independen
 RMS-Careers/
 ├── apps/
 │   ├── web/                     # Public Corporate Portal & Freemium Practice (@rms/web)
+│   ├── student/                 # Student Learning Portal (@rms/student)
+│   ├── tutor/                   # Tutor Portal (@rms/tutor), built, not yet launched
 │   └── admin/                   # Administrative Control Plane & Institutional Portal (@rms/admin)
 ├── packages/
 │   ├── db/                      # Shared Drizzle ORM schema, Neon connection, migrations (@rms/db)
-│   └── auth/                    # Shared Password verification, token hashing, RBAC guards (@rms/auth)
+│   ├── auth/                    # Shared Password verification, token hashing, RBAC guards (@rms/auth)
+│   └── academic/                # Batch scope, project review, live sessions, tutor queries (@rms/academic)
 └── docs/                        # Technical documentation & engineering architecture
 ```
 
@@ -34,8 +37,8 @@ RMS-Careers/
 | Surface | Application Path | Canonical Domain | Access Model | Primary User Persona |
 | :--- | :--- | :--- | :--- | :--- |
 | **Corporate Website** | `apps/web` | `https://www.rms-careers.com` | Public (Unauthenticated) | Prospective Colleges, TPOs, Engineering Students |
-| **Student Portal** | `apps/student` *(Planned Phase 3)* | `https://student.rms-careers.com` | Authenticated (`student`) | Enrolled College Cohort Students |
-| **Tutor Portal** | `apps/tutor` *(Planned Phase 4)* | `https://tutor.rms-careers.com` | Authenticated (`tutor`) | Instructors, Evaluators, Technical Mentors |
+| **Student Portal** | `apps/student` | `https://student.rms-careers.com` | Authenticated (`student`) | Enrolled College Cohort Students |
+| **Tutor Portal** | `apps/tutor` *(built; launch pending)* | `https://tutor.rms-careers.com` | Authenticated (`tutor`) | Instructors, Evaluators, Technical Mentors |
 | **Admin Control Plane** | `apps/admin` | `https://admin.rms-careers.com` | Authenticated (`admin`, `super_admin`) | RMS Leadership, Operations, College Admins |
 
 ---
