@@ -19,7 +19,8 @@ import {
   Sparkles,
   FileQuestion,
   PencilRuler,
-  Copy
+  Copy,
+  Library
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +76,8 @@ interface ContentClientProps {
   selectedProgramId?: string;
   selectedType?: string;
   selectedStatus?: string;
+  /** 'all', 'library', 'curriculum' or 'unplaced'. */
+  selectedUsage?: string;
   searchQuery?: string;
   /** Items matching the filters across all pages. */
   totalCount?: number;
@@ -93,6 +96,7 @@ export function ContentClient({
   selectedProgramId = 'all',
   selectedType = 'all',
   selectedStatus = 'all',
+  selectedUsage = 'all',
   searchQuery = '',
   totalCount = initialContentItems.length,
   page = 1,
@@ -112,6 +116,7 @@ export function ContentClient({
   const [filterProgram, setFilterProgram] = React.useState(selectedProgramId);
   const [filterType, setFilterType] = React.useState(selectedType);
   const [filterStatus, setFilterStatus] = React.useState(selectedStatus);
+  const [filterUsage, setFilterUsage] = React.useState(selectedUsage);
   const [search, setSearch] = React.useState(searchQuery);
 
   // Edit Form State
@@ -161,10 +166,23 @@ export function ContentClient({
     [router, searchParams]
   );
 
+  // applyFilters keeps the other query params, so the usage filter survives the other filters' changes.
+  const applyUsageFilter = (newUsage: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newUsage && newUsage !== 'all') {
+      params.set('usage', newUsage);
+    } else {
+      params.delete('usage');
+    }
+    params.delete('page');
+    router.push(`/content?${params.toString()}`);
+  };
+
   const resetFilters = () => {
     setFilterProgram('all');
     setFilterType('all');
     setFilterStatus('all');
+    setFilterUsage('all');
     setSearch('');
     router.push('/content');
   };
@@ -173,6 +191,7 @@ export function ContentClient({
     filterProgram !== 'all' ||
     filterType !== 'all' ||
     filterStatus !== 'all' ||
+    filterUsage !== 'all' ||
     search.trim() !== '';
 
   const openEditModal = (item: ContentItemWithDetails) => {
@@ -301,7 +320,7 @@ export function ContentClient({
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Canonical learning library. Content is defined once and placed across batches via curriculum.
+            Content is defined once, then shown in the student Library, placed in batch curricula, or both.
           </p>
         </div>
 
@@ -400,6 +419,27 @@ export function ContentClient({
               </Select>
             </div>
 
+            {/* Usage Filter: student Library vs batch curriculum */}
+            <div className="w-full lg:w-44">
+              <Select
+                value={filterUsage}
+                onValueChange={(val) => {
+                  setFilterUsage(val);
+                  applyUsageFilter(val);
+                }}
+              >
+                <SelectTrigger aria-label="Filter by where content is used">
+                  <SelectValue placeholder="Used in" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Library &amp; Curriculum</SelectItem>
+                  <SelectItem value="library">In Library</SelectItem>
+                  <SelectItem value="curriculum">In Curriculum</SelectItem>
+                  <SelectItem value="unplaced">Not placed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Actions */}
             <div className="flex gap-2">
               <Button
@@ -460,7 +500,7 @@ export function ContentClient({
                     <TableHead>Type</TableHead>
                     <TableHead>Scope</TableHead>
                     <TableHead>Lifecycle</TableHead>
-                    <TableHead>Batches</TableHead>
+                    <TableHead>Used in</TableHead>
                     <TableHead className="hidden md:table-cell">Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -552,12 +592,12 @@ export function ContentClient({
                           )}
                         </TableCell>
 
-                        {/* Batches Placed */}
+                        {/* Used in: student Library and/or batch curricula */}
                         <TableCell>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Layers className="h-3.5 w-3.5" />
-                            <span>{item.batchUsageCount}</span>
-                          </div>
+                          <ContentUsageBadges
+                            inLibrary={item.metadata?.inLibrary === true}
+                            batchUsageCount={item.batchUsageCount}
+                          />
                         </TableCell>
 
                         {/* Updated */}
@@ -880,6 +920,40 @@ export function ContentClient({
         variant={pendingLifecycle?.action === 'archive' ? 'destructive' : 'default'}
         onConfirm={confirmLifecycleChange}
       />
+    </div>
+  );
+}
+
+/**
+ * Library and curriculum are separate placements: the Library flag lists an item for every enrolled student,
+ * curriculum placement schedules it inside a batch. An item can have both, either, or neither.
+ */
+function ContentUsageBadges({ inLibrary, batchUsageCount }: { inLibrary: boolean; batchUsageCount: number }) {
+  if (!inLibrary && batchUsageCount === 0) {
+    return <span className="text-xs text-muted-foreground">Not placed</span>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {inLibrary && (
+        <Badge
+          variant="outline"
+          className="gap-1 whitespace-nowrap border-teal-500/30 bg-teal-500/10 font-medium text-teal-700 dark:text-teal-400"
+          title="Shown in the student Library"
+        >
+          <Library className="h-3 w-3" />
+          Library
+        </Badge>
+      )}
+      {batchUsageCount > 0 && (
+        <Badge
+          variant="outline"
+          className="gap-1 whitespace-nowrap border-indigo-500/30 bg-indigo-500/10 font-medium text-indigo-700 dark:text-indigo-400"
+          title={`Placed in ${batchUsageCount} batch curricul${batchUsageCount === 1 ? 'um' : 'a'}`}
+        >
+          <Layers className="h-3 w-3" />
+          Curriculum · {batchUsageCount}
+        </Badge>
+      )}
     </div>
   );
 }

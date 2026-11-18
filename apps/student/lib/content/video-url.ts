@@ -64,3 +64,22 @@ export function embedUrlFor(video: ParsedVideo): string {
   }
   return video.videoId;
 }
+
+/**
+ * A still image for a lecture card, or null when none can be derived without a network call. Only YouTube serves
+ * thumbnails at a predictable URL (hqdefault exists for every public video); Vimeo needs an API lookup and custom
+ * players have no convention, so those cards keep their drawn placeholder. The host must be allowed by img-src in
+ * security-headers.ts.
+ */
+export function videoThumbnailUrl(video: { provider: string; videoId: string } | null): string | null {
+  if (!video?.videoId) return null;
+  let id: string | null = null;
+  if (YOUTUBE_ID.test(video.videoId) && video.provider !== 'vimeo') {
+    // youtube, or a bare id saved under a custom provider (the player embeds those from YouTube too)
+    id = video.videoId;
+  } else if (video.provider === 'custom') {
+    const parsed = parseVideoUrl(video.videoId);
+    if (parsed?.provider === 'youtube') id = parsed.videoId;
+  }
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}

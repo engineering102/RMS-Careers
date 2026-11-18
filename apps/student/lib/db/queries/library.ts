@@ -3,6 +3,8 @@ import 'server-only';
 import { db, contentItems, programs, batchCurriculum } from '@rms/db';
 import { eq, ne, and, or, inArray, isNull, sql, desc, asc } from 'drizzle-orm';
 import { resolveContentSubject } from '@rms/db/content-subjects';
+import { extractVideoMetadata } from '@/lib/content/metadata';
+import { videoThumbnailUrl } from '@/lib/content/video-url';
 import type { LibraryCatalogItem, LibraryContentType, LibraryDifficulty } from '@/lib/types/library';
 
 export type { LibraryCatalogItem };
@@ -79,6 +81,10 @@ export async function getLibraryCatalog(options: {
         subject: metaText('subject'),
         durationMinutes: metaText('durationMinutes'),
         difficulty: metaText('difficulty'),
+        // Video keys, so lecture cards can show a thumbnail
+        provider: metaText('provider'),
+        videoId: metaText('videoId'),
+        videoUrl: metaText('videoUrl'),
         programCode: programs.code
       })
       .from(contentItems)
@@ -108,7 +114,17 @@ export async function getLibraryCatalog(options: {
         subject: resolveContentSubject({ subject: r.subject, topic: r.topic, category: r.category, title: r.title }),
         durationMinutes: Number.isFinite(duration) && duration > 0 ? Math.round(duration) : null,
         difficulty: DIFFICULTIES.find((d) => d === r.difficulty) ?? null,
-        programCode: r.programCode ?? DEFAULT_PROGRAM_CODE
+        programCode: r.programCode ?? DEFAULT_PROGRAM_CODE,
+        thumbnailUrl:
+          r.contentType === 'lecture'
+            ? videoThumbnailUrl(
+                extractVideoMetadata({
+                  provider: r.provider ?? undefined,
+                  videoId: r.videoId ?? undefined,
+                  videoUrl: r.videoUrl ?? undefined
+                })
+              )
+            : null
       };
     });
   } catch (error) {

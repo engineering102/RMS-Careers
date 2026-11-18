@@ -31,11 +31,20 @@ export interface ContentItemWithDetails {
   batchUsageCount: number;
 }
 
+export type ContentUsageFilter = 'library' | 'curriculum' | 'unplaced';
+
+export const CONTENT_USAGE_FILTERS: readonly ContentUsageFilter[] = ['library', 'curriculum', 'unplaced'];
+
 export interface ContentFilterOptions {
   search?: string;
   programId?: number | null | 'all' | 'global';
   contentType?: ContentTypeEnum | 'all';
   status?: 'all' | 'draft' | 'published' | 'archived';
+  /**
+   * Where the item is used: switched on for the student Library (metadata.inLibrary), placed in at least one
+   * batch curriculum, or neither. An item can be in both, so 'library' and 'curriculum' overlap.
+   */
+  usage?: ContentUsageFilter;
   limit?: number;
   offset?: number;
 }
@@ -121,6 +130,19 @@ function buildContentFilterWhere(options: ContentFilterOptions) {
       conditions.push(
         sql`COALESCE((${contentItems.metadata}->>'isArchived')::boolean, false) = true`
       );
+    }
+  }
+
+  // Usage filter: student Library flag and/or batch curriculum placement
+  if (options.usage) {
+    const inLibrary = sql`(${contentItems.metadata}->>'inLibrary') = 'true'`;
+    const inCurriculum = sql`EXISTS (SELECT 1 FROM ${batchCurriculum} WHERE ${batchCurriculum.contentItemId} = ${contentItems.id})`;
+    if (options.usage === 'library') {
+      conditions.push(inLibrary);
+    } else if (options.usage === 'curriculum') {
+      conditions.push(inCurriculum);
+    } else {
+      conditions.push(sql`NOT (${inCurriculum}) AND COALESCE(${inLibrary}, false) = false`);
     }
   }
 

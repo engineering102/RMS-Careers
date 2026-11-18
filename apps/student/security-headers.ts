@@ -5,6 +5,7 @@
  *  - script-src keeps 'unsafe-inline' (Next.js App Router hydration scripts); no third-party scripts.
  *  - frame-src allows https: because lecture videos are embedded from admin-configured providers
  *    (YouTube-nocookie, Vimeo, or a custom https embed URL); http:, data: and javascript: frames are blocked.
+ *  - img-src allows i.ytimg.com for YouTube lecture thumbnails on Library cards (lib/content/video-url.ts).
  *  - 'unsafe-eval' and ws: are added only in development (React refresh / HMR).
  */
 export function buildSecurityHeaders({ isDev }: { isDev: boolean }): Array<{ key: string; value: string }> {
@@ -12,7 +13,7 @@ export function buildSecurityHeaders({ isDev }: { isDev: boolean }): Array<{ key
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://i.ytimg.com",
     "font-src 'self' data:",
     `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
     "frame-src 'self' https:",

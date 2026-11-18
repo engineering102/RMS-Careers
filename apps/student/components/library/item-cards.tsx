@@ -66,15 +66,29 @@ export function LectureCard({ item }: { item: LibraryCatalogItem }) {
       )}
     >
       <div className="relative aspect-video overflow-hidden bg-[hsl(var(--tone)_50%/0.10)]">
-        {/* Faint ruled backdrop in the subject's tone, standing in for a thumbnail. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-70"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(135deg, hsl(var(--tone) 50% / 0.16) 0 1px, transparent 1px 14px)'
-          }}
-        />
+        {item.thumbnailUrl ? (
+          // Plain <img>: the still comes straight from the video host, and object-cover crops YouTube's 4:3
+          // hqdefault letterbox to the 16:9 frame.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.thumbnailUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none"
+          />
+        ) : (
+          // Faint ruled backdrop in the subject's tone, standing in for a thumbnail.
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-70"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(135deg, hsl(var(--tone) 50% / 0.16) 0 1px, transparent 1px 14px)'
+            }}
+          />
+        )}
         <span
           aria-hidden="true"
           className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-foreground text-background shadow-sm transition-transform duration-150 group-hover:scale-110 motion-reduce:transform-none"

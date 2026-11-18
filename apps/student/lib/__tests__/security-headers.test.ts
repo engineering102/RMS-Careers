@@ -24,6 +24,10 @@ describe('Student security headers (audit F-10)', () => {
     }
   });
 
+  it('allows images only from itself and YouTube lecture thumbnails', () => {
+    expect(csp).toContain("img-src 'self' data: blob: https://i.ytimg.com;");
+  });
+
   it('forbids framing, plugins, base hijacking and off-site form posts', () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
