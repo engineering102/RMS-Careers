@@ -1,0 +1,7 @@
+{
+  "college": { "code": "RMS-INTERNAL", "name": "RMS Internal (Templates)", "city": null, "state": null },
+  "programCode": "PLACEMENTPREP",
+  "batchName": "TEMPLATE · 26-Week Placement Prep",
+  "startsAt": "2027-01-04T03:30:00.000Z",
+  "weeks": 26
+}
