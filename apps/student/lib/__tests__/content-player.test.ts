@@ -541,6 +541,25 @@ describe('Slice 9: Video & Resource Player', () => {
       }
     });
 
+    it('opens Library reading material from day one, but keeps unreleased graded work locked', async () => {
+      mockCurriculum = [
+        { batchId: validBatchId, contentItemId: validContentId, availableFrom: new Date(Date.now() + 86400000 * 21) }
+      ];
+      const libraryItem = { ...mockContentItems[0], programId: null, metadata: { inLibrary: true, notes: 'Week 4 notes' } };
+
+      mockContentItems = [{ ...libraryItem, contentType: 'notes' }];
+      expect((await getContentItem(101, validContentId)).id).toBe(validContentId);
+      expect((await getContentItem(101, validContentId, validBatchId)).id).toBe(validContentId);
+
+      // Not in the Library: the release date still applies.
+      mockContentItems = [{ ...libraryItem, contentType: 'notes', metadata: {} }];
+      await expect(getContentItem(101, validContentId)).rejects.toThrow('NEXT_NOT_FOUND');
+
+      // Graded work in the Library still waits for its week.
+      mockContentItems = [{ ...libraryItem, contentType: 'quiz' }];
+      await expect(getContentItem(101, validContentId)).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
     it('rejects completion when student enrollment in batch is completed (read-only)', async () => {
       mockCurriculum = [
         {

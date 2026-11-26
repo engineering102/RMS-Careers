@@ -38,13 +38,36 @@ function libraryAudience(programIds: number[]) {
 }
 
 /**
- * True unless the item is scheduled in one of the student's batches and not yet released in any of them.
- * The content player refuses those, so the Library must not list a card that would open onto "not found".
+ * Reading material in the Library is open from day one, even when a batch schedules it for a later week: the
+ * Library is a reference shelf, the curriculum is the paced path. Graded work (quizzes, projects) still waits for
+ * its release date, so a weekly test cannot be read or sat ahead of its week.
+ */
+export const LIBRARY_EARLY_ACCESS_TYPES = ['lecture', 'notes', 'resource', 'dsa_sheet'] as const;
+
+/**
+ * The content player's twin of the Library rule: a Library item of a reading type that the student may see
+ * (global, or in an enrolled program) opens regardless of batch release dates.
+ */
+export function opensEarlyFromLibrary(
+  row: { contentType: string; programId: number | null; metadata: unknown },
+  enrolledProgramIds: readonly (number | null)[]
+): boolean {
+  const inLibrary = String((row.metadata as Record<string, unknown> | null)?.inLibrary) === 'true';
+  const audience = row.programId === null || enrolledProgramIds.includes(row.programId);
+  return inLibrary && audience && (LIBRARY_EARLY_ACCESS_TYPES as readonly string[]).includes(row.contentType);
+}
+
+/**
+ * True unless the item is graded work scheduled in one of the student's batches and not yet released in any of
+ * them. The content player refuses those, so the Library must not list a card that would open onto "not found".
  */
 function notLockedByRelease(batchIds: string[]) {
   if (batchIds.length === 0) return sql`true`;
   const placed = sql`SELECT 1 FROM ${batchCurriculum} WHERE ${batchCurriculum.contentItemId} = ${contentItems.id} AND ${batchCurriculum.batchId} IN ${batchIds}`;
-  return sql`(NOT EXISTS (${placed}) OR EXISTS (${placed} AND (${batchCurriculum.availableFrom} IS NULL OR ${batchCurriculum.availableFrom} <= now())))`;
+  return or(
+    inArray(contentItems.contentType, [...LIBRARY_EARLY_ACCESS_TYPES]),
+    sql`(NOT EXISTS (${placed}) OR EXISTS (${placed} AND (${batchCurriculum.availableFrom} IS NULL OR ${batchCurriculum.availableFrom} <= now())))`
+  )!;
 }
 
 const metaText = (key: string) => sql<string | null>`nullif(${contentItems.metadata}->>${sql.raw(`'${key}'`)}, '')`;
@@ -54,7 +77,8 @@ const metaText = (key: string) => sql<string | null>`nullif(${contentItems.metad
  * browses it in the browser (formats, subjects, search), so moving around the Library costs no further requests.
  *
  * What is listed: published content an admin has put in the Library, never external tests (they live on
- * Assessments), that is global or belongs to an enrolled program, and is not still locked by a batch release date.
+ * Assessments), that is global or belongs to an enrolled program, and is either reading material (listed from day
+ * one) or graded work a batch has already released.
  * Being scheduled in a batch does not put content in the Library: the week-by-week curriculum is the batch's own,
  * the Library is common to everyone enrolled. Only card-sized fields are selected: notes bodies and other metadata
  * stay in the database.
