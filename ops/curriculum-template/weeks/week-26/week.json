@@ -1,0 +1,35 @@
+{
+  "title": "Demo Day & Placement Readiness Week",
+  "items": [
+    {
+      "file": "01-demo-day.md"
+    },
+    {
+      "file": "02-placement-exam-strategy.md"
+    },
+    {
+      "file": "03-final-mock-interviews.md"
+    },
+    {
+      "file": "04-portfolio-job-search-scorecard.md"
+    },
+    {
+      "file": "05-dsa-final-mock.md"
+    },
+    {
+      "file": "06-cheat-sheet.md",
+      "required": false
+    },
+    {
+      "reuse": "demo-day-placement-readiness-week"
+    },
+    {
+      "file": "09-placement-readiness-mock-test.md",
+      "dueAfterDays": 5
+    },
+    {
+      "file": "08-cap-m4.project.json",
+      "dueAfterDays": 6
+    }
+  ]
+}

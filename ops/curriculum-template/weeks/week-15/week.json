@@ -1,0 +1,14 @@
+{
+  "title": "Full Stack Integration, CI & Deployment — Phase 3 Mini Project",
+  "items": [
+    { "file": "01-full-stack-integration.md" },
+    { "file": "02-deployment-and-ci.md" },
+    { "file": "03-mp3-build-sprint.md" },
+    { "file": "04-demos-and-code-review.md" },
+    { "file": "05-dsa-heaps.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "full-stack-integration-ci-deployment-phase-3-mini-project" },
+    { "file": "08-phase-3-test.md", "dueAfterDays": 6 },
+    { "file": "09-mp3.project.json", "dueAfterDays": 6 }
+  ]
+}

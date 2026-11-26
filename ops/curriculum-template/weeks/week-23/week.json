@@ -1,0 +1,35 @@
+{
+  "title": "Capstone Sprint 1: Discover, Plan & Design",
+  "items": [
+    {
+      "file": "01-teams-prd-user-stories.md"
+    },
+    {
+      "file": "02-system-design-pack.md"
+    },
+    {
+      "file": "03-repo-ci-standups.md"
+    },
+    {
+      "file": "04-sprint-review-resume-v2.md"
+    },
+    {
+      "file": "05-dsa-interview-set-a.md"
+    },
+    {
+      "file": "06-cheat-sheet.md",
+      "required": false
+    },
+    {
+      "reuse": "capstone-sprint-1-discover-plan-design"
+    },
+    {
+      "reuse": "cap-m1-design-review",
+      "dueAfterDays": 6
+    },
+    {
+      "file": "10-leetcode-150.dsa.json",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "title": "MP1 · Python OOP Command-Line App",
+  "slug": "mp1-python-oop-cli-app",
+  "topic": "Phase 1 · Python & Git",
+  "subject": "programming-fundamentals",
+  "description": "Build an object-oriented command-line app in pairs. Choose ONE: Library Manager, Expense Tracker or Hostel Mess Planner.\n\nCOMMON MUST\n1. At least 4 classes, including one abstract base class (abc) with two subclasses that override a method, and one @property.\n2. JSON persistence: data saved on every change and loaded at start; a missing or corrupted file must not crash the app (start fresh with a warning).\n3. Menu-driven CLI with input validation and at least one custom exception.\n4. Code split into modules (models.py, storage.py, cli.py, main.py).\n5. GitHub Issues for every feature (8+), tracked on a Projects board; both partners commit; work through branches and PRs.\n6. README per the documentation checklist (setup, usage, features, class design) with screenshots of the terminal.\n\nLIBRARY: books and members, issue/return with due dates, overdue fine calculation, search by title or author.\nEXPENSE: income and expenses by category, monthly summary, budget per category with over-budget warning, CSV export.\nMESS PLANNER: weekly menu, student meal opt-in/opt-out, headcount per meal, cost per student per month.\n\nSTRETCH: unit tests with unittest or pytest.\n\nDemo in S4: 5 minutes. Both partners must explain any line. Pin the repository on your GitHub profile.\n\nSUBMIT: repo URL; in Notes your app choice and the features you own.",
+  "rubric": [
+    {
+      "title": "Functionality",
+      "maxPoints": 35,
+      "description": "All common requirements and the chosen option's features work: data persists across runs, a missing or corrupted JSON file does not crash the app, invalid menu input is rejected, and the custom exception is raised and handled."
+    },
+    {
+      "title": "Design and code quality",
+      "maxPoints": 20,
+      "description": "At least 4 sensible classes with an abstract base class, two overriding subclasses and a @property; models free of input/print; code split into models, storage, cli and main; clear names and docstrings."
+    },
+    {
+      "title": "Git practice (commits, branches, PRs)",
+      "maxPoints": 10,
+      "description": "8+ GitHub Issues on a Projects board; features built on branches and merged through PRs that reference their issues; meaningful commits from both partners."
+    },
+    {
+      "title": "Documentation",
+      "maxPoints": 15,
+      "description": "README covers purpose, setup and run steps, feature list, class design and who built what, with terminal screenshots; a stranger can run the app from the README alone."
+    },
+    {
+      "title": "Demo and viva",
+      "maxPoints": 20,
+      "description": "Five-minute demo of the main flows and error handling, both partners presenting; each partner can explain any line of the code, including the class design and persistence."
+    }
+  ]
+}

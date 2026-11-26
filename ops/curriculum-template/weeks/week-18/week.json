@@ -1,0 +1,14 @@
+{
+  "title": "Machine Learning with scikit-learn",
+  "items": [
+    { "file": "01-ml-foundations.md" },
+    { "file": "02-regression.md" },
+    { "file": "03-classification.md" },
+    { "file": "04-unsupervised-pipelines.md" },
+    { "file": "05-dsa-greedy.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "machine-learning-with-scikit-learn" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-18-model-comparison", "dueAfterDays": 6 }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Back End with Node.js, Express & Databases",
+  "items": [
+    { "file": "01-node-express-basics.md" },
+    { "file": "02-rest-validation-errors.md" },
+    { "file": "03-databases-from-node.md" },
+    { "file": "04-authentication-security.md" },
+    { "file": "05-dsa-binary-search-trees.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "back-end-with-nodejs-express-databases" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-14-marketplace-rest-api", "dueAfterDays": 6 }
+  ]
+}

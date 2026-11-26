@@ -1,0 +1,34 @@
+{
+  "title": "CAP-M3 · Deploy & Docs Check",
+  "slug": "cap-m3-deploy-docs-check",
+  "topic": "Phase 6 · Capstone",
+  "subject": "system-design",
+  "description": "Capstone Sprint 3: polish, deploy and document. Freeze features by mid-week; anything new goes to a future scope slide, not the codebase. By the end of the week your capstone runs on a public URL and is documented well enough for a recruiter to understand it in two minutes. This is a formative checkpoint before Demo Day; it does not count towards the capstone grade.\n\nMUST (in your team's capstone repo)\n1. Live deployment: front end, back end and a separate production database (or a hosted Streamlit / Spaces app for data and AI projects), loaded with synthetic demo data and demo accounts for each role. The smoke test passes: HTTPS, health check, each role logs in, main journey works, inner pages refresh.\n2. README per the project documentation checklist: title and one-line description, live URL, demo video link, problem, features, screenshots, stack, setup instructions that work on a fresh clone (with .env.example), demo accounts, folder structure, team contributions, future scope.\n3. docs/architecture.png updated to match what you actually built.\n4. docs/api.md (endpoints with auth, request, response and error codes) or, for data and AI projects, a pipeline and model document; plus docs/user-guide.md with task-based steps per role.\n5. A 3-minute demo video of the live app, linked at the top of the README.\n6. docs/security-checklist.md with every item marked done and a note of how: no secrets in Git, hashed passwords, parameterised queries, server-side validation and access checks, safe error messages, restricted CORS.\n7. Draft Demo Day slide deck (link in the README or docs/).\n\nSAP case-study teams: replace the live URL with a demonstrable system walkthrough or guided simulation, and the API docs with the business blueprint and test scripts.\n\nSUBMIT: every team member submits the same repo URL. Notes: live URL, demo video link, demo account usernames (never real passwords), and the documentation sections you wrote.",
+  "rubric": [
+    {
+      "title": "Live deployment",
+      "maxPoints": 15,
+      "description": "Public URL works over HTTPS with seeded demo data and demo accounts; separate production database; smoke test passes, including refreshing inner pages."
+    },
+    {
+      "title": "README and architecture diagram",
+      "maxPoints": 10,
+      "description": "README follows the documentation checklist and its setup steps work on a fresh clone; the architecture diagram matches the deployed system."
+    },
+    {
+      "title": "API / user docs",
+      "maxPoints": 10,
+      "description": "API reference (or pipeline document) matches the running code, with error codes; the user guide gives task-based steps for each role."
+    },
+    {
+      "title": "Demo video",
+      "maxPoints": 10,
+      "description": "About 3 minutes, scripted, shows the main journey in the live app, states the problem and architecture briefly, and is linked in the README."
+    },
+    {
+      "title": "Security checklist",
+      "maxPoints": 5,
+      "description": "Checklist complete with evidence: no secrets in Git, hashed passwords, parameterised queries, server-side validation and access control, safe error handling."
+    }
+  ]
+}

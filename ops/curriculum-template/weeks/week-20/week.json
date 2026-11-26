@@ -1,0 +1,14 @@
+{
+  "title": "ERP Concepts & SAP S/4HANA Overview",
+  "items": [
+    { "file": "01-erp-concepts.md" },
+    { "file": "02-navigation-org-structure.md" },
+    { "file": "03-master-data.md" },
+    { "file": "04-end-to-end-processes.md" },
+    { "file": "05-dsa-dp-2d-knapsack.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "erp-concepts-sap-s4hana-overview" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-20-sap-process-maps", "dueAfterDays": 6 }
+  ]
+}

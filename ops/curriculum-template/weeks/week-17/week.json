@@ -1,0 +1,14 @@
+{
+  "title": "Data Visualisation & Exploratory Data Analysis",
+  "items": [
+    { "file": "01-matplotlib.md" },
+    { "file": "02-seaborn.md" },
+    { "file": "03-eda-method.md" },
+    { "file": "04-storytelling-streamlit.md" },
+    { "file": "05-dsa-graphs-ii.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "data-visualisation-exploratory-data-analysis" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-17-eda-insights-dashboard", "dueAfterDays": 6 }
+  ]
+}

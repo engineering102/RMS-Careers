@@ -1,0 +1,39 @@
+{
+  "title": "SAP Materials Management (MM) & Sales and Distribution (SD) — SAP Mini Project",
+  "items": [
+    {
+      "file": "01-mm-procure-to-pay.md"
+    },
+    {
+      "file": "02-sd-order-to-cash.md"
+    },
+    {
+      "file": "03-integration-document-flow.md"
+    },
+    {
+      "file": "04-mini-project-certification.md"
+    },
+    {
+      "file": "05-dsa-spot-the-pattern.md"
+    },
+    {
+      "reuse": "time-and-space-complexity-big-o-analysis-and-problem-solving-patterns",
+      "required": false
+    },
+    {
+      "file": "06-cheat-sheet.md",
+      "required": false
+    },
+    {
+      "reuse": "sap-materials-management-mm-sales-and-distribution-sd-sap-mini-project"
+    },
+    {
+      "file": "08-phase-5-test.md",
+      "dueAfterDays": 6
+    },
+    {
+      "file": "09-mp5.project.json",
+      "dueAfterDays": 6
+    }
+  ]
+}

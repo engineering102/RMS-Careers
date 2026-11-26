@@ -1,0 +1,15 @@
+{
+  "title": "Database Design, Normalisation, Indexing & Transactions",
+  "items": [
+    { "file": "01-er-modelling.md" },
+    { "file": "02-normalisation.md" },
+    { "file": "03-indexes-explain.md" },
+    { "file": "04-transactions-python.md" },
+    { "file": "05-dsa-two-pointers-sliding-window.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "database-design-normalisation-indexing-and-transactions", "required": false },
+    { "reuse": "database-design-normalisation-indexing-transactions" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-07-design-your-own-domain", "dueAfterDays": 6 }
+  ]
+}
