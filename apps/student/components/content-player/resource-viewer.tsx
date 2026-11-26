@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { ResourceMetadata } from '@/lib/types/content';
 import { parseDriveUrl } from '@/lib/content/drive-url';
 import { DriveDocumentViewer } from './drive-document-viewer';
+import { NotesMarkdown } from './notes-markdown';
 
 interface ResourceViewerProps {
   title: string;
@@ -88,8 +89,8 @@ export function ResourceViewer({
               <FileCode className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <span>Notes</span>
             </div>
-            <div className="max-w-[70ch] whitespace-pre-wrap font-sans text-[15px] leading-relaxed text-foreground">
-              {notes}
+            <div className="max-w-[80ch]">
+              <NotesMarkdown source={notes} />
             </div>
           </CardContent>
         </Card>
