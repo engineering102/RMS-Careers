@@ -19,7 +19,7 @@ import type {
   RelatedBatchContext
 } from '@/lib/types/content';
 import { enrollmentGrantsAccess } from '@/lib/db/access-policy';
-import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME, isInLibrary } from '@/lib/db/queries/library';
+import { DEFAULT_PROGRAM_CODE, DEFAULT_PROGRAM_NAME, isInLibrary, opensEarlyFromLibrary } from '@/lib/db/queries/library';
 import { extractResourceMetadata, extractVideoMetadata } from '@/lib/content/metadata';
 
 export type {
@@ -154,8 +154,16 @@ export async function getContentItem(
       new Set(activeEnrollments.map((e) => e.batchId).filter((id): id is string => Boolean(id)))
     );
 
+    // Library reading material opens from day one; everything else waits for its release date in the batch.
+    const openEarly =
+      row !== undefined &&
+      opensEarlyFromLibrary(
+        row,
+        activeEnrollments.map((e) => e.programId)
+      );
+
     // Release date availability if placed in student's batch(es)
-    if (batchIds.length > 0) {
+    if (batchIds.length > 0 && !openEarly) {
       if (batchId && isValidUuid(batchId) && batchIds.includes(batchId)) {
         // When accessed with specific enrolled batchId, verify release availability for that batch
         const targetPlacement = batchPlacements.find((p) => p.batchId === batchId);

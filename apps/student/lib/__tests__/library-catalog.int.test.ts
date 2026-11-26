@@ -35,7 +35,7 @@ describe('opt-in, shared Library (live test database)', () => {
   // name -> [program: 'mine' | 'other' | null (global), metadata, published, placement in my batch]
   const FIXTURES: Record<
     string,
-    { program: 'mine' | 'other' | null; metadata: Record<string, unknown>; published?: boolean; placed?: Date | null | 'none' }
+    { program: 'mine' | 'other' | null; metadata: Record<string, unknown>; published?: boolean; placed?: Date | null | 'none'; type?: 'lecture' | 'quiz' }
   > = {
     globalLibrary: { program: null, metadata: { inLibrary: true } },
     globalNoFlag: { program: null, metadata: {} },
@@ -43,6 +43,7 @@ describe('opt-in, shared Library (live test database)', () => {
     globalScheduledOnly: { program: null, metadata: {}, placed: null },
     globalLibraryReleased: { program: null, metadata: { inLibrary: true }, placed: PAST },
     globalLibraryLocked: { program: null, metadata: { inLibrary: true }, placed: FUTURE },
+    globalLibraryLockedQuiz: { program: null, metadata: { inLibrary: true }, placed: FUTURE, type: 'quiz' },
     globalLibraryDraft: { program: null, metadata: { inLibrary: true }, published: false },
     mineLibrary: { program: 'mine', metadata: { inLibrary: true } },
     mineNoFlag: { program: 'mine', metadata: {} },
@@ -76,7 +77,7 @@ describe('opt-in, shared Library (live test database)', () => {
         .values({
           title: `LC ${name} ${stamp}`,
           slug: `lc-${name.toLowerCase()}-${stamp}`,
-          contentType: 'lecture',
+          contentType: f.type ?? 'lecture',
           isPublished: f.published ?? true,
           programId: f.program === 'mine' ? programId : f.program === 'other' ? otherProgramId : null,
           metadata: f.metadata
@@ -110,20 +111,27 @@ describe('opt-in, shared Library (live test database)', () => {
       .map(([name]) => name)
       .sort();
 
-  it('lists exactly the opted-in content this student may have: global or own program, published, released', async () => {
+  it('lists exactly the opted-in content this student may have: global or own program, published, reading or released', async () => {
     const catalog = await getLibraryCatalog({ enrolledProgramIds: [programId], enrolledBatchIds: [batchId] });
-    // Other suites share this database, so judge only this suite's rows.
-    expect(names(catalog)).toEqual(['globalLibrary', 'globalLibraryReleased', 'mineLibrary']);
+    // Other suites share this database, so judge only this suite's rows. Reading material scheduled for a later week
+    // is listed from day one; the unreleased quiz is not.
+    expect(names(catalog)).toEqual(['globalLibrary', 'globalLibraryLocked', 'globalLibraryReleased', 'mineLibrary']);
   });
 
   it('gives a student of another batch the same global shelf: the Library does not depend on the batch', async () => {
     const catalog = await getLibraryCatalog({ enrolledProgramIds: [otherProgramId], enrolledBatchIds: [] });
     // No batch here, so nothing is release-locked for this student; the other program's item replaces mine.
-    expect(names(catalog)).toEqual(['globalLibrary', 'globalLibraryLocked', 'globalLibraryReleased', 'otherLibrary']);
+    expect(names(catalog)).toEqual([
+      'globalLibrary',
+      'globalLibraryLocked',
+      'globalLibraryLockedQuiz',
+      'globalLibraryReleased',
+      'otherLibrary'
+    ]);
   });
 
   it('opens what the Library lists in the content player, including global content outside any batch', async () => {
-    for (const name of ['globalLibrary', 'globalLibraryReleased', 'mineLibrary']) {
+    for (const name of ['globalLibrary', 'globalLibraryLocked', 'globalLibraryReleased', 'mineLibrary']) {
       const item = await getContentItem(studentId, ids[name]);
       expect(item.id, name).toBe(ids[name]);
     }
@@ -132,8 +140,8 @@ describe('opt-in, shared Library (live test database)', () => {
   it('still opens curriculum content that is not in the Library, and nothing else', async () => {
     // Scheduled in my batch (no flag): reachable from the curriculum.
     expect((await getContentItem(studentId, ids.globalScheduledOnly)).id).toBe(ids.globalScheduledOnly);
-    // Global with no flag and no placement, another program's Library item, a draft, and a locked item: refused.
-    for (const name of ['globalNoFlag', 'globalFlagFalse', 'otherLibrary', 'globalLibraryDraft', 'globalLibraryLocked']) {
+    // Global with no flag and no placement, another program's Library item, a draft, and unreleased graded work: refused.
+    for (const name of ['globalNoFlag', 'globalFlagFalse', 'otherLibrary', 'globalLibraryDraft', 'globalLibraryLockedQuiz']) {
       await expect(getContentItem(studentId, ids[name]), name).rejects.toThrow('NEXT_NOT_FOUND');
     }
   });
