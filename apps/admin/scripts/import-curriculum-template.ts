@@ -245,6 +245,9 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error(err instanceof Error ? err.message.replace(/postgres(ql)?:\S+/g, '<redacted>') : 'template import failed');
+  // Driver errors are not always Error instances; print message/code/detail without connection strings.
+  const e = (err ?? {}) as { message?: unknown; code?: unknown; detail?: unknown };
+  const text = [e.message ?? String(err), e.code, e.detail].filter((v) => v !== undefined && v !== null && v !== '').join(' | ');
+  console.error(`template import failed: ${String(text).replace(/postgres(ql)?:\S+/g, '<redacted>')}`);
   process.exit(1);
 });
