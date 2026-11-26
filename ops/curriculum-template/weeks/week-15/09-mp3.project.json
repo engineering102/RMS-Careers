@@ -1,0 +1,34 @@
+{
+  "title": "MP3 · Deployed Full Stack App",
+  "slug": "mp3-deployed-full-stack-app",
+  "topic": "Phase 3 · Full Stack Web",
+  "subject": "web-development",
+  "description": "Build and deploy a full stack app in pairs or trios. Choose ONE: Job Board, Event Registration or Hostel Complaint Tracker.\nCOMMON MUST\n1. React front end, Express API, PostgreSQL (or MongoDB) database; the structure you used for Campus Marketplace (client/ and server/, routes -> controllers -> services).\n2. Signup/login with hashed passwords and two roles; role checks enforced on the API, not only in the UI.\n3. Full CRUD on the main resource; validation on both client and server; loading, error and empty states.\n4. Deployed: front end (Vercel/Netlify), API (Render or similar), database (Neon/Supabase/Atlas). Public URL works, including refreshing deep links.\n5. GitHub Actions CI running lint and tests on every pull request, with a passing badge in the README.\n6. No secrets in Git history; .env.example committed.\n7. README per the project documentation checklist (7.4) with screenshots, live URL and a 2-minute demo video link.\n8. Work tracked on a GitHub Projects board; every member commits through reviewed pull requests.\nJOB BOARD: recruiters post jobs; students search/filter and apply once; recruiter sees and updates applicant status.\nEVENT REGISTRATION: organisers create events with capacity; students register/cancel; waitlist when full; attendee CSV.\nCOMPLAINT TRACKER: students raise complaints with category and photo URL; warden assigns, updates status, closes; status history visible.\nSTRETCH: pagination; an admin stats page.\nDemo in S4: 5 minutes on the live URL. Every member must explain any line.\nSUBMIT: repo URL; live URL; in Notes list (1) what you built and which option, (2) anything incomplete, (3) the features you own and your PR links. Every team member submits the same repo URL.",
+  "rubric": [
+    {
+      "title": "Functionality",
+      "maxPoints": 35,
+      "description": "Both roles work end to end on the public URL: auth with hashed passwords, full CRUD on the main resource, the option's key rule (apply once, waitlist or status history), role and ownership checks enforced by the API, validation on client and server, loading/error/empty states."
+    },
+    {
+      "title": "Design and code quality",
+      "maxPoints": 20,
+      "description": "Sensible schema with constraints; client/ and server/ structure with routes -> controllers -> services; consistent JSON errors and status codes; parameterised queries; reusable components and clear state ownership; no secrets in code; CI lint and tests passing."
+    },
+    {
+      "title": "Git practice (commits, branches, PRs)",
+      "maxPoints": 10,
+      "description": "Issues on a Projects board; feature branches merged through reviewed pull requests; main protected with required CI checks; small, clearly named commits from every member; no secrets anywhere in history."
+    },
+    {
+      "title": "Documentation",
+      "maxPoints": 15,
+      "description": "README follows the documentation checklist: description and CI badge, problem and features, stack and architecture diagram, setup with .env.example, migrate/seed/run steps, screenshots, live URL, demo video link, API reference, team contributions and future scope."
+    },
+    {
+      "title": "Demo and viva",
+      "maxPoints": 20,
+      "description": "Clear 5-minute live demo of both roles on the deployed app, including one proof of server-side security; every member explains their own code and answers questions on any line, the auth flow, CI and deployment."
+    }
+  ]
+}

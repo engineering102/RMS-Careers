@@ -1,0 +1,34 @@
+{
+  "title": "MP4 · Data / AI Application",
+  "slug": "mp4-data-ai-application",
+  "topic": "Phase 4 · Data & AI",
+  "subject": "programming-fundamentals",
+  "description": "Ship a small data or AI application in pairs. Choose ONE track. TRACK A - Data/ML app (continues your Weeks 16-18 dataset): a Streamlit app with three pages: EDA highlights; model performance (metrics plus a confusion matrix or residual plot); and a prediction form that uses your saved joblib pipeline. Validate form inputs, and explain in the app which features drive predictions (feature importance or coefficients). TRACK B - RAG assistant: Q&A over the programme syllabus or a college handbook PDF using load, chunk, embed, store (ChromaDB or FAISS), retrieve, generate. Every answer shows the source passages it used, and the app says \"I don't know\" when retrieval finds nothing relevant. Include eval.md with 15 test questions, expected answers, your app's answers and a correct/partly/wrong mark for each. Use only the tutor-provided key from server-side configuration; never commit a key and never send student personal data to an LLM. BOTH TRACKS: README following the project documentation checklist (title, problem, features, stack and architecture diagram, setup with .env.example, screenshots, demo link, team contributions, future scope), requirements.txt, run instructions, a limitations section and a 2-minute demo video. Use only public or synthetic data. Work through branches and pull requests with commits from both partners. STRETCH: deploy on Streamlit Community Cloud or Hugging Face Spaces. Both partners must be able to explain any line. SUBMIT: the GitHub repository URL; a live URL if deployed; in Notes, your track and the parts each partner owns.",
+  "rubric": [
+    {
+      "title": "Functionality",
+      "maxPoints": 35,
+      "description": "All MUST items of the chosen track work. Track A: three pages, a working prediction form with input validation and feature explanations. Track B: grounded answers with sources, the \"I don't know\" path, and eval.md with 15 marked questions."
+    },
+    {
+      "title": "Design and code quality",
+      "maxPoints": 20,
+      "description": "Clear modules (UI separate from pipeline or model code), readable names, error handling for failed API calls or bad input, no hard-coded secrets, and no data leakage in the Track A model."
+    },
+    {
+      "title": "Git practice",
+      "maxPoints": 10,
+      "description": "Meaningful commits from both partners, feature branches and pull requests; .env and keys never committed; .env.example present."
+    },
+    {
+      "title": "Documentation",
+      "maxPoints": 15,
+      "description": "README follows the documentation checklist: problem, features, stack, architecture diagram, setup and run instructions, screenshots, demo video link, limitations, team contributions and any AI assistance used."
+    },
+    {
+      "title": "Demo and viva",
+      "maxPoints": 20,
+      "description": "A clear 2-minute demo showing the app working, including a failure case. Both partners explain any line chosen by the tutor and justify their design and evaluation choices."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "title": "How the Web Works, HTML5 & CSS3",
+  "items": [
+    { "file": "01-how-web-works-html.md" },
+    { "file": "02-css-fundamentals.md" },
+    { "file": "03-flexbox-grid-responsive.md" },
+    { "file": "04-portfolio-deploy.md" },
+    { "file": "05-dsa-binary-search.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "html5-from-scratch", "required": false },
+    { "reuse": "how-the-web-works-html5-css3" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-09-portfolio-v1", "dueAfterDays": 6 }
+  ]
+}

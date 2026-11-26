@@ -1,0 +1,15 @@
+{
+  "title": "NumPy & Pandas: Data Wrangling",
+  "items": [
+    { "file": "01-numpy-arrays.md" },
+    { "file": "02-pandas-basics.md" },
+    { "file": "03-data-cleaning.md" },
+    { "file": "04-groupby-merge-pivot.md" },
+    { "file": "05-dsa-graphs-bfs-dfs.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "numpy-pandas-data-wrangling" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-16-data-wrangling", "dueAfterDays": 6 },
+    { "file": "10-blind-75.dsa.json", "required": false }
+  ]
+}

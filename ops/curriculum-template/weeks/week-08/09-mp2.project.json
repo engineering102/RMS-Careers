@@ -1,0 +1,34 @@
+{
+  "title": "MP2 · Campus Placement Database",
+  "slug": "mp2-campus-placement-database",
+  "topic": "Phase 2 · Databases & SQL",
+  "subject": "core-cs",
+  "description": "Design and build a placement database for a college in PostgreSQL, plus a Python report. Work in pairs.\n\nMUST\n1. ER diagram (PNG, with its editable source) covering: students, departments, companies, job drives, eligibility rules (min CGPA, allowed branches, max backlogs), applications, interview rounds, offers.\n2. schema.sql in 3NF with all constraints (primary and foreign keys, UNIQUE, NOT NULL, CHECK); it runs cleanly on an empty database. design-notes.md justifies the normal form and any denormalisation.\n3. seed.py using Faker: 200+ students, 25+ companies, 40+ drives, 1,000+ applications. Synthetic data only, never real student details.\n4. queries.sql with 20 commented analytical queries, including: placement % per department, average and highest package per branch, students eligible but not applied for a drive, top 5 recruiters by offers, rank of students by offers in each department (window function), month-wise offer trend (CTE), students with multiple offers.\n5. At least 2 indexes justified with EXPLAIN ANALYZE output (before and after) in design-notes.md.\n6. report.py: CLI that asks for a department and prints a formatted placement report using parameterised queries.\n7. MongoDB: model companies and drives as documents and re-implement 2 of your queries as aggregation pipelines (mongo/ folder).\n8. README per the documentation checklist (setup steps with .env.example, ER diagram, screenshots of the report, team contributions). No passwords committed.\n\nSTRETCH: a trigger that blocks applications from ineligible students.\n\nBoth partners commit through branches and pull requests. Demo in S4: 5 minutes. Both partners must explain any line. Pin the repository on your GitHub profile.\n\nSUBMIT: repo URL; in Notes the features you own.",
+  "rubric": [
+    {
+      "title": "Functionality",
+      "maxPoints": 35,
+      "description": "schema.sql and seed.py run cleanly on an empty database and meet the row counts; all 20 queries run and return correct results, including the required ones; report.py prints a correct report for any department and handles unknown departments; the two MongoDB pipelines match their SQL equivalents."
+    },
+    {
+      "title": "Design and code quality",
+      "maxPoints": 20,
+      "description": "ER model with correct cardinalities, the drive-branch many-to-many and interview rounds as a weak entity; schema in 3NF with constraints that enforce the domain rules; indexes justified with EXPLAIN ANALYZE; parameterised queries only; readable, commented SQL and Python."
+    },
+    {
+      "title": "Git practice (commits, branches, PRs)",
+      "maxPoints": 10,
+      "description": "Work tracked in GitHub Issues; features built on branches and merged through pull requests; meaningful commits from both partners; no secrets or .env file in the history."
+    },
+    {
+      "title": "Documentation",
+      "maxPoints": 15,
+      "description": "README follows the documentation checklist: purpose, stack, ER diagram, setup steps with .env.example that work on a fresh clone, screenshots of the report, folder structure and who built what; design-notes.md explains normal forms, denormalisation and indexes."
+    },
+    {
+      "title": "Demo and viva",
+      "maxPoints": 20,
+      "description": "Five-minute demo of the ER design, key queries, the Python report and one index, with both partners presenting; each partner can explain any line, including normalisation decisions, constraints and why the report is safe from SQL injection."
+    }
+  ]
+}

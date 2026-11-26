@@ -1,0 +1,14 @@
+{
+  "title": "SAP Finance (FI) & Controlling (CO)",
+  "items": [
+    { "file": "01-fi-structure-gl.md" },
+    { "file": "02-ap-ar-universal-journal.md" },
+    { "file": "03-controlling.md" },
+    { "file": "04-financial-reporting-close.md" },
+    { "file": "05-dsa-tries-bits.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "sap-finance-fi-controlling-co" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-21-fi-co-transaction-log", "dueAfterDays": 6 }
+  ]
+}

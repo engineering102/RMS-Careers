@@ -1,0 +1,16 @@
+{
+  "title": "Python Collections, Files, Modules & Git Collaboration",
+  "items": [
+    { "file": "01-dictionaries-sets.md" },
+    { "file": "02-files-exceptions.md" },
+    { "file": "03-modules-pip-venv.md" },
+    { "file": "04-git-branching-pull-requests.md" },
+    { "file": "05-dsa-complexity.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "python-collections-files-modules-git-collaboration" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-03-marks-report-pipeline", "dueAfterDays": 6 },
+    { "reuse": "time-and-space-complexity-big-o-analysis-and-problem-solving-patterns", "required": false },
+    { "reuse": "git-and-github-from-scratch", "required": false }
+  ]
+}

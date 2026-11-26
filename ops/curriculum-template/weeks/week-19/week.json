@@ -1,0 +1,35 @@
+{
+  "title": "Generative AI, LLMs & AI-Powered Applications",
+  "items": [
+    {
+      "file": "01-llm-concepts.md"
+    },
+    {
+      "file": "02-prompting-llm-api.md"
+    },
+    {
+      "file": "03-embeddings-rag.md"
+    },
+    {
+      "file": "04-ai-apps-coding-assistants.md"
+    },
+    {
+      "file": "05-dsa-dp-1d.md"
+    },
+    {
+      "file": "06-cheat-sheet.md",
+      "required": false
+    },
+    {
+      "reuse": "generative-ai-llms-ai-powered-applications"
+    },
+    {
+      "file": "08-phase-4-test.md",
+      "dueAfterDays": 6
+    },
+    {
+      "file": "09-mp4.project.json",
+      "dueAfterDays": 6
+    }
+  ]
+}

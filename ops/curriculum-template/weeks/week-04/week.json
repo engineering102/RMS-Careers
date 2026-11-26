@@ -1,0 +1,43 @@
+{
+  "title": "Object-Oriented Python & Phase 1 Mini Project",
+  "items": [
+    {
+      "file": "01-classes-objects.md"
+    },
+    {
+      "file": "02-oop-pillars.md"
+    },
+    {
+      "file": "03-mini-project-build.md"
+    },
+    {
+      "file": "04-demos-review-profile.md"
+    },
+    {
+      "file": "05-dsa-arrays.md"
+    },
+    {
+      "file": "06-cheat-sheet.md",
+      "required": false
+    },
+    {
+      "reuse": "object-oriented-python-phase-1-mini-project"
+    },
+    {
+      "file": "08-phase-1-test.md",
+      "dueAfterDays": 6
+    },
+    {
+      "file": "09-mp1.project.json",
+      "dueAfterDays": 6
+    },
+    {
+      "reuse": "array-strings",
+      "required": false
+    },
+    {
+      "file": "10-dsa-sheet-150.dsa.json",
+      "required": false
+    }
+  ]
+}

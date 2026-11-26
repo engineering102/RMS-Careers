@@ -1,0 +1,15 @@
+{
+  "title": "Python Core: Control Flow, Functions & Strings",
+  "items": [
+    { "file": "01-control-flow.md" },
+    { "file": "02-functions.md" },
+    { "file": "03-strings.md" },
+    { "file": "04-lists-tuples-debugging.md" },
+    { "file": "05-dsa-math-and-loops.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "python-core-control-flow-functions-strings" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-02-number-utils", "dueAfterDays": 6 },
+    { "reuse": "python-programming-from-scratch", "required": false }
+  ]
+}

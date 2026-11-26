@@ -8,6 +8,8 @@
     { "file": "05-dsa-logic.md" },
     { "reuse": "pattern-path-26-weeks", "required": false },
     { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "git-and-github-from-scratch", "required": false },
+    { "reuse": "programming-fundamentals-and-computational-thinking", "required": false },
     { "reuse": "orientation-developer-toolkit-git-basics" },
     { "file": "07-weekly-test.md", "dueAfterDays": 6 },
     { "reuse": "wb-01-hello-git-week-1", "dueAfterDays": 6 }

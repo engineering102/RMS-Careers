@@ -1,0 +1,15 @@
+{
+  "title": "Relational Databases & SQL Fundamentals",
+  "items": [
+    { "file": "01-relational-model.md" },
+    { "file": "02-ddl-constraints.md" },
+    { "file": "03-dml-select.md" },
+    { "file": "04-aggregates-group-by.md" },
+    { "file": "05-dsa-strings.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "array-strings", "required": false },
+    { "reuse": "relational-databases-sql-fundamentals" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-05-college-database", "dueAfterDays": 6 }
+  ]
+}

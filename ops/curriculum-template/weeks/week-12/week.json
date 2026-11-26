@@ -1,0 +1,14 @@
+{
+  "title": "React Fundamentals",
+  "items": [
+    { "file": "01-react-jsx-components.md" },
+    { "file": "02-state-events-lists.md" },
+    { "file": "03-forms-effects-lifting-state.md" },
+    { "file": "04-styling-composition-catalogue.md" },
+    { "file": "05-dsa-stacks-queues.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "react-fundamentals" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-12-marketplace-catalogue", "dueAfterDays": 6 }
+  ]
+}

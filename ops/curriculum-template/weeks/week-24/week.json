@@ -1,0 +1,14 @@
+{
+  "title": "Capstone Sprint 2: Build & Integrate",
+  "items": [
+    { "file": "01-feature-work-pairing.md" },
+    { "file": "02-testing-code-review.md" },
+    { "file": "03-mid-capstone-demo.md" },
+    { "file": "04-bug-bash.md" },
+    { "file": "05-dsa-interview-set-b.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "capstone-sprint-2-build-integrate" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "file": "08-cap-m2.project.json", "dueAfterDays": 6 }
+  ]
+}

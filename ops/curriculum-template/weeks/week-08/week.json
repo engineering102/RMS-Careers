@@ -1,0 +1,14 @@
+{
+  "title": "NoSQL with MongoDB & Phase 2 Mini Project",
+  "items": [
+    { "file": "01-nosql-mongodb-crud.md" },
+    { "file": "02-mongodb-queries-aggregation.md" },
+    { "file": "03-mp2-build-guide.md" },
+    { "file": "04-demos-documentation.md" },
+    { "file": "05-dsa-sorting-prefix-sums.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "nosql-with-mongodb-phase-2-mini-project" },
+    { "file": "08-phase-2-test.md", "dueAfterDays": 6 },
+    { "file": "09-mp2.project.json", "dueAfterDays": 6 }
+  ]
+}

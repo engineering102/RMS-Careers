@@ -1,0 +1,14 @@
+{
+  "title": "React Applications: Routing, State Management & APIs",
+  "items": [
+    { "file": "01-react-router.md" },
+    { "file": "02-context-reducer-hooks.md" },
+    { "file": "03-api-integration.md" },
+    { "file": "04-testing-memo-a11y.md" },
+    { "file": "05-dsa-binary-trees.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "react-applications-routing-state-management-apis" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-13-marketplace-multi-page", "dueAfterDays": 6 }
+  ]
+}

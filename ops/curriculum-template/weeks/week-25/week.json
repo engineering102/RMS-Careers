@@ -1,0 +1,14 @@
+{
+  "title": "Capstone Sprint 3: Polish, Deploy & Document",
+  "items": [
+    { "file": "01-hardening-security-quality.md" },
+    { "file": "02-deployment-ci-logs.md" },
+    { "file": "03-documentation-demo-video.md" },
+    { "file": "04-presentation-hr-gd.md" },
+    { "file": "05-dsa-interview-set-c.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "capstone-sprint-3-polish-deploy-document" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "file": "08-cap-m3.project.json", "dueAfterDays": 6 }
+  ]
+}

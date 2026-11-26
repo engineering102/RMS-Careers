@@ -1,0 +1,14 @@
+{
+  "title": "Advanced JavaScript, Async & Tooling",
+  "items": [
+    { "file": "01-scope-closures-this.md" },
+    { "file": "02-async-fetch.md" },
+    { "file": "03-npm-vite-tooling.md" },
+    { "file": "04-api-explorer-team-build.md" },
+    { "file": "05-dsa-linked-lists.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "advanced-javascript-async-tooling" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-11-api-explorer", "dueAfterDays": 6 }
+  ]
+}

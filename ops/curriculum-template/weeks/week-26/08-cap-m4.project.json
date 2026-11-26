@@ -1,0 +1,44 @@
+{
+  "title": "CAP-M4 · Final Evaluation",
+  "slug": "cap-m4-final-evaluation",
+  "topic": "Phase 6 · Capstone",
+  "subject": "system-design",
+  "description": "Capstone Demo Day: present your team's capstone to the evaluation panel. Each team has 15 minutes for the presentation and live demo, then Q&A and an individual viva for every member. This milestone is 80% of the capstone grade.\n\nMUST\n1. Live demo from the deployed build on main (tagged, for example v1.0), with synthetic demo data, showing every must-have feature working. Each member demonstrates the feature they own.\n2. Final slide deck: problem, solution, architecture, data design, quality (tests, security, deployment), challenges and lessons, future scope, team contributions.\n3. Repository complete: README per the documentation checklist with live URL and demo video, up-to-date architecture diagram, API or pipeline docs, user guide, test plan with test runs, security checklist.\n4. Code quality and Git practice visible in the history: readable code, meaningful commits under each member's own identity, reviewed pull requests linked to issues, no secrets in Git.\n5. Tests in CI and graceful handling of invalid input and errors.\n6. Individual viva: every member explains and, if asked, modifies their own code. AI assistants were allowed during the build, but you must be able to explain any line you submitted.\n7. Backup plan ready: recorded demo video available offline.\n\nSAP case-study capstone (Sunrise Electronics): the same rubric applies, with Code quality and Git practice replaced by process accuracy and configuration rationale, and Security and deployment replaced by integration and document-flow evidence, keeping the same marks.\n\nSUBMIT: every team member submits the same repo URL. Notes: live URL, demo video link, slide deck link, and the features you own with their PR links.",
+  "rubric": [
+    {
+      "title": "Functionality and completeness",
+      "maxPoints": 25,
+      "description": "All must-have features work in the live demo from the deployed build."
+    },
+    {
+      "title": "Architecture and data design",
+      "maxPoints": 15,
+      "description": "Design matches the implementation; sensible structure and a normalised schema (or a justified document model)."
+    },
+    {
+      "title": "Code quality and Git practice",
+      "maxPoints": 15,
+      "description": "Readable code, consistent structure, meaningful commits, reviewed PRs. SAP capstone: process accuracy and configuration rationale."
+    },
+    {
+      "title": "Testing and reliability",
+      "maxPoints": 10,
+      "description": "Tests are present and run in CI; the app handles invalid input and errors gracefully."
+    },
+    {
+      "title": "Security and deployment",
+      "maxPoints": 10,
+      "description": "Live URL, no committed secrets, hashed passwords, validated input. SAP capstone: integration and document-flow evidence."
+    },
+    {
+      "title": "Documentation",
+      "maxPoints": 10,
+      "description": "README, architecture diagram, API or user docs and demo video are complete and accurate."
+    },
+    {
+      "title": "Presentation and viva",
+      "maxPoints": 15,
+      "description": "Clear story within the time; every member answers questions about their own code and can modify it."
+    }
+  ]
+}

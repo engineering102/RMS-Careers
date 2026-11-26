@@ -1,0 +1,29 @@
+{
+  "title": "CAP-M2 · Build Checkpoint",
+  "slug": "cap-m2-build-checkpoint",
+  "topic": "Phase 6 · Capstone",
+  "subject": "system-design",
+  "description": "Capstone Sprint 2: build and integrate. By the end of this week every must-have feature in your PRD is merged to main and working end to end (UI, API, database, and AI or data components where relevant), and you show it to your tutor in a mid-capstone demo. This is a formative checkpoint: it does not count towards the capstone grade, but it is where problems are caught while there is time to fix them.\n\nMUST (in your team's capstone repo)\n1. All must-have features from the Sprint 2 milestone merged to main through reviewed pull requests, each linked to its issue (Closes #n). Anything not done is moved on the board with a written plan or a scope decision agreed with the tutor.\n2. docs/test-plan.md: scope, approach, test data, manual test cases written from your acceptance criteria, and a recorded first test run (date, commit, passed, failed, issue links for failures).\n3. Automated tests running in CI on every pull request: unit tests for business rules and at least one success and one error API test per main resource.\n4. Every member has opened pull requests for their own features and reviewed teammates' pull requests with specific comments.\n5. A seed script that loads synthetic demo data.\n6. Mid-capstone demo (7-10 minutes) from main with freshly seeded data; each member demonstrates the feature they own and answers questions on it.\n7. Bug bash issues triaged (severity, owner) and every critical issue fixed.\n\nSAP case-study teams: replace items 1-5 with executed P2P and O2C cycles documented with document numbers, test scripts with a first run, and peer review of each other's documents.\n\nSUBMIT: every team member submits the same repo URL. Notes: link to the Sprint 2 milestone, the features you own with their PR links, and the PRs you reviewed.",
+  "rubric": [
+    {
+      "title": "Must-haves merged vs plan",
+      "maxPoints": 20,
+      "description": "Must-have features from the Sprint 2 milestone are merged to main and work end to end in the demo; anything behind has a clear plan or an agreed scope decision on the board."
+    },
+    {
+      "title": "Test plan and first run",
+      "maxPoints": 10,
+      "description": "docs/test-plan.md covers scope, approach, test data and manual cases from the acceptance criteria; a first test run is recorded with issue links; automated tests run in CI."
+    },
+    {
+      "title": "PR review practice",
+      "maxPoints": 10,
+      "description": "Every member has opened PRs for their own work and reviewed teammates' PRs with specific, useful comments; PRs are small and linked to issues."
+    },
+    {
+      "title": "Mid-capstone demo",
+      "maxPoints": 10,
+      "description": "A clear 7-10 minute demo from main with seeded data; each member shows their own feature and answers questions about it."
+    }
+  ]
+}

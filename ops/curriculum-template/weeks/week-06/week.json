@@ -1,0 +1,15 @@
+{
+  "title": "Joins, Subqueries, CTEs & Window Functions",
+  "items": [
+    { "file": "01-joins.md" },
+    { "file": "02-subqueries-set-operations.md" },
+    { "file": "03-ctes-window-functions.md" },
+    { "file": "04-case-functions-views-interview-sql.md" },
+    { "file": "05-dsa-hashing.md" },
+    { "file": "06-cheat-sheet.md", "required": false },
+    { "reuse": "advanced-sql-joins-subqueries-ctes-and-window-functions", "required": false },
+    { "reuse": "joins-subqueries-ctes-window-functions-2716" },
+    { "file": "07-weekly-test.md", "dueAfterDays": 6 },
+    { "reuse": "wb-06-business-analytics-brief", "dueAfterDays": 6 }
+  ]
+}

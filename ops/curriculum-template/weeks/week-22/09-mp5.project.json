@@ -1,0 +1,34 @@
+{
+  "title": "MP5 · SAP End-to-End Process Document",
+  "slug": "mp5-sap-end-to-end-process-document",
+  "topic": "Phase 5 · SAP S/4HANA",
+  "subject": "career",
+  "description": "Individual project. Write the end-to-end process document for Kaveri Home Appliances Ltd (fictional), a distributor that buys mixers and fans from suppliers and sells them to retailers, building on your Week 20-21 work in your sap-kaveri-case repository. Use the training system if your college has access; otherwise use the scenario worksheets and say so in the introduction.\n\nMUST (week-22/process-document.pdf, 10-15 pages)\n1. Company background and the org structure you configured or chose (company code, plant, storage location, purchasing organisation, sales area).\n2. Master data used: business partners, materials, G/L accounts (screenshots or worksheet tables).\n3. Procure-to-Pay: purchase requisition -> purchase order -> goods receipt -> invoice verification -> payment. For each step: screenshot, document number, who does it, and the accounting entry it creates (or \"none\").\n4. Order-to-Cash: inquiry/quotation -> sales order -> delivery -> post goods issue -> billing -> incoming payment, in the same format.\n5. Integration: document flow screenshots and a table of MM-FI and SD-FI postings with the accounts hit.\n6. One page of \"what could go wrong\" (for example a goods receipt without a PO, a blocked invoice) and how SAP controls it.\n7. Your certification path: which SAP Certified Associate track fits you and why (check learning.sap.com for the current exam list).\n\nCommit the source file too (DOCX), with one commit per section. Present it in S4 (5 minutes). Be ready to explain every posting.\n\nSUBMIT: repo URL; in Notes list (1) what you built, (2) anything incomplete.",
+  "rubric": [
+    {
+      "title": "Process coverage and accuracy",
+      "maxPoints": 35,
+      "description": "P2P and O2C are complete and in the right order; every step has its document number, owner and the correct accounting entry (or none); the integration table shows the right MM-FI and SD-FI accounts and debit/credit sides."
+    },
+    {
+      "title": "Structure and clarity",
+      "maxPoints": 20,
+      "description": "Consistent format for every step, business description before SAP detail, numbered and cropped figures referenced in the text, a clear org structure diagram and a realistic 'what could go wrong' page with the matching SAP controls."
+    },
+    {
+      "title": "Version history of the document",
+      "maxPoints": 10,
+      "description": "DOCX source committed alongside the PDF, with commits per section and meaningful commit messages showing the document being built."
+    },
+    {
+      "title": "Documentation completeness",
+      "maxPoints": 15,
+      "description": "All seven required sections present; master data and org units documented; certification path chosen with reasons and checked against the current list on learning.sap.com; README links to the PDF."
+    },
+    {
+      "title": "Presentation and viva",
+      "maxPoints": 20,
+      "description": "Five-minute presentation within time covering both cycles and integration; answers viva questions on postings, GR/IR, document flow and account determination from the student's own work."
+    }
+  ]
+}
