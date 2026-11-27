@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { notFound, redirect } from 'next/navigation';
-import { getBatchAcademicAnalytics } from '@/lib/db/queries';
+import { notFound } from 'next/navigation';
+import { getBatchAcademicAnalytics, getStudentPeriodAnalytics } from '@/lib/db/queries';
 import { BatchAnalyticsClient } from './analytics-client';
 import { requireAdminSession } from '@/lib/authz';
+import { isPeriodKey, resolvePeriod } from '@/lib/analytics/periods';
 
 export const metadata = {
   title: 'Batch Academic Analytics & Reporting | Academy Control Plane'
@@ -10,18 +11,34 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
+const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
 export default async function BatchAnalyticsPage(props: {
   params: Promise<{ batchId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await requireAdminSession();
+  await requireAdminSession();
 
-  const params = await props.params;
-  const { batchId } = params;
+  const [{ batchId }, searchParams] = await Promise.all([props.params, props.searchParams]);
+  const periodParam = first(searchParams.period);
+  const now = new Date();
+  const period = resolvePeriod(isPeriodKey(periodParam) ? periodParam : 'this_week', now, {
+    from: first(searchParams.from),
+    to: first(searchParams.to)
+  });
 
-  const data = await getBatchAcademicAnalytics(batchId);
+  const [data, studentActivity] = await Promise.all([
+    getBatchAcademicAnalytics(batchId),
+    getStudentPeriodAnalytics(batchId, period, now)
+  ]);
   if (!data) {
     notFound();
   }
 
-  return <BatchAnalyticsClient data={data} />;
+  // Opening a period link (or ?tab=students) lands on the Student Activity tab.
+  const initialTab = periodParam || first(searchParams.tab) === 'students' ? 'students' : 'overview';
+
+  return (
+    <BatchAnalyticsClient data={data} studentActivity={studentActivity} initialTab={initialTab} />
+  );
 }
