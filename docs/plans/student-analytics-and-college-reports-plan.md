@@ -1,6 +1,9 @@
 # Student Analytics & College Report Cards: Plan
 
-Status: **Phase 1 built (Student Activity tab on batch analytics). Decisions D-1 to D-10 still open.**
+Status: **Phases 1 and 2 built.** Phase 1 is the Student Activity tab on batch analytics (PR #91). Phase 2 is the
+student report card (`/batches/[batchId]/students/[studentId]`), the college dashboard
+(`/colleges/[collegeId]/analytics`) and the printable college report (`/colleges/[collegeId]/report`), plus a
+college CSV export. Phase 3 (delivery) waits on decisions D-1 to D-10 and schema approval.
 Date: 2026-11-27
 Surface: `apps/admin` (protected surface, CLAUDE.md §5.3). Schema additions need approval (§5.2).
 

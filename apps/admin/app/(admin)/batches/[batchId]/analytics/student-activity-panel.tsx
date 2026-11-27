@@ -1,13 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   AlertTriangle,
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
-  CalendarRange,
   Download,
   Search,
   Users
@@ -33,8 +32,8 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/admin/empty-state';
-import { formatDate } from '@/lib/utils/format-date';
-import { PERIOD_KEYS, PERIOD_LABELS, type PeriodKey } from '@/lib/analytics/periods';
+import { PeriodPicker } from '@/components/admin/period-picker';
+import { formatIstDay, periodQuery } from '@/lib/analytics/period-format';
 import type { StudentPeriodRow } from '@/lib/analytics/student-period-metrics';
 import type { StudentPeriodAnalytics } from '@/lib/db/queries/student-period-analytics';
 import { exportStudentActivityCsvAction } from './student-activity-actions';
@@ -48,11 +47,6 @@ const ROW_FILTER_LABELS: Record<RowFilter, string> = {
   inactive: 'Inactive',
   clear: 'No flags'
 };
-
-function formatIstDay(day: string | null): string {
-  // 'YYYY-MM-DD' IST day -> "02 Oct 2026". Noon IST keeps the formatter on the same day.
-  return day ? formatDate(`${day}T12:00:00+05:30`) : '';
-}
 
 function Trend({ row }: { row: StudentPeriodRow }) {
   const title = `Previous period: ${row.prevActiveDays} active day${row.prevActiveDays === 1 ? '' : 's'}`;
@@ -83,31 +77,10 @@ export function StudentActivityPanel({
   batchId: string;
   data: StudentPeriodAnalytics | null;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isPending, startTransition] = React.useTransition();
-  const [customFrom, setCustomFrom] = React.useState(data?.period.from ?? '');
-  const [customTo, setCustomTo] = React.useState(data?.period.to ?? '');
-  const [periodChoice, setPeriodChoice] = React.useState<PeriodKey>(data?.period.key ?? 'this_week');
+  const [isPending, setIsPending] = React.useState(false);
   const [search, setSearch] = React.useState('');
   const [rowFilter, setRowFilter] = React.useState<RowFilter>('all');
   const [exporting, setExporting] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!data) return;
-    setPeriodChoice(data.period.key);
-    setCustomFrom(data.period.from);
-    setCustomTo(data.period.to);
-  }, [data]);
-
-  const navigate = (key: PeriodKey, from?: string, to?: string) => {
-    const params = new URLSearchParams({ period: key });
-    if (key === 'custom' && from && to) {
-      params.set('from', from);
-      params.set('to', to);
-    }
-    startTransition(() => router.push(`${pathname}?${params.toString()}`, { scroll: false }));
-  };
 
   const rows = React.useMemo(() => {
     if (!data) return [];
@@ -174,87 +147,19 @@ export function StudentActivityPanel({
       {/* Period selector */}
       <Card className="shadow-sm">
         <CardContent className="p-4 flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="sa-period">
-              Period
-            </label>
-            <Select
-              value={periodChoice}
-              onValueChange={(v) => {
-                const key = v as PeriodKey;
-                setPeriodChoice(key);
-                if (key !== 'custom') navigate(key);
-              }}
-            >
-              <SelectTrigger id="sa-period" className="w-44 h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIOD_KEYS.map((k) => (
-                  <SelectItem key={k} value={k} className="text-xs">
-                    {PERIOD_LABELS[k]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PeriodPicker period={period} onPendingChange={setIsPending} />
 
-          {periodChoice === 'custom' && (
-            <form
-              className="flex flex-wrap items-end gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!customFrom || !customTo || customFrom > customTo) {
-                  toast.error('Choose a start date on or before the end date.');
-                  return;
-                }
-                navigate('custom', customFrom, customTo);
-              }}
-            >
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-muted-foreground" htmlFor="sa-from">
-                  From
-                </label>
-                <Input
-                  id="sa-from"
-                  type="date"
-                  className="h-9 text-xs w-40"
-                  value={customFrom}
-                  max={customTo || undefined}
-                  onChange={(e) => setCustomFrom(e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-muted-foreground" htmlFor="sa-to">
-                  To
-                </label>
-                <Input
-                  id="sa-to"
-                  type="date"
-                  className="h-9 text-xs w-40"
-                  value={customTo}
-                  min={customFrom || undefined}
-                  onChange={(e) => setCustomTo(e.target.value)}
-                />
-              </div>
-              <Button type="submit" size="sm" className="h-9 text-xs" disabled={isPending}>
-                Apply
-              </Button>
-            </form>
+          {data.college && (
+            <Button asChild variant="ghost" size="sm" className="h-9 text-xs ml-auto">
+              <Link href={`/colleges/${data.college.id}/analytics?${periodQuery(period)}`}>
+                College view
+              </Link>
+            </Button>
           )}
-
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground pb-2">
-            <CalendarRange className="h-3.5 w-3.5" />
-            <span>
-              {formatIstDay(period.from)} to {formatIstDay(period.to)} · {period.days} day
-              {period.days === 1 ? '' : 's'} (IST)
-            </span>
-          </div>
-
           <Button
             variant="outline"
             size="sm"
-            className="h-9 text-xs gap-1.5 ml-auto"
+            className={`h-9 text-xs gap-1.5 ${data.college ? '' : 'ml-auto'}`}
             onClick={handleExport}
             disabled={exporting || isPending}
           >
@@ -390,7 +295,12 @@ export function StudentActivityPanel({
                   {rows.map((r) => (
                     <TableRow key={r.studentId}>
                       <TableCell className="text-xs">
-                        <div className="font-medium text-foreground">{r.fullName}</div>
+                        <Link
+                          href={`/batches/${batchId}/students/${r.studentId}?${periodQuery(period)}`}
+                          className="font-medium text-foreground hover:underline underline-offset-4"
+                        >
+                          {r.fullName}
+                        </Link>
                         <div className="text-muted-foreground">
                           {r.collegeRollNumber ? `${r.collegeRollNumber} · ` : ''}
                           {r.email}
