@@ -36,10 +36,10 @@ export default async function AdminLayout({
 
   return (
     <Providers>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex min-h-screen w-full flex-col bg-muted/40 print:bg-white">
         <DesktopNav isSuperAdmin={isSuperAdmin} />
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14 print:p-0">
+          <header className="print:hidden sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <MobileNav isSuperAdmin={isSuperAdmin} />
             <AdminBreadcrumb />
             <CommandPalette isSuperAdmin={isSuperAdmin} />
@@ -47,7 +47,7 @@ export default async function AdminLayout({
           </header>
           {/* grid-cols-1 (minmax(0, 1fr)) keeps wide tables and tab strips scrolling inside their own
               containers instead of stretching the page past the viewport. */}
-          <main className="grid flex-1 grid-cols-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-6 bg-muted/40">
+          <main className="grid flex-1 grid-cols-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-6 bg-muted/40 print:bg-white print:p-0">
             {children}
           </main>
         </div>
@@ -58,7 +58,7 @@ export default async function AdminLayout({
 
 function DesktopNav({ isSuperAdmin }: { isSuperAdmin: boolean }) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+    <aside className="print:hidden fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         <Link
           href="/overview"

@@ -28,6 +28,8 @@ export * from './queries/batch-projects';
 export * from './queries/batch-external-assessments';
 export * from './queries/batch-analytics';
 export * from './queries/student-period-analytics';
+export * from './queries/student-report-card';
+export * from './queries/college-analytics';
 export * from './queries/live-sessions';
 export * from './queries/tutors';
 export * from './queries/overview';

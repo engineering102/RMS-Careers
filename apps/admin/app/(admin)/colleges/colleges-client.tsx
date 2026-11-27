@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { PlusCircle, Building2, Pencil, Power } from 'lucide-react';
+import Link from 'next/link';
+import { PlusCircle, Building2, Pencil, Power, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
@@ -145,6 +146,12 @@ export function CollegesClient({ initialColleges }: { initialColleges: CollegeIt
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button asChild size="sm" variant="ghost" className="h-8 gap-1 text-xs">
+                        <Link href={`/colleges/${college.id}/analytics`}>
+                          <BarChart3 className="h-3 w-3" />
+                          Analytics
+                        </Link>
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
