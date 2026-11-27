@@ -67,12 +67,20 @@ import type {
   BatchAcademicAnalyticsData,
   AnalyticsReportType
 } from '@/lib/db/queries/batch-analytics';
+import type { StudentPeriodAnalytics } from '@/lib/db/queries/student-period-analytics';
+import { StudentActivityPanel } from './student-activity-panel';
 
 interface BatchAnalyticsClientProps {
   data: BatchAcademicAnalyticsData;
+  studentActivity: StudentPeriodAnalytics | null;
+  initialTab?: string;
 }
 
-export function BatchAnalyticsClient({ data }: BatchAnalyticsClientProps) {
+export function BatchAnalyticsClient({
+  data,
+  studentActivity,
+  initialTab = 'overview'
+}: BatchAnalyticsClientProps) {
   const {
     batch,
     college,
@@ -86,7 +94,7 @@ export function BatchAnalyticsClient({ data }: BatchAnalyticsClientProps) {
   } = data;
 
   // Active Tab
-  const [activeTab, setActiveTab] = React.useState<string>('overview');
+  const [activeTab, setActiveTab] = React.useState<string>(initialTab);
 
   // Filter States
   const [assessmentSearch, setAssessmentSearch] = React.useState<string>('');
@@ -332,6 +340,10 @@ export function BatchAnalyticsClient({ data }: BatchAnalyticsClientProps) {
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <BarChart3 className="h-3.5 w-3.5" />
             Cohort Distributions
+          </TabsTrigger>
+          <TabsTrigger value="students" className="text-xs gap-1.5">
+            <Users className="h-3.5 w-3.5" />
+            Student Activity
           </TabsTrigger>
           <TabsTrigger value="assessments" className="text-xs gap-1.5">
             <FileQuestion className="h-3.5 w-3.5" />
@@ -1082,6 +1094,10 @@ export function BatchAnalyticsClient({ data }: BatchAnalyticsClientProps) {
         {/* =========================================================================
             TAB 6: REPORTS & CSV EXPORTS
         ========================================================================= */}
+        <TabsContent value="students" className="space-y-4">
+          <StudentActivityPanel batchId={batch.id} data={studentActivity} />
+        </TabsContent>
+
         <TabsContent value="exports" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Report 1: Executive Summary */}
