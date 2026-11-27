@@ -145,7 +145,7 @@ Nothing in this document, and no rehearsal, starts this part. Per app, in this o
 - [ ] Do the next app only after part C passes for this one.
 - [ ] When the bootstrap window is over, set `PRODUCTION_DEPLOY_ENABLED` back to unset or `false` if automatic deployment should stay off.
 
-**Pre-launch apps.** An app listed in `PRE_LAUNCH_APPS` (`scripts/ci/deploy-tracking.mjs`; today `tutor`) has no Worker yet. Automatic runs and a dispatched `all` leave it out, so merges do not fail on its missing baseline and nothing creates the `rms-tutor` Worker or claims `tutor.rms-careers.com` by accident. Its first deployment is this same single-app bootstrap (`app` = `tutor`), done at its launch (tutor plan, `docs/plans/tutor-portal-implementation-plan.md` §13.5) after its Environment and Worker secrets exist. After part C passes for it, remove it from `PRE_LAUNCH_APPS` in a pull request so automatic deploys cover it from then on.
+**Pre-launch apps.** An app listed in `PRE_LAUNCH_APPS` (`scripts/ci/deploy-tracking.mjs`; today `tutor`) has no Worker yet. Automatic runs and a dispatched `all` leave it out, so merges do not fail on its missing baseline and nothing creates the `rms-tutor` Worker or claims `tutor.rms-careers.com` by accident. Its first deployment is this same single-app bootstrap (`app` = `tutor`), done at its launch ([tutor-launch.md](./tutor-launch.md)) after its Environment and Worker secrets exist. After part C passes for it, remove it from `PRE_LAUNCH_APPS` in a pull request so automatic deploys cover it from then on.
 
 ### 7C. After each bootstrap (verification and recovery preparation)
 
